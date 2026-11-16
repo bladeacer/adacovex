@@ -487,6 +487,10 @@ package body Adacovex_SBOM_Tests is
          & ASCII.LF
          & ASCII.HT
          & "sphinx-build docs _build/html"
+         & ASCII.LF
+         --  A tool that only a comment names is not a dependency: the
+         --  comment text is never scanned.
+         & "# curl is not used by this project"
          & ASCII.LF);
       Write_File
         (D & "/build.sh",
@@ -1829,6 +1833,14 @@ package body Adacovex_SBOM_Tests is
          R.Check
            (Count_Name (Graph, "pandoc") = 0,
             "unreferenced tool not registered");
+
+         --  curl appears in the Makefile only inside a comment. Comment
+         --  text is not command text, so an installed curl stays out of
+         --  the graph: a build file that merely mentions a tool does not
+         --  depend on it.
+         R.Check
+           (Count_Name (Graph, "curl") = 0,
+            "tool named only in a comment not registered");
       end;
 
       --  A C project built with Meson has no Rust or Go dependency. Its
@@ -1877,6 +1889,16 @@ package body Adacovex_SBOM_Tests is
             R.Check
               (Count_Name (Graph, "ninja") = 1,
                "C project: ninja registered from the Makefile recipe");
+         end if;
+         --  meson is the configure step of the same recipe and is in the
+         --  curated table: the list covers every build tool the fixture
+         --  projects name.
+         Exe := GNAT.OS_Lib.Locate_Exec_On_Path ("meson");
+         if Exe /= null then
+            GNAT.OS_Lib.Free (Exe);
+            R.Check
+              (Count_Name (Graph, "meson") = 1,
+               "C project: meson registered from the Makefile recipe");
          end if;
       end;
 

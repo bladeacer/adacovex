@@ -784,13 +784,16 @@ package body Adacovex.Parsers.Manifest is
    --  scan to build files keeps prose and source identifiers from
    --  registering phantom tools. Add an entry when a project's build
    --  files reference the tool by name -- keep the list alphabetical
-   --  within each category.
+   --  within each category. The list covers every build tool the committed
+   --  fixture projects reference (make, ninja, meson, alr, python3, git,
+   --  gnatprove); sphinx-build stays out on purpose, because it is the
+   --  pypi package sphinx rather than a system tool.
    --  The two adacovex entries are the one exception to rule (b): the
    --  running binary is the dependency, so Discover_System_Dev_Deps
    --  registers them from the reference alone and classifies them by
    --  installation method (Adacovex.Install). They are listed here so
    --  the word scan records a project's reference to adacovex or covex.
-   System_Tools : constant array (1 .. 66) of Tool_Entry :=
+   System_Tools : constant array (1 .. 67) of Tool_Entry :=
      (
       --  Build / test drivers.
       Make_Tool ("adacovex"),
@@ -807,6 +810,7 @@ package body Adacovex.Parsers.Manifest is
       Make_Tool ("gnatprep"),
       Make_Tool ("gradle"),
       Make_Tool ("make"),
+      Make_Tool ("meson"),
       Make_Tool ("mvn"),
       Make_Tool ("ninja"),
       Make_Tool ("pytest", C_Build),
