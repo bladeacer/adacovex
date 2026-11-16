@@ -60,16 +60,26 @@ def adacovex(*args: str) -> int:
     return run([str(exe), *args])
 
 
+#  One build, one docs bundle, and one proof run feed every gate in a single
+#  `check` run.  Each flag records a product an earlier gate already made, so
+#  a later gate reuses it instead of rebuilding, re-bundling, or re-proving
+#  it.  `tools/build.py` regenerates the bundled offline manual among its
+#  pre-build steps, so a successful build also satisfies the offline-manual
+#  gate.
 _BUILD_DONE = False
+_BOOK_DONE = False
+_PROVE_DONE = False
 
 
 def task_build() -> int:
     """Build once per process; later gates reuse the built tree."""
-    global _BUILD_DONE
+    global _BUILD_DONE, _BOOK_DONE
     if _BUILD_DONE:
         return 0
     rc = py("tools/build.py")
     _BUILD_DONE = rc == 0
+    if _BUILD_DONE:
+        _BOOK_DONE = True
     return rc
 
 
@@ -102,8 +112,17 @@ def task_test() -> int:
 
 
 def task_prove() -> int:
+    """Prove once per process; a second gate reads the first run's output."""
+    global _PROVE_DONE
     rc = task_build()
-    return rc if rc != 0 else py("tools/run.py", "prove")
+    if rc != 0:
+        return rc
+    if _PROVE_DONE:
+        print("=== SPARK proof: already run in this `check` ===")
+        return 0
+    rc = py("tools/run.py", "prove")
+    _PROVE_DONE = rc == 0
+    return rc
 
 
 def fmt_sources() -> List[str]:
@@ -147,7 +166,14 @@ def task_doc() -> int:
 
 
 def task_book() -> int:
-    return py("tools/gen-docs.py")
+    """Bundle the offline manual once; the build already did it."""
+    global _BOOK_DONE
+    if _BOOK_DONE:
+        print("=== Offline manual: already bundled by the build ===")
+        return 0
+    rc = py("tools/gen-docs.py")
+    _BOOK_DONE = rc == 0
+    return rc
 
 
 def task_run_self() -> int:
@@ -549,16 +575,17 @@ def skip_without_sphinx() -> Optional[str]:
 
 #  The `check` recipe order.  `fmt` is first: gnatprove and the API docs both
 #  read the sources, so every later gate must see formatted code.  The cheap
-#  static gates run before the expensive build + proof, and the count-sync
-#  checks run last, after `test`/`prove` have refreshed the metrics.
+#  static gates run before the build, the build comes before every gate that
+#  needs the binary (so the compile is attributed to one row instead of the
+#  first gate that happened to need it), and the count-sync checks run last,
+#  after `test`/`prove` have refreshed the metrics.  Build, docs bundle, and
+#  proof are each produced once: the memos above make a later gate a reuse.
 #  Each entry is (label, gate, preflight): the preflight returns a SKIP
 #  reason, or None to run the gate.
 CHECK_GATES: List[Tuple[str, Callable[[], int],
                          Optional[Callable[[], Optional[str]]]]] = [
     ("fmt", task_fmt, skip_without_gnatformat),
     ("ASCII", task_ascii_check, None),
-    ("complexity (no god objects/functions/files)", task_complexity_check,
-     skip_without_alr),
     ("CSS 4px spacing", task_csslint_check, None),
     ("SPARK_Mode Off", task_spark_off_check, None),
     ("changelog format", task_changelog_check, None),
@@ -566,7 +593,6 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("documentation coverage", task_docs_coverage_check, None),
     ("CLI surface parity", task_surface_parity_check, None),
     ("tools unit tests", task_tools_check, None),
-    ("CLI end-to-end", task_cli_e2e, skip_without_alr),
     ("version source", task_version_source_check, None),
     ("version consistency", task_version_consistency_check, None),
     ("doc links", task_doc_links_check, None),
@@ -577,6 +603,9 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("bundled offline manual links", task_book_links_check, None),
     ("bundled offline manual spec", task_book_spec_check, None),
     ("build", task_build, skip_without_alr),
+    ("complexity (no god objects/functions/files)", task_complexity_check,
+     skip_without_alr),
+    ("CLI end-to-end", task_cli_e2e, skip_without_alr),
     ("native tests", task_test, skip_without_alr),
     ("SPARK proof + badges", task_prove, skip_without_alr),
     ("prove diagnostics end-to-end", task_prove_e2e, skip_without_gnatprove),
