@@ -1141,6 +1141,20 @@ class CheckGateOrderTests(unittest.TestCase):
             self.assertIn(spec.name, names,
                           f"generated spec not excluded from fmt: {spec.name}")
 
+    def test_fmt_excludes_fixture_projects(self) -> None:
+        # A fixture is a standalone project with its own GPR, so the root
+        # project cannot see it; formatting one printed the "not visible to
+        # the provided project" warning and touched a file the build never
+        # compiles.
+        sources = set(tasks.fmt_sources())
+        self.assertTrue(sources, "fmt would format nothing")
+        for source in sources:
+            self.assertFalse(source.startswith(tuple(tasks.FIXTURE_ROOTS)),
+                             f"fixture source handed to gnatformat: {source}")
+        self.assertIn("src/tests/adacovex-test_support.ads", sources)
+        self.assertNotIn("src/tests/fixtures/ecosystems/ada/src/mini.ads",
+                         sources)
+
 
 class CssSpacingTests(unittest.TestCase):
     """Pure-logic tests for tools/csslint.py (the 4px spacing gate)."""

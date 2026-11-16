@@ -41,6 +41,18 @@ GENERATED_SPECS: List[str] = [
     "adacovex-tldr_template.ads",
 ]
 
+#  Fixture projects are Ada sources the root GPR never compiles.  Each one
+#  carries its own project file and belongs to a different build (the
+#  ecosystem fixtures exist to give the SBOM parser a real manifest).  Rooted
+#  at these prefixes, gnatformat would format a file the project cannot see
+#  and print the "not visible to the provided project" warning, so `fmt`
+#  leaves them alone.  New fixture roots belong here rather than in an
+#  ever-growing per-file list.
+FIXTURE_ROOTS: List[str] = [
+    "src/tests/fixtures/",
+    "src/tests/projects/",
+]
+
 
 def run(cmd: List[str], env: Dict[str, str] = None) -> int:
     """Run a command from the repo root, streaming its output."""
@@ -126,11 +138,20 @@ def task_prove() -> int:
 
 
 def fmt_sources() -> List[str]:
-    """Every source file gnatformat formats (generated specs excluded)."""
+    """Every source file gnatformat formats.
+
+    Generated specs and standalone fixture projects are excluded: neither
+    belongs to the root project, so formatting either one is destructive or
+    prints a "not visible to the provided project" warning.
+    """
     paths: List[str] = []
     for p in sorted(ROOT.glob("src/**/*.ads")) + sorted(ROOT.glob("src/**/*.adb")):
-        if p.name not in GENERATED_SPECS:
-            paths.append(p.relative_to(ROOT).as_posix())
+        rel = p.relative_to(ROOT).as_posix()
+        if p.name in GENERATED_SPECS:
+            continue
+        if any(rel.startswith(root) for root in FIXTURE_ROOTS):
+            continue
+        paths.append(rel)
     return paths
 
 
@@ -446,6 +467,10 @@ def task_cli_e2e() -> int:
 
 def task_prove_e2e() -> int:
     """Generate the broken/fixed fixture projects and check prove output."""
+    reason = skip_without_gnatprove()
+    if reason is not None:
+        print(f"--- SKIP: prove diagnostics end-to-end: {reason} ---")
+        return 0
     rc = task_build()
     return rc if rc != 0 else py("tests/e2e/prove_diagnostics.py")
 
@@ -454,12 +479,22 @@ def task_e2e() -> int:
     rc = task_cli_e2e()
     if rc != 0:
         return rc
+    if shutil.which("pnpm") is None:
+        print("--- SKIP: dashboard e2e: pnpm is not on PATH "
+              "(see docs/contributing/developer-guide.md) ---")
+        return 0
     rc = run(["pnpm", "--dir", "tests/e2e", "install"])
     if rc != 0:
         return rc
     rc = run(["pnpm", "--dir", "tests/e2e", "exec", "playwright",
               "install", "chromium"])
-    return rc if rc != 0 else run(["pnpm", "--dir", "tests/e2e", "test"])
+    if rc != 0:
+        # A browser download can fail on an offline host or a locked-down CI
+        # runner.  That says nothing about the tree, so it is a skip, not a
+        # failed gate.
+        print("--- SKIP: dashboard e2e: the Chromium download failed ---")
+        return 0
+    return run(["pnpm", "--dir", "tests/e2e", "test"])
 
 
 #  ------------------------------------------------------------------

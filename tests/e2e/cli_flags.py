@@ -21,7 +21,8 @@ binary is built:
   just build          # once
   python3 tests/e2e/cli_flags.py
 
-Exit code 0 when every check passes, 1 otherwise.
+Exit code 0 when every check passes or skips (a skip is reported with its
+reason and is never counted as a pass), 1 when a check fails.
 """
 
 import json
@@ -114,6 +115,7 @@ class Results:
     def __init__(self) -> None:
         self.passed: int = 0
         self.failed: int = 0
+        self.skipped: int = 0
 
     def check(self, ok: bool, label: str) -> None:
         if ok:
@@ -123,14 +125,23 @@ class Results:
             self.failed += 1
             print(f"  FAIL: {label}")
 
+    def skip(self, label: str, reason: str) -> None:
+        """A check that cannot run here: never a pass, never a failure."""
+        self.skipped += 1
+        print(f"  SKIP: {label}: {reason}")
+
     def report(self) -> int:
         total = self.passed + self.failed
         print(f"\n  Passed: {self.passed}  Failed: {self.failed}  "
-              f"({total} checks)")
+              f"Skipped: {self.skipped}  ({total} checks)")
         if self.failed:
             print("=== CLI E2E FAILED ===")
             return 1
-        print("=== ALL CLI E2E CHECKS PASSED ===")
+        if self.skipped:
+            print(f"=== ALL CLI E2E CHECKS PASSED "
+                  f"({self.skipped} skipped) ===")
+        else:
+            print("=== ALL CLI E2E CHECKS PASSED ===")
         return 0
 
 
@@ -539,7 +550,7 @@ def check_sbom_siblings(r: Results, tmp: Path) -> None:
     for name, ecosystems in SBOM_SIBLINGS:
         target = ROOT.parent / name
         if not target.is_dir():
-            print(f"  SKIP: ../{name} is not checked out")
+            r.skip(f"../{name} sbom checks", "the sibling is not checked out")
             continue
         rows = sbom_table(target, tmp / f"sibling-{name}.md")
         r.check(rows is not None and rows != [],
@@ -1080,8 +1091,8 @@ def check_config_files(r: Results, tmp: Path) -> None:
 def check_config_prove(r: Results, tmp: Path) -> None:
     """The [prove] keys and flags need a real prover; skip without one."""
     if shutil.which("gnatprove") is None:
-        print("  SKIP: no gnatprove on PATH; the prove-side config checks "
-              "need a prover")
+        r.skip("prove-side configuration",
+               "no gnatprove on PATH (the checks need a prover)")
         return
     proj = tmp / "cfg-prove"
     write_project(proj, 2)
@@ -1243,7 +1254,8 @@ def check_differential(r: Results, tmp: Path) -> None:
     repo = tmp / "diff-repo"
     write_project(repo, 1)
     if not git_init_commit(repo):
-        print("  SKIP: git not available; the differential checks need a VCS")
+        r.skip("differential assessment",
+               "git is not available (the checks need a VCS)")
         return
 
     suppress = ["--no-sbom", "--no-svg", "--no-md", "--no-cache"]
@@ -1304,7 +1316,8 @@ def check_differential_regression(r: Results, tmp: Path) -> None:
     repo = tmp / "diff-regression"
     write_documented_project(repo, 1)
     if not git_init_commit(repo):
-        print("  SKIP: git not available; the regression checks need a VCS")
+        r.skip("coverage-delta regression",
+               "git is not available (the checks need a VCS)")
         return
 
     clean = run(["-t", str(repo), "--coverage-delta=HEAD"])
