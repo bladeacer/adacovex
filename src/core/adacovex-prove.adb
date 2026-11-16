@@ -2567,82 +2567,79 @@ package body Adacovex.Prove is
          --  summary did.
          if GPR_Patched then
             declare
-               --  The two artefacts of a proof run, padded to the longest
-               --  name (gnatprove.out is 13 characters, gnatprove.sarif is
-               --  15). The component type fits every literal: a bound of 15
-               --  raised a length check at copy time for the 17-character
-               --  padded summary name. Trim drops the padding below.
-               Names    : constant array (1 .. 2) of String (1 .. 17) :=
-                 ("gnatprove.out    ", "gnatprove.sarif  ");
+               --  The proof artefacts live in the patched tree's own object
+               --  dir: <copy>/obj/gnatprove/<file> (the copy's root project
+               --  path is <copy>/<basename>.gpr).
                Dir_Part : constant String := "obj/gnatprove/";
                Prefix   : Natural := GLen;
                Src_Out  : String (1 .. Types.Max_Path);
                Src_Len  : Natural;
+
+               --  Copy one proof artefact to the canonical path. The name
+               --  arrives as an unconstrained String, so no padded literal
+               --  and no name width stand between the caller and the bound
+               --  check: every artefact takes the same one bound, Max_Path.
+               --  @param Name  Artefact file name (for example gnatprove.out).
+               procedure Copy_Artefact (Name : String) is
+               begin
+                  --  An over-long path is reported, never truncated.
+                  if Prefix + Dir_Part'Length + Name'Length > Src_Out'Length
+                  then
+                     Ada.Text_IO.Put_Line
+                       (Ada.Text_IO.Standard_Error,
+                        "  ERROR: patched proof tree path exceeds"
+                        & " Max_Path; cannot copy "
+                        & Name);
+                     return;
+                  end if;
+                  Src_Len := Prefix;
+                  for I in 1 .. Prefix - 1 loop
+                     Src_Out (I) := GPR (I);
+                  end loop;
+                  Src_Out (Src_Len) := '/';
+                  for I in Dir_Part'Range loop
+                     Src_Len := Src_Len + 1;
+                     Src_Out (Src_Len) := Dir_Part (I);
+                  end loop;
+                  for I in Name'Range loop
+                     Src_Len := Src_Len + 1;
+                     Src_Out (Src_Len) := Name (I);
+                  end loop;
+                  declare
+                     C1 : Boolean;
+                     C2 : Integer;
+                  begin
+                     Run_Command
+                       ((new String'("-c"),
+                         new String'
+                           ("mkdir -p '"
+                            & Target_Dir
+                            & "/obj/gnatprove' && cp -f '"
+                            & Src_Out (1 .. Src_Len)
+                            & "' '"
+                            & Target_Dir
+                            & "/obj/gnatprove/"
+                            & Name
+                            & "'")),
+                        "/dev/null",
+                        C1,
+                        C2);
+                     if not C1 or else C2 /= 0 then
+                        Ada.Text_IO.Put_Line
+                          (Ada.Text_IO.Standard_Error,
+                           "  ERROR: could not copy the proof result to "
+                           & Target_Dir
+                           & "/obj/gnatprove/"
+                           & Name);
+                     end if;
+                  end;
+               end Copy_Artefact;
             begin
-               --  The proof artefacts live in the patched tree's own object
-               --  dir: <copy>/obj/gnatprove/<file> (the copy's root project
-               --  path is <copy>/<basename>.gpr).
                while Prefix > 1 and then GPR (Prefix) /= '/' loop
                   Prefix := Prefix - 1;
                end loop;
-               for N in Names'Range loop
-                  declare
-                     Name : constant String :=
-                       Trim (Names (N), Ada.Strings.Both);
-                  begin
-                     --  An over-long path is reported, never truncated.
-                     if Prefix + Dir_Part'Length + Name'Length > Src_Out'Length
-                     then
-                        Ada.Text_IO.Put_Line
-                          (Ada.Text_IO.Standard_Error,
-                           "  ERROR: patched proof tree path exceeds"
-                           & " Max_Path; cannot copy "
-                           & Name);
-                     else
-                        Src_Len := Prefix;
-                        for I in 1 .. Prefix - 1 loop
-                           Src_Out (I) := GPR (I);
-                        end loop;
-                        Src_Out (Src_Len) := '/';
-                        for I in Dir_Part'Range loop
-                           Src_Len := Src_Len + 1;
-                           Src_Out (Src_Len) := Dir_Part (I);
-                        end loop;
-                        for I in Name'Range loop
-                           Src_Len := Src_Len + 1;
-                           Src_Out (Src_Len) := Name (I);
-                        end loop;
-                        declare
-                           C1 : Boolean;
-                           C2 : Integer;
-                        begin
-                           Run_Command
-                             ((new String'("-c"),
-                               new String'
-                                 ("mkdir -p '"
-                                  & Target_Dir
-                                  & "/obj/gnatprove' && cp -f '"
-                                  & Src_Out (1 .. Src_Len)
-                                  & "' '"
-                                  & Target_Dir
-                                  & "/obj/gnatprove/"
-                                  & Name
-                                  & "'")),
-                              "/dev/null",
-                              C1,
-                              C2);
-                           if not C1 or else C2 /= 0 then
-                              Ada.Text_IO.Put_Line
-                                (Ada.Text_IO.Standard_Error,
-                                 "  ERROR: could not copy the proof result to "
-                                 & Target_Dir
-                                 & "/obj/gnatprove/"
-                                 & Name);
-                           end if;
-                        end;
-                     end if;
-                  end;
-               end loop;
+               Copy_Artefact ("gnatprove.out");
+               Copy_Artefact ("gnatprove.sarif");
             end;
          end if;
          if Opts.Cache then
