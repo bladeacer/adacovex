@@ -1,6 +1,6 @@
   | Category                                |  Tests | Status   |
   |-----------------------------------------|--------|----------|
-  | Types conversions                        |  67 | PASS     |
+  | Types conversions                        |  72 | PASS     |
   | DAL compliance                           |  23 | PASS     |
   | Source scanner                           |  89 | PASS     |
   | GNATprove parser                         |  88 | PASS     |
@@ -8,7 +8,7 @@
   | CLI config                               |  387 | PASS     |
   | SVG renderer                             |  161 | PASS     |
   | HTML/Markdown renderers                  |  58 | PASS     |
-  | SBOM generator                           |  578 | PASS     |
+  | SBOM generator                           |  580 | PASS     |
   | Result cache                             |  36 | PASS     |
   | IR synthesis                             |  42 | PASS     |
   | Man page renderer                        |  30 | PASS     |
@@ -31,4 +31,4 @@
   | tldr installer                           |  48 | PASS     |
   |-----------------------------------------|--------|----------|
 
-  Passed: 2387  Failed: 0
+  Passed: 2394  Failed: 0
