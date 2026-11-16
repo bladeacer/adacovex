@@ -179,6 +179,17 @@ jobs:
       - name: Enforce documentation coverage
         run: python3 tools/tasks.py docs-coverage-check
 
+  diagnostics-coverage:
+    # Feature gate: the diagnostics matrix, the Fix_Hint branches, and the
+    # prove-diagnostics fixtures must name the same check kinds.  Fails when
+    # a classification, a fixture, or its documented row drifts.
+    name: Diagnostics coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce diagnostics coverage
+        run: python3 tools/tasks.py diagnostics-coverage-check
+
   surface-parity:
     # Feature gate: the --help, man, tldr, cli-reference, and completion
     # surfaces must advertise the same subcommands and flag shapes, and the
@@ -384,7 +395,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, version-consistency, consumer-run-tests, action-project-config, coverage-gate]
+    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, diagnostics-coverage, version-consistency, consumer-run-tests, action-project-config, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -396,6 +407,7 @@ jobs:
           COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
           DOCS: ${{ needs.docs-coverage.result }}
+          DIAG: ${{ needs.diagnostics-coverage.result }}
           VERSION: ${{ needs.version-consistency.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
           ACTIONCFG: ${{ needs.action-project-config.result }}
@@ -414,13 +426,14 @@ jobs:
             echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
             echo "| Documentation coverage gate | $DOCS |"
+            echo "| Diagnostics coverage gate | $DIAG |"
             echo "| Version consistency gate | $VERSION |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Action project config (adacovex.toml) | $ACTIONCFG |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$VERSION" "$CONSUMER" "$ACTIONCFG" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$DIAG" "$VERSION" "$CONSUMER" "$ACTIONCFG" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2

@@ -25,6 +25,7 @@ Exit code 0 when every check passes or skips (a skip is reported with its
 reason and is never counted as a pass), 1 when a check fails.
 """
 
+import argparse
 import json
 import os
 import re
@@ -37,7 +38,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parents[2]
 
@@ -662,12 +663,28 @@ def serve_get(port: int, args: List[str], path: str = "/") -> Optional[str]:
     return body
 
 
+def serve_get_retry(build_args: Callable[[int], List[str]],
+                    path: str = "/",
+                    attempts: int = 4) -> Tuple[Optional[str], int]:
+    """Try to serve and GET, re-picking the port when the bind lost a race.
+
+    The shards run concurrently, so another shard can take the port between
+    `free_port` and the child's bind.  A retry gives the check a real verdict
+    instead of a false failure.
+    """
+    for _ in range(attempts):
+        port = free_port()
+        body = serve_get(port, build_args(port), path)
+        if body is not None:
+            return body, port
+    return None, 0
+
+
 def check_serve_shorthands(r: Results, tmp: Path) -> None:
-    port = free_port()
-    body = serve_get(
-        port,
-        ["serve", "-t", str(tmp), "-p", str(port), "--workers=2",
-         "--no-sbom", "--no-svg", "--no-md", "--no-cache"],
+    body, _ = serve_get_retry(
+        lambda port: ["serve", "-t", str(tmp), "-p", str(port),
+                      "--workers=2", "--no-sbom", "--no-svg", "--no-md",
+                      "--no-cache"],
         "/api/metrics",
     )
     payload: Optional[dict] = None
@@ -689,16 +706,15 @@ def check_serve_info_health(r: Results, tmp: Path) -> None:
     base = ["serve", "-t", str(tmp), "--workers=2",
             "--no-sbom", "--no-svg", "--no-md", "--no-cache"]
 
-    health_port = free_port()
-    health = serve_get(health_port, base + ["-p", str(health_port)],
-                       "/health")
+    health, _ = serve_get_retry(
+        lambda port: base + ["-p", str(port)], "/health")
     r.check(
         health is not None and health.strip() == '{"status": "ok"}',
         "serve answers /health with the JSON health verdict",
     )
 
-    info_port = free_port()
-    info = serve_get(info_port, base + ["-p", str(info_port)], "/api/info")
+    info, info_port = serve_get_retry(
+        lambda port: base + ["-p", str(port)], "/api/info")
     payload: Optional[dict] = None
     if info is not None:
         try:
@@ -796,9 +812,8 @@ def check_serve_watch(r: Results, tmp: Path) -> None:
             proc.kill()
             proc.wait(timeout=10)
 
-    off_port = free_port()
-    off = serve_get(off_port, base + ["-p", str(off_port), "--no-watch"],
-                    "/api/watch")
+    off, _ = serve_get_retry(
+        lambda port: base + ["-p", str(port), "--no-watch"], "/api/watch")
     off_payload: Optional[dict] = None
     if off is not None:
         try:
@@ -836,14 +851,13 @@ def check_theme_and_port(r: Results, tmp: Path) -> None:
     # The CLI theme reaches the served dashboard, and the port shorthand
     # works in both the "=" and the glued form.
     for theme, form in (("dark", "-p=PORT"), ("light", "-pPORT")):
-        port = free_port()
-        port_arg = f"-p={port}" if form == "-p=PORT" else f"-p{port}"
-        body = serve_get(
-            port,
-            ["serve", "-t", str(tmp), port_arg, f"--theme={theme}",
-             "--workers=2", "--no-sbom", "--no-svg", "--no-md", "--no-cache"],
-            "/",
-        )
+        def args_for(port: int) -> List[str]:
+            port_arg = f"-p={port}" if form == "-p=PORT" else f"-p{port}"
+            return ["serve", "-t", str(tmp), port_arg, f"--theme={theme}",
+                    "--workers=2", "--no-sbom", "--no-svg", "--no-md",
+                    "--no-cache"]
+
+        body, _ = serve_get_retry(args_for, "/")
         r.check(
             body is not None
             and f'data-initial-theme="{theme}"' in body,
@@ -1530,38 +1544,63 @@ def check_timezone(r: Results, tmp: Path) -> None:
         "--tz=UTC+8 reports the explicit offset (UTC+08:00)",
     )
 
-def main() -> int:
+#  Named check groups.  Each group owns its project subdirectories under a
+#  private temporary root, so the groups can run as separate shards.
+CHECKS: List[Tuple[str, Callable]] = [
+    ("version", lambda r, tmp: check_version(r)),
+    ("help", lambda r, tmp: check_help(r)),
+    ("completion", lambda r, tmp: check_completion(r)),
+    ("rejections", lambda r, tmp: check_rejections(r)),
+    ("tier tokens", check_tier_tokens),
+    ("SBOM shapes", check_sbom_shapes),
+    ("SBOM siblings", check_sbom_siblings),
+    ("target equivalence", check_target_equivalence),
+    ("markdown output", check_markdown_output),
+    ("complexity", check_complexity),
+    ("init", check_init),
+    ("config files", check_config_files),
+    ("config prove", check_config_prove),
+    ("spark coverage", check_spark_coverage),
+    ("timezone", check_timezone),
+    ("differential", check_differential),
+    ("differential regression", check_differential_regression),
+    ("prove", check_prove),
+    ("serve shorthands", check_serve_shorthands),
+    ("serve info/health", check_serve_info_health),
+    ("serve watch", check_serve_watch),
+    ("theme and port", check_theme_and_port),
+    ("tldr install", check_tldr_install),
+]
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--shard", default="0/1",
+        help="run one slice of the checks, as INDEX/COUNT")
+    args = parser.parse_args(argv)
+    try:
+        index_text, count_text = args.shard.split("/", 1)
+        index, count = int(index_text), int(count_text)
+    except ValueError:
+        print(f"error: invalid --shard '{args.shard}' (use INDEX/COUNT)",
+              file=sys.stderr)
+        return 2
+    if count < 1 or not 0 <= index < count:
+        print(f"error: shard {args.shard} is out of range", file=sys.stderr)
+        return 2
     if not Path(BIN).is_file():
         print(f"error: {BIN} not found; run `just build` first",
               file=sys.stderr)
         return 1
+    selected = CHECKS[index::count]
     r = Results()
-    print("=== adacovex CLI end-to-end checks ===")
+    print(f"=== adacovex CLI end-to-end checks (shard {index + 1}/{count}) "
+          "===")
     with tempfile.TemporaryDirectory(prefix="adacovex-cli-e2e-") as td:
         tmp = Path(td)
-        check_version(r)
-        check_help(r)
-        check_completion(r)
-        check_rejections(r)
-        check_tier_tokens(r, tmp)
-        check_sbom_shapes(r, tmp)
-        check_sbom_siblings(r, tmp)
-        check_target_equivalence(r, tmp)
-        check_markdown_output(r, tmp)
-        check_complexity(r, tmp)
-        check_init(r, tmp)
-        check_config_files(r, tmp)
-        check_config_prove(r, tmp)
-        check_spark_coverage(r, tmp)
-        check_timezone(r, tmp)
-        check_differential(r, tmp)
-        check_differential_regression(r, tmp)
-        check_prove(r, tmp)
-        check_serve_shorthands(r, tmp)
-        check_serve_info_health(r, tmp)
-        check_serve_watch(r, tmp)
-        check_theme_and_port(r, tmp)
-        check_tldr_install(r, tmp)
+        for _, check in selected:
+            check(r, tmp)
     return r.report()
 
 

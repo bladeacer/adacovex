@@ -18,11 +18,14 @@ Exit code is the last subprocess's, or 0.
 """
 
 import argparse
+import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -54,8 +57,22 @@ FIXTURE_ROOTS: List[str] = [
 ]
 
 
+#  A parallel gate captures its child output into a thread-local buffer so
+#  task_check can print the gates in their declared order after the phase
+#  finishes.  A serial gate streams as before.
+_PARALLEL_CAPTURE = threading.local()
+
+
 def run(cmd: List[str], env: Dict[str, str] = None) -> int:
-    """Run a command from the repo root, streaming its output."""
+    """Run a command from the repo root, streaming or capturing its output."""
+    if getattr(_PARALLEL_CAPTURE, "active", False):
+        proc = subprocess.run(cmd, cwd=str(ROOT), env=env,
+                              capture_output=True, text=True)
+        if proc.stdout:
+            _PARALLEL_CAPTURE.chunks.append(proc.stdout)
+        if proc.stderr:
+            _PARALLEL_CAPTURE.chunks.append(proc.stderr)
+        return proc.returncode
     return subprocess.run(cmd, cwd=str(ROOT), env=env).returncode
 
 
@@ -86,7 +103,7 @@ _PROVE_DONE = False
 def task_build() -> int:
     """Build once per process; later gates reuse the built tree."""
     global _BUILD_DONE, _BOOK_DONE
-    if _BUILD_DONE:
+    if _BUILD_DONE or os.environ.get("ADACOVEX_ASSUME_BUILT") == "1":
         return 0
     rc = py("tools/build.py")
     _BUILD_DONE = rc == 0
@@ -155,13 +172,106 @@ def fmt_sources() -> List[str]:
     return paths
 
 
+def _digest(path: Path) -> bytes:
+    """Content digest of a source, used to tell a real edit from a rewrite."""
+    return hashlib.sha256(path.read_bytes()).digest()
+
+
+def _fmt_stamp(sources: List[Path]) -> str:
+    """Digest of the formatting inputs: every source and the dev manifest.
+
+    The manifest carries the gnatformat pin, so a tool change invalidates the
+    stamp even when the sources are unchanged.
+    """
+    digest = hashlib.sha256()
+    for path in sources:
+        digest.update(path.relative_to(ROOT).as_posix().encode())
+        digest.update(_digest(path))
+    manifest = ROOT / "alire-dev.toml"
+    if manifest.exists():
+        digest.update(manifest.read_bytes())
+    return digest.hexdigest()
+
+
 def task_fmt() -> int:
-    cmd = "alr exec -- gnatformat -U " + " ".join(fmt_sources())
+    #  gnatformat rewrites every file it visits, even when the layout is
+    #  already correct, which bumps the mtime and makes gprbuild rebuild the
+    #  whole tree.  Snapshot each source's content and timestamps first, then
+    #  restore the timestamps of the files whose bytes did not change.  A
+    #  warm `just check` therefore gets a no-op build, while a real format
+    #  edit still reaches gnatprove and the API docs in the same run.
+    sources = [ROOT / rel for rel in fmt_sources()]
+    before = {}
+    for path in sources:
+        try:
+            stat = path.stat()
+            before[path] = (stat.st_mtime_ns, stat.st_atime_ns,
+                            _digest(path))
+        except OSError:
+            continue
+    stamp_path = ROOT / "obj" / "adacovex-fmt.stamp"
+    stamp = _fmt_stamp(sources)
+    if stamp_path.is_file():
+        try:
+            if stamp_path.read_text(encoding="utf-8").strip() == stamp:
+                print("=== fmt: sources unchanged since the last "
+                      "formatted pass ===")
+                rc = py("tools/gen-version.py")
+                return rc if rc != 0 else py("tools/gen-dashboard.py")
+        except OSError:
+            pass
+    sources_arg = " ".join(fmt_sources())
+    #  A warm tree is already formatted: `--check` proves it without writing
+    #  a byte, so the common case never touches a source mtime.  Only a
+    #  genuine formatting change pays for the rewrite pass.
+    check_rc = py("tools/dev-cmd.py",
+                  f"alr exec -- gnatformat -U --check {sources_arg}")
+    if check_rc == 0:
+        stamp_path.parent.mkdir(exist_ok=True)
+        stamp_path.write_text(stamp + "\n", encoding="utf-8", newline="\n")
+        rc = py("tools/gen-version.py")
+        return rc if rc != 0 else py("tools/gen-dashboard.py")
+    cmd = "alr exec -- gnatformat -U " + sources_arg
     rc = py("tools/dev-cmd.py", cmd)
     if rc != 0:
         return rc
+    for path, (mtime, atime, digest) in before.items():
+        try:
+            if _digest(path) == digest:
+                os.utime(path, ns=(atime, mtime))
+        except OSError:
+            continue
+    stamp_path.parent.mkdir(exist_ok=True)
+    stamp_path.write_text(_fmt_stamp(sources) + "\n", encoding="utf-8",
+                          newline="\n")
     rc = py("tools/gen-version.py")
     return rc if rc != 0 else py("tools/gen-dashboard.py")
+
+
+def _doc_stamp() -> str:
+    """Digest of every input gnatdoc reads (sources and the converter).
+
+    The manifest carries the gnatdoc/toolchain pin, so a tool change
+    invalidates the stamp even when no source changed.
+    """
+    digest = hashlib.sha256()
+    #  The generated bundle specs are data-only string constants.  A docs or
+    #  dashboard edit rewrites their bodies but never their package
+    #  interface, so they must not invalidate the gnatdoc stamp.
+    generated = set(GENERATED_SPECS)
+    files: List[Path] = sorted(
+        p for p in (ROOT / "src").rglob("*")
+        if p.suffix in (".ads", ".adb") and p.is_file()
+        and p.name not in generated
+    )
+    for extra in (ROOT / "tools" / "rst2md.py", ROOT / "adacovex.gpr",
+                  ROOT / "alire-dev.toml"):
+        if extra.is_file():
+            files.append(extra)
+    for path in files:
+        digest.update(path.relative_to(ROOT).as_posix().encode())
+        digest.update(_digest(path))
+    return digest.hexdigest()
 
 
 def task_doc() -> int:
@@ -169,6 +279,17 @@ def task_doc() -> int:
     #  through the platform shell, and `mkdir -p` would make cmd.exe create
     #  a literal `-p` directory on Windows.
     (ROOT / "obj").mkdir(exist_ok=True)
+    stamp_path = ROOT / "obj" / "adacovex-doc.stamp"
+    stamp = _doc_stamp()
+    if (ROOT / "docs" / "api-docs" / "index.md").is_file() \
+            and stamp_path.is_file():
+        try:
+            if stamp_path.read_text(encoding="utf-8").strip() == stamp:
+                print("=== API docs: sources unchanged since the last "
+                      "gnatdoc pass ===")
+                return 0
+        except OSError:
+            pass
     cmd = (
         "alr exec -- gnatdoc -P adacovex.gpr --backend=rst "
         "--generate private --output-dir=obj/gnatdoc-rst && "
@@ -183,6 +304,7 @@ def task_doc() -> int:
     for pattern in ("test_*.md", "adacovex-test_support.md"):
         for page in (ROOT / "docs" / "api-docs").glob(pattern):
             page.unlink()
+    stamp_path.write_text(stamp + "\n", encoding="utf-8", newline="\n")
     return 0
 
 
@@ -299,8 +421,12 @@ def task_test_count() -> int:
     return py("tools/update-test-count.py")
 
 
-def task_doc_links() -> int:
-    return py("tools/update-doc-links.py")
+def task_diagnostics_coverage_check() -> int:
+    return py("tools/check-diagnostic-coverage.py")
+
+
+def task_docs_tree() -> int:
+    return py("tools/gen-docs-tree.py")
 
 
 def task_changelog_check() -> int:
@@ -374,8 +500,8 @@ def task_version_source_check() -> int:
     return py("tools/gen-version.py", "--check")
 
 
-def task_doc_links_check() -> int:
-    return py("tools/update-doc-links.py", "--check")
+def task_docs_tree_check() -> int:
+    return py("tools/gen-docs-tree.py", "--check")
 
 
 def task_book_spec_check() -> int:
@@ -461,18 +587,91 @@ def task_clean() -> int:
 
 
 def task_cli_e2e() -> int:
+    """Run the CLI checks as four independent shards in parallel."""
     rc = task_build()
-    return rc if rc != 0 else py("tests/e2e/cli_flags.py")
+    if rc != 0:
+        return rc
+    from concurrent.futures import ThreadPoolExecutor
+
+    shards = 4
+    script = ROOT / "tests" / "e2e" / "cli_flags.py"
+    env = dict(os.environ)
+    env["ADACOVEX_ASSUME_BUILT"] = "1"
+
+    def run_shard(index: int) -> Tuple[int, str]:
+        proc = subprocess.run(
+            [PY, str(script), "--shard", f"{index}/{shards}"],
+            cwd=str(ROOT), env=env, capture_output=True, text=True)
+        return proc.returncode, (proc.stdout or "") + (proc.stderr or "")
+
+    with ThreadPoolExecutor(max_workers=shards) as pool:
+        outputs = list(pool.map(run_shard, range(shards)))
+    first_rc = 0
+    passed = failed = 0
+    for code, output in outputs:
+        print(output.rstrip())
+        for match in re.finditer(r"Passed: (\d+)  Failed: (\d+)", output):
+            passed += int(match.group(1))
+            failed += int(match.group(2))
+        if code != 0 and first_rc == 0:
+            first_rc = code
+    if first_rc == 0:
+        print(f"=== ALL CLI E2E CHECKS PASSED ({passed} checks, "
+              f"{shards} shards) ===")
+    return first_rc
 
 
 def task_prove_e2e() -> int:
-    """Generate the broken/fixed fixture projects and check prove output."""
+    """Run the output-mode checks and every fixture case in parallel.
+
+    Each case owns its own temporary project, so the cases do not share
+    state.  The modes run once on the index case; the cases run with
+    `--skip-modes` so the mode checks are not repeated nine times.
+    """
     reason = skip_without_gnatprove()
     if reason is not None:
         print(f"--- SKIP: prove diagnostics end-to-end: {reason} ---")
         return 0
     rc = task_build()
-    return rc if rc != 0 else py("tests/e2e/prove_diagnostics.py")
+    if rc != 0:
+        return rc
+    script = ROOT / "tests" / "e2e" / "prove_diagnostics.py"
+    cases = re.findall(r'_case\(\s*"([^"]+)"', script.read_text())
+    jobs: List[Tuple[str, List[str]]] = [
+        ("modes", [str(script), "--modes-only"]),
+    ] + [(name, [str(script), "--case", name, "--skip-modes"])
+         for name in cases]
+    results: Dict[str, Tuple[int, str]] = {}
+    from concurrent.futures import ThreadPoolExecutor
+    #  Each job is a `-j 1` prove run.  The default cap keeps this gate from
+    #  monopolising the machine while the other parallel check gates run; a
+    #  standalone `just prove-e2e` can raise it with the environment variable.
+    try:
+        cap = int(os.environ.get("ADACOVEX_PROVE_E2E_WORKERS", "6"))
+    except ValueError:
+        cap = 6
+    workers = max(2, min(len(jobs), os.cpu_count() or 4, cap))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(subprocess.run, [PY, *args], cwd=str(ROOT),
+                        capture_output=True, text=True): key
+            for key, args in jobs
+        }
+        for future, key in futures.items():
+            proc = future.result()
+            results[key] = (proc.returncode,
+                            (proc.stdout or "") + (proc.stderr or ""))
+    first_rc = 0
+    for key, _ in jobs:
+        code, output = results[key]
+        if output.strip():
+            print(output.rstrip())
+        if code != 0 and first_rc == 0:
+            first_rc = code
+    if first_rc == 0:
+        print(f"=== ALL PROVE DIAGNOSTICS CHECKS PASSED "
+              f"({len(cases)} cases + modes) ===")
+    return first_rc
 
 
 def task_e2e() -> int:
@@ -626,11 +825,12 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("changelog format", task_changelog_check, None),
     ("action/CLI/docs parity", task_action_parity_check, None),
     ("documentation coverage", task_docs_coverage_check, None),
+    ("diagnostics coverage", task_diagnostics_coverage_check, None),
     ("CLI surface parity", task_surface_parity_check, None),
     ("tools unit tests", task_tools_check, None),
     ("version source", task_version_source_check, None),
     ("version consistency", task_version_consistency_check, None),
-    ("doc links", task_doc_links_check, None),
+    ("docs tree", task_docs_tree_check, None),
     ("markdown links", task_link_check, None),
     ("user documentation", task_docs_check, None),
     ("paragraph splitter", task_para_split_check, None),
@@ -654,9 +854,71 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
 ]
 
 
+#  The check runner keeps three short serial phases around one parallel
+#  phase.  `fmt` and `build` must be first and alone (they rewrite sources
+#  and artefacts); the manual, API-docs, SBOM, proof, and tools gates run
+#  serially next, so every read-only gate sees a stable tree; the count-sync
+#  gates run last, after the tests and proof have refreshed their inputs.
+CHECK_SERIAL_HEAD: List[str] = ["fmt", "build"]
+CHECK_SERIAL_MID: List[str] = [
+    "bundled offline manual links",
+    "bundled offline manual spec",
+    "SPARK proof + badges",
+    "API docs",
+    "SBOM",
+    #  The tools suite compares `git status` around each `--check` run, so it
+    #  must not overlap a gate that legitimately touches build state
+    #  (alire.lock, sbom.json), or the comparison sees another gate's write.
+    "tools unit tests",
+]
+CHECK_SERIAL_TAIL: List[str] = [
+    "test counts in sync",
+    "proof metrics in sync",
+    "description sync",
+    "requirements sync",
+]
+
+#  A gate in this map runs in its own process during the parallel phase, so
+#  its own print output is captured without interleaving.  Every other
+#  parallel gate runs in a thread with `run` capturing its children.
+CHECK_PARALLEL_PROCESS: Dict[str, str] = {
+    "CLI end-to-end": "cli-e2e",
+    "native tests": "test",
+    "prove diagnostics end-to-end": "prove-e2e",
+    "offline manual": "book",
+    "complexity (no god objects/functions/files)": "complexity-check",
+}
+
+
 def check_gate_labels() -> List[str]:
     """The gate labels of the `check` recipe, in order."""
     return [label for label, _, _ in CHECK_GATES]
+
+
+def _run_gate_serial(label: str, action: Callable[[], int]) -> int:
+    print(f"=== Quality gate: {label} ===")
+    return action()
+
+
+def _run_gate_parallel(label: str,
+                        action: Callable[[], int]) -> Tuple[int, str]:
+    command = CHECK_PARALLEL_PROCESS.get(label)
+    if command is not None:
+        env = dict(os.environ)
+        env["ADACOVEX_ASSUME_BUILT"] = "1"
+        proc = subprocess.run([PY, "tools/tasks.py", command],
+                              cwd=str(ROOT), env=env,
+                              capture_output=True, text=True)
+        output = (proc.stdout or "") + (proc.stderr or "")
+        return proc.returncode, output
+    _PARALLEL_CAPTURE.active = True
+    _PARALLEL_CAPTURE.chunks = []
+    try:
+        rc = action()
+    finally:
+        _PARALLEL_CAPTURE.active = False
+        output = "".join(_PARALLEL_CAPTURE.chunks)
+    return rc, output
 
 
 def task_check() -> int:
@@ -665,23 +927,101 @@ def task_check() -> int:
     A gate whose tool is missing here is SKIPped with its reason, a gate
     that runs and fails is FAILED, and the summary lists all three states.
     Only failures set the exit code, so one broken gate no longer hides
-    the state of the rest of the tree.
+    the state of the rest of the tree.  The independent gates run in one
+    parallel phase (one worker per core, capped); the serial phases keep
+    the writers apart and stay in the declared order.
     """
+    from concurrent.futures import ThreadPoolExecutor
     from time import perf_counter
 
     passed: List[str] = []
     failed: List[Tuple[str, int]] = []
     skipped: List[Tuple[str, str]] = []
     timings: List[Tuple[str, float, int]] = []
-    for label, action, preflight in CHECK_GATES:
-        print(f"=== Quality gate: {label} ===")
+    gate_by_label = {label: (action, preflight)
+                    for label, action, preflight in CHECK_GATES}
+
+    def run_one(label: str) -> Tuple[str, Optional[int], str, float,
+                                       Optional[str]]:
+        action, preflight = gate_by_label[label]
+        reason = preflight() if preflight is not None else None
+        if reason is not None:
+            return label, None, "", 0.0, reason
+        started = perf_counter()
+        rc, output = _run_gate_parallel(label, action)
+        return label, rc, output, perf_counter() - started, None
+
+    parallel = [label for label, _, _ in CHECK_GATES
+                if label not in CHECK_SERIAL_HEAD
+                and label not in CHECK_SERIAL_MID
+                and label not in CHECK_SERIAL_TAIL]
+
+    for label in CHECK_SERIAL_HEAD:
+        action, preflight = gate_by_label[label]
         reason = preflight() if preflight is not None else None
         if reason is not None:
             print(f"--- SKIP: {label}: {reason} ---")
             skipped.append((label, reason))
             continue
         started = perf_counter()
-        rc = action()
+        rc = _run_gate_serial(label, action)
+        timings.append((label, perf_counter() - started, rc))
+        if rc == 0:
+            passed.append(label)
+        else:
+            print(f"--- FAIL: {label} (exit {rc}) ---")
+            failed.append((label, rc))
+
+    for label in CHECK_SERIAL_MID:
+        action, preflight = gate_by_label[label]
+        reason = preflight() if preflight is not None else None
+        if reason is not None:
+            print(f"--- SKIP: {label}: {reason} ---")
+            skipped.append((label, reason))
+            continue
+        started = perf_counter()
+        rc = _run_gate_serial(label, action)
+        timings.append((label, perf_counter() - started, rc))
+        if rc == 0:
+            passed.append(label)
+        else:
+            print(f"--- FAIL: {label} (exit {rc}) ---")
+            failed.append((label, rc))
+
+    workers = max(2, min(len(parallel), os.cpu_count() or 4, 8))
+    if parallel:
+        print(f"=== Parallel phase: {len(parallel)} gates, {workers} workers "
+              "===")
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            parallel_results = list(pool.map(run_one, parallel))
+        #  Print in the declared gate order, not in completion order, so the
+        #  log is deterministic even though the gates overlapped.
+        for label, rc, output, seconds, reason in parallel_results:
+            if reason is not None:
+                print(f"--- SKIP: {label}: {reason} ---")
+                skipped.append((label, reason))
+                continue
+            if rc is None:
+                continue
+            timings.append((label, seconds, rc))
+            print(f"=== Quality gate: {label} ===")
+            if output.strip():
+                print(output.rstrip())
+            if rc == 0:
+                passed.append(label)
+            else:
+                print(f"--- FAIL: {label} (exit {rc}) ---")
+                failed.append((label, rc))
+
+    for label in CHECK_SERIAL_TAIL:
+        action, preflight = gate_by_label[label]
+        reason = preflight() if preflight is not None else None
+        if reason is not None:
+            print(f"--- SKIP: {label}: {reason} ---")
+            skipped.append((label, reason))
+            continue
+        started = perf_counter()
+        rc = _run_gate_serial(label, action)
         timings.append((label, perf_counter() - started, rc))
         if rc == 0:
             passed.append(label)
@@ -702,7 +1042,8 @@ def task_check() -> int:
             timings, key=lambda entry: entry[1], reverse=True):
         suffix = "  (FAIL)" if gate_rc else ""
         print(f"  {seconds:7.2f}  {label}{suffix}")
-    print(f"  {sum(entry[1] for entry in timings):7.2f}  total (sequential)")
+    print(f"  {sum(entry[1] for entry in timings):7.2f}  sum of gate times "
+          "(parallel phases overlap)")
     print("")
     if failed:
         print(f"{len(failed)} of {len(CHECK_GATES)} gate(s) failed.")
@@ -714,7 +1055,7 @@ def task_check() -> int:
 
 def task_sync() -> int:
     for action in (task_agents_tree, task_proof_status, task_test_count,
-                   task_doc_links, task_description, task_requirements):
+                   task_docs_tree, task_description, task_requirements):
         rc = action()
         if rc != 0:
             return rc
@@ -740,11 +1081,12 @@ TASKS: Dict[str, Callable[[], int]] = {
     "link-check": task_link_check,
     "action-parity-check": task_action_parity_check,
     "docs-coverage-check": task_docs_coverage_check,
+    "diagnostics-coverage-check": task_diagnostics_coverage_check,
     "surface-parity-check": task_surface_parity_check,
     "agents-tree": task_agents_tree,
     "proof-status": task_proof_status,
     "test-count": task_test_count,
-    "doc-links": task_doc_links,
+    "docs-tree": task_docs_tree,
     "sync": task_sync,
     "changelog-check": task_changelog_check,
     "complexity-check": task_complexity_check,

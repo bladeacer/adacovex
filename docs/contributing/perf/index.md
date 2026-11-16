@@ -14,8 +14,8 @@ per-release `just prove` timings, grouped into phases, are on [Prove timing
 and the optimisation review](prove-timing.md); the reverse-chronological
 record of the work behind the numbers is on [Performance optimisation
 history](optimisation-history.md).
-The `just check` orchestration, its timing table, and the sequential-gate
-decision are on [The `just check` pipeline](check-pipeline.md).
+The `just check` orchestration, its timing table, and the parallel-phase
+layout are on [The `just check` pipeline](check-pipeline.md).
 
 ## Benchmark category reference
 

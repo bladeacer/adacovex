@@ -143,9 +143,13 @@ proof-status:
 test-count:
     @python3 tools/tasks.py test-count
 
-# Regenerate the AGENTS.md documentation block.
-doc-links:
-    @python3 tools/tasks.py doc-links
+# Fail when the diagnostics matrix, Fix_Hint, and fixtures drift.
+diagnostics-coverage-check:
+    @python3 tools/tasks.py diagnostics-coverage-check
+
+# Regenerate the AGENTS.md documentation tree from the docs pages.
+docs-tree:
+    @python3 tools/tasks.py docs-tree
 
 # Run every sync task.
 sync:

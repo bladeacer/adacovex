@@ -81,13 +81,13 @@ Because the gates are cheap and deterministic, the safest workflow is to
 iterate locally and let `just check` be the arbiter:
 
 ```bash
-just build && just test      # native suite must stay 2040/2040
+just build && just test      # native suite must stay 2394/2394
 just prove                   # 0 unproved, 0 justified
-just check                   # full gate: static checks, build, test, prove,
-                             # doc, sbom, then tree-wide count-sync checks
+just check                   # full gate: format, build, products, parallel
+                             # checks, then tree-wide count-sync checks
 ```
 
-`just check` runs the cheap static gates first (ascii, spark-off, changelog, version source, doc links). A formatting or sync problem fails before the expensive build and SPARK proof. Then it verifies the count-sync checks (`test-count --check`, `proof-status --check`, `description --check`). A stale metric anywhere in the tree fails loudly.
+`just check` runs `fmt` and `build` first, then the serial product gates (manual, API docs, SBOM, proof) and the tools suite, then every independent static and test gate in one parallel phase. A formatting problem fails before the expensive SPARK proof. The count-sync checks (`test-count --check`, `proof-status --check`, `description --check`) run last. A stale metric anywhere in the tree fails loudly.
 
 Regenerated files that are byte-identical when nothing changed (the version constant, the dashboard template) are left untouched. `git status` stays quiet.
 

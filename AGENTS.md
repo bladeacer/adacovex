@@ -117,8 +117,9 @@ Finish every change in the same response that made it: update the relevant
 docs and re-run the sync gates at the end of that response, or invoke the
 wrapper directly instead `just check`:
 `just docs-check`, `just action-parity-check`, `just docs-coverage-check`,
-`just surface-parity-check`, `just agents-tree` (when the source tree
-changes), `just doc-links`, `just link-check`, and `just book-links-check`
+`just diagnostics-coverage-check`, `just surface-parity-check`,
+`just agents-tree` (when the source tree changes), `just docs-tree`,
+`just link-check`, and `just book-links-check`
 plus `python3 tools/gen-docs.py --check` (when `docs/` changed -- they fail
 on a broken bundled-manual link or a stale committed spec; the spec is the
 committed artifact, so `docs/` edits must be followed by `just book`). After
@@ -523,7 +524,7 @@ scripts), differential modes, and `sbom`.
   dashboard and the offline manual into the binary via
   `tools/gen-dashboard.py` and `tools/gen-docs.py`. The pure-stdlib `tools/*.py`
   (version generation, description sync, test/proof doc sync, requirements
-  sync, changelog checks, doc-links, agents-tree) all run on Python 3;
+  sync, changelog checks, docs-tree, agents-tree) all run on Python 3;
   `tools/gen-docs.py` additionally needs `sphinx` + `myst-parser` + `furo`
   (single-sourced in `pyproject.toml`; `just requirements` renders the
   committed `requirements.txt`) to build the manual
@@ -537,7 +538,7 @@ all functions/variables with `typing` (`from typing import ...`). Keep new
 scripts consistent: `typing` for annotations, `argparse` for CLI, `pathlib`
 for paths, and no `pip install` / external imports. Run them with
 `python3 tools/<name>.py`; the sync ones are wired as `just test-count`, `just
-proof-status`, `just requirements`, `just doc-links`, and `just link-check`
+proof-status`, `just requirements`, `just docs-tree`, and `just link-check`
 (markdown link
 verification, run as a cheap static gate in `just check`).
 `tools/tasks.py` is the task runner. It owns every build, sync, and gate
@@ -694,14 +695,14 @@ compatibility shim. The table names the canonical target for each task.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single everything-check / verification entry point.** Run it after any change. It runs every gate CI runs before a release, and **`fmt` is first**: gnatprove and the API docs both read the sources, so every later gate must see formatted code. Then the cheap static gates (ascii, csslint, spark-off, changelog, action-parity, docs-coverage, surface-parity, tools-check, version, version-consistency, doc-links, link, docs-check, para-split, tldr, book-links, book-spec), then one build (which also bundles the offline manual), then the gates that need the binary (complexity, cli-e2e, native tests, SPARK proof + badges, prove-e2e, API docs, offline manual, SBOM), then tree-wide count-sync checks (test-count, proof-status, description, requirements). A successful build, docs bundle, and proof run are each memoised, so no later gate recompiles, re-bundles, or re-proves what an earlier gate produced. Every gate runs a preflight first: a gate whose tool is missing on the host (no `alr` on `PATH`, no `gnatformat` on the developer path, a `gnatdoc` that cannot document a one-package probe project, no `sphinx` in the interpreter) is SKIPped with the reason instead of failing, the run continues past a failed gate, and the summary shows PASS/FAIL/SKIP per gate, exiting non-zero only when a gate failed. `just check` resolves `gnatprove` for you (it is fetched into `<data>/toolchain/` and executed directly when not on `PATH`), so you never have to install or point at a prover by hand -- just run `just check` and it verifies the whole tree end to end. `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the count-sync checks. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 2394-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
-| `fmt` | Format Ada sources (gnatformat) |
+| `fmt` | Format the root project's Ada sources (gnatformat). Generated specs and the standalone fixture projects are excluded, so gnatformat never warns that a fixture is `not visible to the provided project` |
 | `sbom` | Generate the proof-aware SBOM (`sbom.json`) |
 | `compliance` | Regenerate the committed `docs/compliance/VERIFICATION.md` + `TRACE.md` for the self tree (kept out of `just prove` so the bundled-report template cannot invalidate the proof cache) |
 | `description` | Sync the crate description from alire/description.txt + alire/long-description.txt (`CHECK=1` verifies only) |
@@ -713,10 +714,11 @@ compatibility shim. The table names the canonical target for each task.
 | `agents-tree` | Regenerate the `src/` architecture tree above |
 | `proof-status` | Sync VC count + SPARK level from gnatprove.out |
 | `test-count` | Sync test counts from docs/test_result.md |
-| `doc-links` | Regenerate the AGENTS.md Documentation block from tools/doc-links.map |
+| `docs-tree` | Regenerate the AGENTS.md documentation tree from the pages' own H1 titles (`just docs-tree --check` gates it) |
 | `changelog-check` | Validate all `docs/changelogs/` against the canonical format (tools/check-changelogs.py) |
 | `action-parity-check` | Fail if the GitHub Action drifts from the base CLI option set or the docs/usage/ci-cd.md input table (tools/check-action-parity.py; feature gate) |
 | `docs-coverage-check` | Fail when a `Known_Flags` entry, a dispatched server route, or a hand-written usage/contributing page is missing from the user docs (tools/check-docs-coverage.py; feature gate) |
+| `diagnostics-coverage-check` | Fail when a `Fix_Hint` keyword, a prove-diagnostics fixture, or a supported matrix row drifts from `docs/contributing/proving-diagnostics.md` (tools/check-diagnostic-coverage.py; feature gate) |
 | `surface-parity-check` | Fail when the `--help` usage block, the man SYNOPSIS, the cli-reference fence, or a completion script stops advertising the parser's subcommand set, when a surface shows a stale subcommand/flag, or when the tldr/help/man/AGENTS prose drops the README tagline (tools/check-surface-parity.py; feature gate) |
 | `version-consistency-check` | Fail when a manifest, the generated version spec, the built binary, or the committed SBOM names a different version (tools/check-version-consistency.py; feature gate) |
 | `release` | Build the release binary and verify its version, prove, validate, run coverage gate vs last release, bundle + tag & push |
@@ -724,7 +726,7 @@ compatibility shim. The table names the canonical target for each task.
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `cli-e2e` | Run the CLI end-to-end checks against the real binary (tests/e2e/cli_flags.py): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `just check` |
 | `prove-e2e` | Run the prove diagnostics end-to-end suite (tests/e2e/prove_diagnostics.py): it generates one small SPARK project per contract-writing mistake -- `index`, `overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`, `typo_attribute`, `typo_identifier` -- each with a broken variant and a fixed counterpart, runs the real `prove` command over both, and checks the quiet replay (no phase banners, no unconditional filtered footer), the diagnostics block (prover identity, source location, check kind, fix hint) for a finding, the compile-error shape (replay keeps the error with its location, non-zero exit, no block) for a typo, the fixed variant proving cleanly, the coverage-summary line (`--no-coverage` removes it and leaves the proof alone), and the `--verbose` raw stream (no block). 132 checks. `--keep` writes the projects to `obj/prove-diagnostics/` and `--case`/`--debug` narrow and expand the run. Part of `just check`; SKIPped when no gnatprove is resolvable |
-| `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium) |
+| `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium). SKIPs the browser half when pnpm is absent or the Chromium download fails |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `just build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by just complexity-check) |
 | `para-split-check` | Paragraph splitter gate: report every paragraph over the 4-sentence rule by name (tools/para-split.py --check, its non-mutating mode). `docs-check` enforces the same rule; running the splitter here keeps the tool that advises on a failure provably in step with the gate (a drift fails the gate instead of rewriting a page wrongly) |
@@ -895,126 +897,128 @@ source file with no entry), and the CONTRIBUTING category table.
 
 ## Documentation
 
-adacovex has two distinct documentation tiers with different audiences:
+`docs/` is one Sphinx project (Furo + MyST) that Read the Docs builds and
+`tools/gen-docs.py` bundles into the binary for the `--serve` manual at
+`/docs`. There are two tiers: **user documentation** (`docs/usage/`,
+`docs/index.md`, `docs/proof/`, ...) for people who install, run, and read an
+assessment, and the **API reference** (`docs/api-docs/`) that `just doc`
+generates from Ada docstrings. Never edit a generated page by hand.
 
-- **User documentation** (`docs/*.md` except `api-docs/`) -- written for end
-  users, safety engineers, and auditors who need to install, configure, run,
-  and interpret adacovex assessments. After reading these pages a user should
-  understand the full project lifecycle: setup, CLI usage, dashboard
-  interpretation, SBOM generation, VCS differential modes, CI/CD integration,
-  compliance standards (DO-178C / ISO 26262 / IEC 62304), and the SPARK
-  proving workflow. This tier includes installation, CLI reference, the web
-  dashboard, SBOM, VCS support, target projects, CI/CD, contributing,
-  standards, platforms, proving, architecture, changelogs, HLR/LLR indexes,
-  and performance guides. The earlier dated records (the 16.1.0 proof-debt
-  audit and the pre-1.42 optimisation history) have been retired. `docs/` is a **Sphinx project** (`docs/conf.py`,
-  the **Furo** theme, and the MyST Markdown parser; build deps are pinned in
-  `requirements.txt`): Read the Docs builds the site from it (see
-  `.readthedocs.yaml`), and `tools/gen-docs.py` builds the same project into a
-  self-contained offline manual that the `--serve` dashboard exposes at
-  `/docs` (bundled into the binary via `src/adacovex-docs_template.ads`,
-  regenerated by `just book`). Every new or moved doc page must be reachable
-  from a `:toctree:` (the hidden toctrees in `docs/index.md` pull in `usage/`,
-  `contributing/`, `api-docs/`, `changelogs/`, `proof/`, `compliance/`,
-  `badges/` but not auto-discovered pages). The Sphinx build output
-  (`docs/_build/`) is a local, gitignored product; the committed artifact is
-  the generated spec `src/adacovex-docs_template.ads`, so regenerate it with
-  `just book` whenever `docs/` changes and keep the committed spec in sync
-  (`just check` enforces this via `tools/gen-docs.py --check`).
+**Currency rule.** A change that adds or alters a feature updates the page
+that describes it in the same change. Route by the kind of change:
 
-- **API reference** (`docs/api-docs/` and its sub-pages) -- generated from
-  Ada source docstrings via `gnatdoc` + `rst2md` (`just doc`). Written for
-  contributors, developers, and code auditors who need package-level detail,
-  type definitions, subprogram contracts, and SPARK proof annotations.
-  Cross-links from the API pages point back to the hand-written user guides
-  where relevant, but the API pages themselves are not a substitute for the
-  user documentation tier.
+| Change | Documentation to update |
+|--------|--------------------------|
+| CLI flag, subcommand, exit code, help frame | `docs/usage/cli-reference*.md`; the action input and `docs/usage/ci-cd.md`; `docs/tldr/adacovex.md` when the cheat sheet changes |
+| Dashboard route, metric, tab, or API payload | `docs/usage/dashboard*.md` |
+| SBOM parser, scope, licence, or resolution rule | `docs/usage/sbom*.md` |
+| Proof runner, contract support, diagnostics, counterexample | `docs/contributing/proving*.md`, `docs/proof/`, and the Ada docstrings `just doc` renders |
+| Cache, configuration key, or state directory | `docs/usage/configuration.md`, `docs/usage/cli-reference-options.md` |
+| Pipeline, gate, or measured performance | `docs/contributing/perf/*.md` and `plan.md` |
+| Platform, installation, or packaging | `docs/usage/platforms.md`, `docs/usage/installation.md` |
+| Compliance standard, DAL/ASIL/class, or badge | `docs/usage/standards*.md`, `docs/compliance/`, `docs/badges/` |
+| Source layout, module boundary, or new package | This file's source tree and `docs/contributing/architecture*.md` |
+| Release cut | `docs/changelogs/adacovex-<version>.md`, then `just docs-tree` and `just book` |
 
-Keep this separation sharp: never move a user-guide topic into the API
-reference, and never inline API details into a user doc when a cross-link
-suffices.
+Every new or moved page must also be reachable from a `:toctree:` in
+`docs/index.md`. The Sphinx build output (`docs/_build/`) is a gitignored
+product; the committed artifact is `src/adacovex-docs_template.ads`, which
+`just book` regenerates and `just check` verifies.
 
-<!-- doc-links:begin -->
-- [Documentation index](docs/index.md)
-- [Site transparency](docs/site-transparency.md)
-- [Usage guide](docs/usage/index.md)
-- [CLI reference](docs/usage/cli-reference.md)
-- [CLI flag details: assessment flags and subcommands](docs/usage/cli-reference-flags.md)
-- [CLI flag details: serving, CI, and tool options](docs/usage/cli-reference-options.md)
-- [CLI flag details: emitted reports and differential modes](docs/usage/cli-reference-emit.md)
-- [Web dashboard](docs/usage/dashboard.md)
-- [Dashboard document and dependency views](docs/usage/dashboard-html.md)
-- [Dashboard JSON API and playground](docs/usage/dashboard-api.md)
-- [Dashboard metric charts and robustness tier](docs/usage/dashboard-charts.md)
-- [Dashboard: the bundled offline manual](docs/usage/dashboard-docs.md)
-- [SBOM](docs/usage/sbom.md)
-- [SBOM dependency resolution](docs/usage/sbom-resolution.md)
-- [SBOM transitive dependencies](docs/usage/sbom-transitive.md)
-- [SBOM system dependencies](docs/usage/sbom-system.md)
-- [SBOM comparison with syft](docs/usage/sbom-syft.md)
-- [Global configuration and state](docs/usage/configuration.md)
-- [VCS support](docs/usage/vcs.md)
-- [Target projects](docs/usage/target-projects.md)
-- [CI/CD](docs/usage/ci-cd.md)
-- [CI/CD: the composite action](docs/usage/ci-cd-action.md)
-- [CI/CD workflows and release bundling](docs/usage/ci-cd-workflows.md)
-- [CI/CD: release bundling, tags, and consumer manifests](docs/usage/ci-cd-release.md)
-- [Contributing](CONTRIBUTING.md)
-- [Developer guide](docs/contributing/developer-guide.md)
-- [Developer guide: repository layout](docs/contributing/developer-guide-layout.md)
-- [Technical debt register](docs/contributing/debt.md)
-- [Installation](docs/usage/installation.md)
-- [LLM usage](docs/contributing/llm-usage.md)
-- [Commit messages](docs/contributing/commits.md)
-- [Changelog](docs/changelogs/index.md)
-- [API reference](docs/api-docs/index.md)
-- [Docstring spec](docs/api-docs/adacovex-docstring-spec.md)
-- [Test format](docs/api-docs/adacovex-test-format.md)
-- [SPARK levels](docs/api-docs/adacovex-spark-levels.md)
-- [DAL levels](docs/api-docs/adacovex-dal-levels.md)
-- [ASIL levels](docs/api-docs/adacovex-asil-levels.md)
-- [Safety classes](docs/api-docs/adacovex-class-levels.md)
-- [Standards](docs/usage/standards.md)
-- [Standards: DO-178C and the DAL levels](docs/usage/standards-do-178c.md)
-- [Standards: ISO 26262 and the ASIL levels](docs/usage/standards-iso-26262.md)
-- [Standards: IEC 62304 and the safety classes](docs/usage/standards-iec-62304.md)
-- [Standards: selecting a standard](docs/usage/standards-selection.md)
-- [Platforms](docs/usage/platforms.md)
-- [Proving and writing proofs](docs/contributing/proving.md)
-- [Proof patches over vendored code](docs/contributing/proving-patches.md)
-- [Reading a prove failure](docs/contributing/proving-diagnostics.md)
-- [Architecture](docs/contributing/architecture.md)
-- [Architecture: dependency management and toolchain](docs/contributing/architecture-dependencies.md)
-- [Architecture: verification and proof patches](docs/contributing/architecture-verification.md)
-- [Architecture: outputs and formats](docs/contributing/architecture-outputs.md)
-- [Architecture: pipeline, platforms, and delivery](docs/contributing/architecture-pipeline.md)
-- [Requirements](docs/contributing/requirements.md)
-- [STE100 technical names](docs/contributing/ste100/index.md)
-- [STE100: Ada language constructs](docs/contributing/ste100/ada-terms.md)
-- [STE100: proof and compliance terms](docs/contributing/ste100/proof-terms.md)
-- [STE100: tooling and workflow terms](docs/contributing/ste100/tooling-terms.md)
-- [STE100: hardware and system entities](docs/contributing/ste100/entities.md)
-- [STE100: tools and files](docs/contributing/ste100/identifiers.md)
-- [STE100: reports and concepts](docs/contributing/ste100/concepts.md)
-- [STE100: web site terms](docs/contributing/ste100/web-terms.md)
-- [Credits](docs/CREDITS.md)
-- [Third-party notices](docs/THIRD_PARTY_NOTICES.md)
-- [HLR index](docs/compliance/HLR.md)
-- [LLR mapping](docs/compliance/LLR.md)
-- [Performance](docs/contributing/perf/index.md)
-- [Benchmarking adacovex](docs/contributing/perf/benchmarks.md)
-- [Benchmarks: pipeline and prove timings](docs/contributing/perf/benchmarks-timings.md)
-- [Benchmarks: binary size and the bundled manual](docs/contributing/perf/benchmarks-binary-size.md)
-- [Benchmarks: server throughput and latency](docs/contributing/perf/benchmarks-server.md)
-- [Prove timing and optimisation review](docs/contributing/perf/prove-timing.md)
-- [The just check pipeline](docs/contributing/perf/check-pipeline.md)
-- [Performance and benchmarks](docs/usage/performance.md)
-- [Performance optimisation history](docs/contributing/perf/optimisation-history.md)
-- [gnatprove-friendly IR](docs/contributing/ir.md)
-- [Proof records](docs/proof/index.md)
-- [Compliance outputs](docs/compliance/index.md)
-- [Badges](docs/badges/index.md)
-<!-- doc-links:end -->
+The tree below is generated from the pages themselves; `just docs-tree`
+rewrites it and `just docs-tree --check` gates it.
+
+<!-- docs-tree:begin -->
+<!-- Generated by `just docs-tree`; do not edit by hand. -->
+
+docs/
+|-- CREDITS.md -- Credits
+|-- THIRD_PARTY_NOTICES.md -- Third-Party Notices
+|-- index.md -- adacovex Documentation
+|-- site-transparency.md -- Documentation site transparency
+|-- usage/
+|   |-- ci-cd-action.md -- The composite action
+|   |-- ci-cd-release.md -- Release bundling, tags, and consumer manifests
+|   |-- ci-cd-workflows.md -- CI/CD workflows, summaries, and release bundling
+|   |-- ci-cd.md -- adacovex CI/CD
+|   |-- cli-reference-emit.md -- CLI flag details: emitted reports, scan scope, and differential modes
+|   |-- cli-reference-flags.md -- CLI flag details: assessment flags and subcommands
+|   |-- cli-reference-options.md -- CLI flag details: serving, CI, and tool options
+|   |-- cli-reference.md -- adacovex CLI Reference
+|   |-- configuration.md -- Global configuration and state
+|   |-- dashboard-api.md -- The dashboard JSON API, playground, and themes
+|   |-- dashboard-charts.md -- Dashboard metric charts and the robustness tier
+|   |-- dashboard-docs.md -- The bundled offline manual
+|   |-- dashboard-html.md -- The dashboard document and its dependency views
+|   |-- dashboard.md -- Web dashboard and JSON API
+|   |-- index.md -- adacovex usage guide
+|   |-- installation.md -- Installing adacovex
+|   |-- performance.md -- Performance and benchmarks
+|   |-- platforms.md -- Platforms and the `status` subcommand
+|   |-- sbom-resolution.md -- SBOM dependency resolution
+|   |-- sbom-syft.md -- SBOM comparison with syft
+|   |-- sbom-system.md -- SBOM system dependencies
+|   |-- sbom-transitive.md -- SBOM transitive dependencies
+|   |-- sbom.md -- The `sbom` subcommand
+|   |-- standards-do-178c.md -- DO-178C and the DAL levels
+|   |-- standards-iec-62304.md -- IEC 62304 and the safety classes
+|   |-- standards-iso-26262.md -- ISO 26262 and the ASIL levels
+|   |-- standards-selection.md -- Selecting a standard and reading the reports
+|   |-- standards.md -- Compliance standards (DO-178C / ISO 26262 / IEC 62304)
+|   |-- target-projects.md -- Target project requirements
+|   `-- vcs.md -- VCS support and differential assessment
+|-- contributing/
+|   |-- architecture-dependencies.md -- Architecture: dependency management and the toolchain
+|   |-- architecture-outputs.md -- Architecture: outputs and formats
+|   |-- architecture-pipeline.md -- Architecture: pipeline, platforms, and delivery
+|   |-- architecture-verification.md -- Architecture: verification and proof patches
+|   |-- architecture.md -- adacovex Architecture Decisions
+|   |-- commits.md -- Commit Messages
+|   |-- debt.md -- Technical debt register
+|   |-- developer-guide-layout.md -- Contributor guide: repository layout and generated artifacts
+|   |-- developer-guide.md -- Contributor guide: codebase structure and setup
+|   |-- ir.md -- A gnatprove-friendly IR for lowered code
+|   |-- llm-usage.md -- AI / LLM Usage in this Project
+|   |-- proving-diagnostics.md -- Reading a prove failure
+|   |-- proving-patches.md -- Proof patches: SPARK contracts over vendored code
+|   |-- proving.md -- Proving and writing SPARK proofs
+|   |-- requirements.md -- Dependencies
+|   |-- perf/
+|   |   |-- benchmarks-binary-size.md -- Binary size and the bundled manual
+|   |   |-- benchmarks-server.md -- Server throughput and latency
+|   |   |-- benchmarks-timings.md -- Pipeline and prove timings
+|   |   |-- benchmarks.md -- Benchmarking adacovex
+|   |   |-- check-pipeline.md -- The `just check` pipeline
+|   |   |-- index.md -- Performance
+|   |   |-- optimisation-history.md -- Performance optimisation history
+|   |   |-- prove-rebaseline.md -- The 1.55.0 timing re-baseline
+|   |   `-- prove-timing.md -- Prove timing and the optimisation review
+|   `-- ste100/
+|       |-- ada-terms.md -- STE100 Technical Names: Ada language constructs
+|       |-- concepts.md -- STE100 Technical Names: reports and concepts
+|       |-- entities.md -- STE100 Technical Names: hardware and system entities
+|       |-- identifiers.md -- STE100 Technical Names: tools and files
+|       |-- index.md -- STE100 Technical Names for adacovex
+|       |-- proof-terms.md -- STE100 Technical Names: proof and compliance terms
+|       |-- tooling-terms.md -- STE100 Technical Names: tooling and workflow terms
+|       `-- web-terms.md -- STE100 Technical Names: web site terms
+|-- proof/
+|   |-- 16.1.0-ledger.md -- adacovex proof debt ledger -- gnatprove 16.1.0
+|   `-- index.md -- Proof Records
+|-- compliance/
+|   |-- HLR.md -- High-Level Requirements -- adacovex
+|   |-- LLR.md -- Low-Level Requirements -- adacovex
+|   |-- TRACE.md -- Traceability Matrix
+|   |-- VERIFICATION.md -- adacovex Verification Report
+|   `-- index.md -- Compliance Outputs
+|-- badges/
+|   `-- index.md -- Badges
+|-- api-docs/ (generated by `just doc`; edit the Ada docstrings, never these pages)
+|-- changelogs/ (one page per release; `just release` adds the current one)
+`-- tldr/
+    `-- adacovex.md -- adacovex
+
+<!-- docs-tree:end -->
 
 ## Technical writing
 

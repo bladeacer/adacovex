@@ -530,6 +530,7 @@ def run_prove(project: Path, verbose: bool = False,
     """
     argv: List[str] = [
         BIN, "prove", f"--target={project}", "--no-svg", "--no-sbom",
+        "-j", "1",
     ]
     if verbose:
         argv.append("--verbose")
@@ -775,6 +776,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--debug", action="store_true",
         help="print every full `prove` output")
+    parser.add_argument(
+        "--skip-modes", action="store_true",
+        help="skip the output-mode checks (used when cases run in parallel)")
+    parser.add_argument(
+        "--modes-only", action="store_true",
+        help="run only the output-mode checks")
     args = parser.parse_args(argv)
     if not Path(BIN).is_file():
         print(f"error: {BIN} not found; run `just build` first",
@@ -803,10 +810,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         root = Path(cleanup.name)
 
     try:
-        check_modes(r, root, args.debug)
-        for case in selected:
-            print("")
-            check_case(r, root, case, args.debug)
+        if not args.skip_modes:
+            check_modes(r, root, args.debug)
+        if not args.modes_only:
+            for case in selected:
+                print("")
+                check_case(r, root, case, args.debug)
     finally:
         if cleanup is not None:
             cleanup.cleanup()

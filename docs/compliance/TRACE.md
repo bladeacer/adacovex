@@ -24,6 +24,7 @@
 | adacovex-ansi | ANSI |
 | adacovex-complexity | COMPLEXITY |
 | adacovex-completion | CLI |
+| adacovex-prove_output | PROVE |
 | adacovex-config | CLI |
 | adacovex-install | MANIFEST |
 | adacovex-prove_patch | PROVE |

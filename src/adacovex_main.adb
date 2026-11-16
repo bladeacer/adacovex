@@ -1291,7 +1291,7 @@ begin
    --  --require-tests / --require-proof). When set, the assessment fails
    --  loudly (exit code 1, explicit reason) if the target is below the
    --  pinned minimum -- an extra gate on top of the DAL criteria that lets a
-   --  workflow require e.g. Gold SPARK, 100% docstrings, 2040 passing
+   --  workflow require e.g. Gold SPARK, 100% docstrings, 2394 passing
    --  tests, and 100% proved VCs and fail if any slips.
    declare
       All_Pass : Boolean := True;

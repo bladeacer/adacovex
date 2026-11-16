@@ -1,5 +1,7 @@
 # Reading a prove failure
 
+<!-- no-covex-docs-loc: diagnostics matrix and mode reference, the line cap does not apply -->
+
 `adacovex prove` runs gnatprove and reports what it found. This page shows
 what the output looks like in each mode, and what each unproved check asks you
 to change. The contract rules are on
@@ -149,6 +151,70 @@ flow and budget flags, call-site count, source excerpt, and fix hint.
 The JSON is one line, so `grep '^{"'` selects it from a run log.
 
 ## What each finding asks you to change
+
+The matrix below is the contract between the prover, the diagnostics block,
+and the fixtures. **Status** means:
+
+- **Supported** -- the check kind is classified, a specific fix hint is
+  printed, and a broken/fixed fixture pair proves the block and the hint.
+- **Hinted** -- the check kind is classified and gets a specific hint, but no
+  fixture pair exists yet (tracked by the contract-error work in `plan.md`).
+- **Fallback** -- the message is reported with its location and the generic
+  "add the precondition, loop invariant, or postcondition" hint. The check is
+  not classified yet.
+
+**Counterexample** says what the block can show. `yes` means the solver's
+`when ...` input is parsed when the prover produced one. `budget` means the
+provers gave up, so there is no input and the hint raises the proof budget
+instead. `n/a` means the finding has no single violating input, as with flow
+analysis, and `none` means the run stopped before any check was analysed.
+
+<!-- diagnostic-matrix:begin -->
+| Case | Check or kind | Hint keywords | Counterexample | Status | Fixture |
+|------|---------------|---------------|----------------|--------|---------|
+| `index` | array index check | index | yes | Supported | `index` |
+| `overflow` | overflow check | overflow | yes | Supported | `overflow` |
+| `division` | divide by zero | divide, division | yes | Supported | `division` |
+| `range` | range check | range | yes | Hinted | - |
+| `discriminant` | discriminant check | discriminant | yes | Hinted | - |
+| `precondition` | precondition | precondition | yes | Supported | `precondition` |
+| `postcondition` | postcondition | postcondition, contract | yes | Hinted | - |
+| `assertion` | assertion | assert | yes | Hinted | - |
+| `invariant` | loop invariant | invariant | yes | Supported | `invariant` |
+| `invariant_entry` | loop invariant | invariant | yes | Supported | `invariant_entry` |
+| `termination` | termination | termination | budget | Hinted | - |
+| `flow` | initialization (flow) | initializ | n/a | Supported | `flow` |
+| `typo_attribute` | compile error | none | none | Supported (compile-error shape) | `typo_attribute` |
+| `typo_identifier` | compile error | none | none | Supported (compile-error shape) | `typo_identifier` |
+| `access` | access check | fallback | yes | Fallback | - |
+| `subtype_conversion` | subtype conversion check | fallback | yes | Fallback | - |
+| `predicate` | predicate check | fallback | yes | Fallback | - |
+| `ghost_lemma` | ghost or lemma check | fallback | yes | Fallback | - |
+| `modular` | modular arithmetic check | fallback | yes | Fallback | - |
+| `floating_point` | floating-point check | fallback | yes | Fallback | - |
+| `aliasing` | aliasing or ownership check | fallback | yes | Fallback | - |
+<!-- diagnostic-matrix:end -->
+
+A **Fallback** row is not a promise. It is the current boundary: the message
+still reaches you with its location and source excerpt, but the block cannot
+name the check or a fix for it. Treat a fallback finding as a gap to record,
+not as a diagnosis you can act on without reading `--verbose`.
+
+### Adding or changing a classification
+
+Do all three in the same change; `just diagnostics-coverage-check` fails when
+they drift:
+
+1. add or change the branch in `Fix_Hint` in
+   `src/core/adacovex-prove_output.adb`;
+2. add a broken/fixed fixture pair to `tests/e2e/prove_diagnostics.py`
+   (later `src/tests/projects/contract-errors/<class>/`);
+3. change the row above, including its keyword and counterexample shape.
+
+A check kind absent from this matrix is a fallback by definition, so a new
+gnatprove category is never silently presented as supported.
+
+### The most common fixes
 
 | Finding | What it means | What to do |
 |---------|---------------|------------|

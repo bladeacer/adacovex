@@ -54,7 +54,7 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 | Regenerate the offline manual | `just book` (Sphinx -> `tools/gen-docs.py` -> `src/adacovex-docs_template.ads`) |
 | Sync test counts | `just test-count` (reads `docs/test_result.md`, rewrites every anchored count) |
 | Sync proof metrics | `just proof-status` |
-| Regenerate AGENTS.md blocks | `just agents-tree` (src tree) and `just doc-links` (docs list) |
+| Regenerate AGENTS.md blocks | `just agents-tree` (src tree) and `just docs-tree` (docs tree) |
 | Verify markdown links | `just link-check` |
 
 ### API docs and cross-links

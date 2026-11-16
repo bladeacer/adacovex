@@ -12,9 +12,9 @@
 .PHONY: help build man test prove fmt doc book book-serve docs-serve clean \
         run-self run-ada-crdt ascii-check spark-off-check bump-version \
         coverage-gate release publish test-publish agents-tree sbom compliance \
-        description proof-status test-count doc-links link-check \
+        description proof-status test-count docs-tree link-check \
         requirements changelog-check action-parity-check docs-coverage-check \
-        surface-parity-check tools-check \
+        diagnostics-coverage-check surface-parity-check tools-check \
         bench perf-bench complexity-check csslint-check \
         version-consistency-check sync docs-check para-split-check tldr-check \
         tldr-lint book-links-check cli-e2e prove-e2e e2e check
@@ -103,8 +103,8 @@ proof-status:
 test-count:
 	@python3 tools/tasks.py test-count
 
-doc-links:
-	@python3 tools/tasks.py doc-links
+docs-tree:
+	@python3 tools/tasks.py docs-tree
 
 link-check:
 	@python3 tools/tasks.py link-check
@@ -117,6 +117,9 @@ action-parity-check:
 
 docs-coverage-check:
 	@python3 tools/tasks.py docs-coverage-check
+
+diagnostics-coverage-check:
+	@python3 tools/tasks.py diagnostics-coverage-check
 
 surface-parity-check:
 	@python3 tools/tasks.py surface-parity-check
