@@ -23,10 +23,21 @@ than cherry-picking rows across versions.
 | v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
 | v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
 | v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
-| v1.72.0 | planned | Performance close-out | 15c, 8c, 9 close-out |
+| v1.72.0 | planned | Performance close-out and documentation currency | 15c, 8c, 9 close-out, 21, 22, 23 |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
+
+## Session status (2026-11-16, v1.72.0 work started)
+
+v1.72.0 now also carries the tool-hygiene and documentation items 21-23. Item
+21 is done in this change: `fmt` formats only files the root project sees, so
+the ecosystem fixture's `mini.gpr`/`mini.ads` no longer produce the "not
+visible to the provided project" warning, and the e2e suites SKIP a check
+whose prerequisite is absent (a sibling checkout, Playwright/pnpm, Chromium, a
+prover, or git) instead of failing it. Item 22 is the documentation currency
+audit (prove-timing, perf, architecture, and surface pages); item 23 adds
+expected command output to the CLI reference in sparse code blocks.
 
 ## Session status (2026-11-16)
 
@@ -127,7 +138,83 @@ docs bundle, and proof from a run in v1.71.0.
 
 ---
 
-## v1.72.0 - Performance close-out
+## v1.72.0 - Performance close-out and documentation currency
+
+- [x] Item 21 - Root-project tooling hygiene
+
+**Goal:** A root-project command never reads or formats a file the root
+project does not own, and an e2e check whose prerequisite is absent SKIPs with
+a reason instead of failing.
+
+**Work:**
+- `tools/tasks.py`: `fmt_sources` excludes the fixture roots
+  (`src/tests/fixtures/`, `src/tests/projects/`) as well as the generated
+  specs, so gnatformat no longer prints `Warning: Formatting ... which is not
+  visible to the provided project` for the ecosystem fixture's `mini.ads`.
+- `tests/e2e/cli_flags.py`: a check that cannot run reports `SKIP` with its
+  reason and is counted separately in the summary; a missing sibling
+  checkout, gnatprove, or git is never a pass or a failure.
+- `tools/tasks.py`: `just e2e` SKIPs the Playwright dashboard suite when pnpm
+  is absent and when the Chromium download fails; `just prove-e2e` SKIPs when
+  no prover is resolvable.
+- `tools/tests.py`: pin the fmt exclusion and the source it still formats.
+
+**Files:** `tools/tasks.py`, `tools/tests.py`, `tests/e2e/cli_flags.py`,
+`docs/contributing/developer-guide.md` (skip policy).
+
+**Verify:** `just fmt` (no fixture warning), `just tools-check`,
+`just cli-e2e`, `just e2e` on a host without pnpm.
+
+---
+
+- [ ] Item 22 - Documentation currency audit
+
+**Goal:** The user docs and contributor docs describe the tree at v1.72.0, not
+an earlier release. A dated figure stays only where the page needs it (a phase
+column, a changelog, or an optimisation record), and every other stale
+reference is removed or restated as current behaviour.
+
+**Work:**
+- Audit `docs/contributing/perf/` first: `prove-timing.md` still introduces
+  itself through the 1.46.0 SIMD review, `benchmarks-timings.md` compares
+  pipeline figures from 1.47.0-1.52.0, `check-pipeline.md` records the v1.70.0
+  and v1.71.0 runs, and `index.md` describes the 1.63.0 memo as the current
+  explanation. Keep the phase table's representative versions (the AGENTS.md
+  rule), and retire prose that describes a superseded release as the present.
+- Sweep the rest of `docs/usage/` and `docs/contributing/` for dated version
+  references that no longer explain a current behaviour (`grep -rn
+  '1\.[0-9][0-9]\.[0-9]' docs`); a changelog and a proof ledger keep theirs.
+- Re-read the surface pages against the binary: every `Known_Flags` entry in
+  the CLI reference, every dispatched dashboard route, every action input,
+  and the `--serve`/`prove`/`sbom` descriptions in AGENTS.md.
+- Fold the outcome into `docs/changelogs/adacovex-1.72.0.md`.
+
+**Verify:** `just docs-check`, `just docs-coverage-check`,
+`just surface-parity-check`, `just link-check`.
+
+---
+
+- [ ] Item 23 - Expected command output in the docs
+
+**Goal:** A reader sees what a command prints without running it, in a fenced
+block that matches the real binary. Blocks stay sparse: one per command or
+mode, not one per flag.
+
+**Work:**
+- Add one expected-output block to each of `prove` (coverage summary plus one
+  finding), `status`, `complexity`, and `spark-coverage` in
+  `docs/usage/cli-reference-flags.md`, and one to `docs/usage/platforms.md`
+  for `status --export`.
+- Capture each block from a real run on the self tree and trim it to the
+  stable lines; mark the volatile ones (paths, timings, counts) with a
+  placeholder the page defines once.
+- Keep the blocks inside the 4-sentence paragraph rule and do not let a block
+  replace the prose that explains the flag.
+
+**Verify:** `just docs-check`, `just link-check`, `just book` and
+`python3 tools/gen-docs.py --check`.
+
+---
 
 - [ ] Item 15c - Close the 344 s -> 60 s warm-tree gap
 

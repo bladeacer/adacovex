@@ -2,11 +2,11 @@
 
 <!-- no-covex-docs-loc: timing page with a long phase table, line cap does not apply -->
 
-This page covers the `just prove` timing table (the true proof-performance
-test) and the 1.46.0 SIMD and optimisation candidate review. Benchmark
-methodology is on [Performance](index.md), the optimisation history is on
-[Performance optimisation history](optimisation-history.md), and the 1.55.0
-re-baseline detail is on [The 1.55.0 timing re-baseline](prove-rebaseline.md).
+This page is the `just prove` timing table (the true proof-performance test)
+and the reading notes for every phase in it. Benchmark methodology is on
+[Performance](index.md), the optimisation history is on [Performance
+optimisation history](optimisation-history.md), and the 1.55.0 re-baseline
+detail is on [The 1.55.0 timing re-baseline](prove-rebaseline.md).
 
 ## How the phase table works
 
@@ -123,10 +123,14 @@ comparison against 1.62.0.
 The open `1.63.0-` column remains the 1.63.0 measurement. At v1.69.0 the tree
 moved to **1057 VCs** (+3, from the named first index in the flag-suggestion
 writer). The proof surface changed, not the methodology, so the column keeps
-its representative version and its complete metric set. At v1.71.0 the tree
+its representative version and its complete metric set.
+
+At v1.71.0 the tree
 proves the same **1058 VCs**: the release changed which gate runs gnatprove,
 not how gnatprove runs, so the open column keeps 1.63.0 as its representative
-and this release adds no figure to the table.
+and this release adds no figure to the table. The v1.72.0 work changes the
+root-project tooling and the documentation, not the proof surface or how the
+prover runs, so the open column still keeps 1.63.0 as its representative.
 
 The 1.58.0 warm row is 15 runs. Its cold row is 3 runs from the same session,
 and the gnatprove session store is wiped before each one. The 1.62.0 rows are

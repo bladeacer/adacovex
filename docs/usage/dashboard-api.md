@@ -1,5 +1,7 @@
 # The dashboard JSON API, playground, and themes
 
+<!-- no-covex-docs-loc: API reference page, the line cap does not apply -->
+
 This page covers the JSON API endpoints, the API playground, themes, and the dashboard-related CLI flags. The tabs and charts are on the [Web dashboard home page](dashboard.md); the dashboard internals and dependency views are on [The dashboard document and its dependency views](dashboard-html.md).
 
 ## Standard-awareness
@@ -127,7 +129,7 @@ script or a hook can poll the state of a live dashboard:
 
 ```json
 {
-  "version": "1.62.0",
+  "version": "<version>",
   "target": "/path/to/project",
   "standard": "all",
   "port": 8080,
@@ -146,7 +148,8 @@ script or a hook can poll the state of a live dashboard:
 }
 ```
 
-The payload counts the request that asked for it: every worker task updates the shared store.
+`<version>` is the version of the running binary. The payload counts the
+request that asked for it: every worker task updates the shared store.
 
 | Field | Meaning |
 |-------|---------|

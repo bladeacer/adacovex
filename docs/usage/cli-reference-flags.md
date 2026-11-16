@@ -110,6 +110,28 @@ consume it without parsing prose. `adacovex status --metrics` prints the
 same data as compact `key=value` lines, one per line, for shell scripts.
 Both flags only work with the `status` subcommand.
 
+A plain report starts like this (`<version>` and `<path>` are the binary's
+version and its install path, and the date, time, and counts are the host's):
+
+```
+adacovex v<version> status
+  target:             <path>
+  adacovex install:   source-checkout (<path>/bin/adacovex)
+  timezone:           UTC+00:00
+  alire:              installed (/usr/bin/alr)
+  gnatprove:
+    manifest pin:     ^16.1.0
+    on PATH:           not found
+    toolchain cache:   <path>/toolchain/gnatprove_16.1.0_<digest>
+  platform:
+    logical CPUs:      12
+    CI environment:    no
+    prove -j default:  auto default: 12 - 2 = 10 jobs (reserved 2 cores for system)
+  => OK (alr + gnatprove available or dependency-managed)
+```
+
+The `=>` line is the verdict: `OK` or the reason a prover is not usable.
+
 ### `init`
 
 `adacovex init [-t=PATH] [--force]` writes a sample `<target>/adacovex.toml`.
@@ -139,7 +161,20 @@ for generated trees committed next to hand-written source (for example
 `--skip-path=docs/api-docs`). It prints
 a tokei-style summary (files, lines, code, comments, blanks) plus a per-file
 table of `Lines=`, `Code=`, `Comments=`, `Blanks=`, the codebase loc
-percentage, and the cyclomatic complexity `cx=`.
+percentage, and the cyclomatic complexity `cx=`:
+
+```
+Language              Files      Lines       Code   Comments      Blanks
+Ada                   156   49077   37861   8714   2502
+Python                 41   13845   11890       29     1926
+
+Per-file (Lines / Code / Comments / Blanks / loc % / cx):
+<path>/src/core/adacovex-config.adb  [Ada]  Lines=4063  Code=3633  Comments=324  Blanks=106  loc=3633 (4%) cx=373
+```
+
+The counts above are the self tree, so your project's differ. A failing gate
+prints `Complexity/LOC gate FAILED (N violation(s))` and one line per
+violating file, and the command exits `1`.
 
 The gate fails when a file or function exceeds the thresholds (defaults:
 4 000 LOC, 10% of codebase per file, 120 per function, 600 per file).
@@ -158,6 +193,28 @@ rows. It never runs the prover, so run `adacovex prove` first.
 `--spark-format=json`
 prints the machine-readable report. `--min-coverage=PCT` hides group rows
 below a verified percentage from the display.
+
+The text report separates the three metrics (trimmed here to its stable
+lines) and shows the off statements as classes:
+
+```
+SPARK proof coverage
+
+Statement coverage
+proved statements / statements in assessed bodies
+  proved / (proved + off)  7246 / 12254 = 59.1%
+  proved / total           7246 / 12582 = 57.5%
+
+Subprogram coverage
+  proved / (proved + off)  122 / 668 = 18.2%
+
+VC coverage
+  proved / (proved + off)  1058 / 1058 = 100.0%
+```
+
+Exit `0` when the report is produced. The `--require-coverage` gate exits `1`
+when the named metric falls below its threshold and names the metric, its
+numerator, its denominator, and the achieved value.
 
 CI gate: `--require-coverage=PCT --gate-metric=statements|subprograms|vcs`
 exits `1` when the named metric's proved share falls below the threshold
@@ -249,6 +306,15 @@ notices and locations dim, `Success:` green, and the summary footers bold.
 redirected log stays plain text. The cached replay is stored without escape
 codes and coloured when it is printed, so a later run never inherits another
 terminal's decision.
+
+A successful run prints the proof-coverage summary after the replay (the
+numbers are the self tree at v1.71.0):
+
+```
+  coverage:  statements 57% (7246/12582) subprograms 18% (122/668) VCs 100% (1058/1058)
+```
+
+`--no-coverage` removes that line and leaves the proof alone.
 
 A warm cache hit is not a silent run. The plain replay text is cached under
 the proof input hash and printed again, so a cached run and a fresh run show
