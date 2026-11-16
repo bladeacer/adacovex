@@ -1,5 +1,7 @@
 # Contributor guide: codebase structure and setup
 
+<!-- no-covex-docs-loc: setup and testing guide, the line cap does not apply -->
+
 This page is a human-readable tour of the adacovex codebase for people who want
 to build, test, or modify it. It supplements
 [CONTRIBUTING.md](https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md) (process, changelog format, PR rules).
@@ -147,8 +149,14 @@ regression, and the not-a-repository failure), the `prove` subcommand (its
 `-t`/`-l`/`-j` shorthands, the accepted option set, and the range and
 subcommand reject paths), and the serve `--theme` values and `-p` port
 forms. It needs no browser and runs inside `just check`.
-The differential checks skip themselves when `git` is missing. The browser
-suite (`just e2e`) adds the Playwright dashboard layout tests on top.
+A check whose prerequisite is absent reports `SKIP` with the reason and is
+counted separately, never as a pass: the differential checks skip when `git`
+is missing, the SBOM dogfood checks skip a sibling checkout that is not there
+(for example `../polars`, `../playwright`, `../yams`), and the prove-side
+checks skip when no prover is resolvable. The browser suite (`just e2e`) adds
+the Playwright dashboard layout tests on top and SKIPs when `pnpm` is absent
+or the Chromium download fails, so a clean clone and a locked-down CI runner
+still finish with a verdict about the tree.
 
 The prove diagnostics suite (`just prove-e2e`, `tests/e2e/prove_diagnostics.py`)
 generates one small SPARK project per contract-writing mistake, each with a

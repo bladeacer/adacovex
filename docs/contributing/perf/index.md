@@ -55,8 +55,11 @@ states, not steady states, so they are not benchmarked):
 ## What the numbers mean
 
 Figures are from `just bench`/`perf-bench` on the benchmark machine
-(hyperfine, cold + warm per scenario). They shift with the machine and the
-codebase; what matters is the shape:
+(hyperfine, cold + warm per scenario). The values below are the complete
+metric set of the open phase's representative, 1.63.0, which is still the
+last re-baselined set: the tree now proves 1058 VCs, but no later version
+changed the methodology enough to replace the column. They shift with the
+machine and the codebase; what matters is the shape:
 
 - **Pipeline cold ~77 ms**: dominated by source scanning (Ada file
   enumeration and SHA-256 of every scanned file), the SBOM tree walk and
@@ -107,7 +110,9 @@ holds; a methodology shift closes the phase and opens a new one.
 
 The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0,
 1.57.0-1.60.0, and 1.61.0-1.62.0 phases are closed, represented by 1.55.0,
-1.58.0, and 1.62.0. The **open phase is 1.63.0-**, represented by 1.63.0:
+1.58.0, and 1.62.0. The **open phase is 1.63.0-**, represented by 1.63.0
+(the v1.72.0 tooling and documentation work folds in without a methodology
+shift):
 that version packed the directory memo again, moved the five pre-build steps
 into one concurrent bundle, and gave `just bench` a per-step build-phase
 breakdown, so the implementation and the measurement methodology both moved.

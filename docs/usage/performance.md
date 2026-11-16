@@ -12,8 +12,8 @@ results and links to the evidence.
 |-------|---------|----------------------------|
 | Pipeline cold | `adacovex --cache-dir=<fresh>` | Scans and renders everything; about 77 ms on the benchmark machine |
 | Pipeline warm | `adacovex --cache-dir=<populated>` | Serves scan and graph results from the cache |
-| Prove warm | `adacovex prove` on an unchanged tree | One content hash, then the stored proof; about 55 ms |
-| Prove cold | `adacovex prove --no-cache` with `obj/gnatprove/` wiped | The solver dominates: 61-88 s at 878 VCs |
+| Prove warm | `adacovex prove` on an unchanged tree | One content hash, then the stored proof; about 63 ms |
+| Prove cold | `adacovex prove --no-cache` with `obj/gnatprove/` wiped | The solver dominates: roughly 80 s at the open phase's 1054 VCs (the tree now proves 1058) |
 | Build no-op | `just build` on a built tree | About 0.3 s; the generators rewrite only changed specs |
 
 The result cache is content-addressed per file, so an edit costs only the file
@@ -25,8 +25,8 @@ session store as well gives the true cold shape.
 
 A slow first run on a fresh clone is expected: there is no result cache, no
 gnatprove session, and no `gnatprove.out`. A slow run on a warm tree is not,
-and the timing table in `adacovex status` output and the `--verbose` step
-banners show where the time went.
+and the `--verbose` step banners show where the time went. A full `just check`
+prints a per-gate timing table after its summary, so a slow gate names itself.
 
 Watch mode does not change these figures. The server rescans through the same
 result cache every two seconds, so an unchanged tree costs one content hash per

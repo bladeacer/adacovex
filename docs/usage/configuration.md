@@ -109,7 +109,7 @@ summary. The summary is one line: statement coverage, subprogram coverage, and
 VC coverage, each with the proved count and the total.
 
 ```
-  coverage:  statements 96% (1448/1508)  subprograms 98% (392/400)  VCs 100% (1054/1054)
+  coverage:  statements 57% (7246/12582) subprograms 18% (122/668) VCs 100% (1058/1058)
 ```
 
 The default is `true`, so the summary is on without a configuration file. Set

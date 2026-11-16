@@ -40,23 +40,23 @@ Every `just check` run now prints a gate-timing table after the summary,
 slowest first, plus the sequential total. The table is the measurement to
 compare across changes; no separate benchmark run is needed.
 
-## What v1.71.0 changed in the table
+## The current gate order
 
-Before v1.71.0 the build was paid by the first gate that needed the binary
-(complexity) and the offline-manual gate re-bundled the manual the build had
-already bundled. The gate order now puts the build before those gates and
-`task_book` reuses the build's bundle, so the same work no longer appears in
-two rows. The v1.70.0 per-gate figures below are the previous order's split
-and are not row-by-row comparable with a run from 1.71.0 onward; compare the
-total and the moved rows with that difference in mind.
+The build is paid once, before every gate that needs the binary, and the
+offline-manual gate reuses the bundle the build already made. Before v1.71.0
+the build was charged to the first gate that needed it (complexity) and the
+manual was bundled twice, so an older table splits the same work across
+different rows and is not row-by-row comparable with a current run (compare
+the total and the moved rows instead).
 
-## The v1.71.0 run
+## The reference run
 
-One full `just check` run on the same development machine on 2026-11-16, with
-a warm result cache and a warm gnatprove session, passed all 31 gates with
-`fmt` first. `fmt` rewrote source files, so the build row below carries a real
-recompile rather than a no-op one; the raw stdout is
-`obj/check-v1.71.0.log`.
+The most recent full measurement is the v1.71.0 run. One full `just check` on
+the development machine on 2026-11-16, with a warm result cache and a warm
+gnatprove session, passed all 31 gates with `fmt` first. `fmt` rewrote source
+files, so the build row carries a real recompile rather than a no-op one; the
+raw stdout is `obj/check-v1.71.0.log`. No v1.72.0 run replaces it yet: item
+15c records the next warm-tree measurement against the 60 s budget.
 
 | Gate | Seconds |
 |------|---------|
@@ -99,7 +99,7 @@ cold tree cannot meet the budget by construction. The plan records that shape
 as the outlier rather than hiding it, and the timing table makes the
 difference visible on every run.
 
-## The measured warm-tree run
+## The measurement that drove item 15b
 
 Two full `just check` runs on the development machine (12 logical CPUs, built
 tree, warm result cache, warm gnatprove session, generated specs and docs
@@ -107,7 +107,9 @@ bundle content-current) on 2026-11-14. The first ran directly after a version
 bump, so its proof cache was cold, and it took 620.58 s with one gate failing
 on the bump's own ordering. The second, fully warm run passed all 31 gates in
 **452.99 s**. The raw stdout of both runs is kept as
-`obj/check-v1.70.0-r1.log` and `obj/check-v1.70.0-r2.log`.
+`obj/check-v1.70.0-r1.log` and `obj/check-v1.70.0-r2.log`. These figures are
+history, not the current shape: the v1.71.0 run above removed the repeated
+build and manual bundle from the table.
 
 Gate timings of the warm run, slowest first:
 
@@ -136,4 +138,5 @@ paid 155.33 s for it -- the difference the result cache exists to make.
 The total is not the comparable number across runs, because it follows the
 machine's load; the per-gate split is. The 344 s figure from 2026-11-06 is
 retired: that run predates the 31-gate table and the v1.70.0 SBOM and docs
-work.
+work. The 452.99 s warm run is likewise superseded by the v1.71.0 table, and
+the 60 s budget stays open until item 15c records a run that meets it.

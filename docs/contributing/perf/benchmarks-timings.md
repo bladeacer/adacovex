@@ -16,16 +16,19 @@ profile, because that is the binary the released figures describe; a
 development build is roughly half the serial compile time and is for
 iteration, not for measurement.
 
-## Sample output (hyperfine, x86-64, 12-core machine)
+## Historical sample output (1.46.0-1.52.0, hyperfine, 12-core machine)
 
-1.47.0 is the first release compiled with `-O2 -gnatn` (1.46.0 and earlier
-used GNAT's default `-O0`). The 1.46.0 figures are kept for comparison;
-they were measured in the same session so the load conditions match. The
-1.50.0 column was measured on a later session, so read it for shape, not
-for a millisecond-level A/B against 1.47.0. The 1.52.0 column is the first
-measured at gnatprove `--level=4` (its prove gate) and on the same tree the
-cold-clone scenario landed in, so its prove rows sit beside the new
-scenario:
+The table below is kept as the record of the 1.46.0-1.52.0 comparison, not as
+the current shape. Every figure this page describes as current comes from the
+open phase on [Prove timing and the optimisation review](prove-timing.md);
+read these columns for shape and for the effect of the `-O0` -> `-O2` move,
+not as today's numbers. 1.47.0 is the first release compiled with `-O2
+-gnatn` (1.46.0 and earlier used GNAT's default `-O0`). The 1.46.0 figures
+were measured in the same session as 1.47.0, so their load conditions match.
+The 1.50.0 column came from a later session, so read it for shape, not for a
+millisecond-level A/B against 1.47.0. The 1.52.0 column is the first measured
+at gnatprove `--level=4` (its prove gate) and on the same tree the cold-clone
+scenario landed in:
 
 | Scenario | 1.46.0 (`-O0`) | 1.47.0 (`-O2`) | 1.50.0 | 1.52.0 |
 |----------|-----------------|----------------|--------|--------|

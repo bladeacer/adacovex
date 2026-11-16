@@ -81,5 +81,5 @@ adacovex --target=../Ada_CRDT --dal=C
 - [DAL Levels](adacovex-dal-levels.md) -- the per-level SPARK gates
   (Gold / Silver / Bronze / Stone)
 - [Proof ledger](../proof/16.1.0-ledger.md) -- adacovex's own proof record
-  (1054/1054 VCs, 0 unproved, 0 justified under gnatprove 16.1.0; level
+  (1058/1058 VCs, 0 unproved, 0 justified under gnatprove 16.1.0; level
   Gold, because its coverage report shows subprograms outside the proof)

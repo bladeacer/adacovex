@@ -11,19 +11,21 @@ Before 1.58.0 the release profile kept GNAT's default `-g`, so the build
 was ~14.0 MiB at `-O2` on the 1.50.0 tree and ~5.3 MiB after `strip bin/adacovex`.
 Since 1.58.0 the release profile drops `-g` (it stays on the development
 profile, where debuggability is the point), so no strip pass is needed for a
-sane size: the 1.58.0 release build is ~9.5 MiB as linked, and
-`strip bin/adacovex` yields ~6.0 MiB (the increase over 1.50.0's ~5.3 MiB
-reflects the code added since, notably the SPARK coverage analyser and its
-report paths; the manual encoding below is unchanged). All figures on this
-page are taken on the release profile (`-O2 -gnatn`); a development build
-(`-O1`, with debug info) is larger by design. `just bench` reports both raw and stripped sizes, so a size
+sane size. The open phase's representative (1.63.0) links at 10 202 640 bytes
+(9.7 MiB) and strips to 6 552 528 bytes (6.2 MiB); the growth over 1.58.0's
+~6.0 MiB reflects the code added since, notably the SPARK coverage analyser
+and its report paths. All figures on this page are taken on the release
+profile (`-O2 -gnatn`); a development build (`-O1`, with debug info) is
+larger by design. `just bench` reports both raw and stripped sizes, so a size
 regression is visible in the same command as the timings.
 
 ## Bundled offline manual
 
-The offline manual is the largest single payload in the binary, so it was
-measured on the 1.50.0 tree through the generator's own pipeline. The
-bundled site holds 226 assets over 191 pages (about 5.49 MB of source);
+The offline manual is the largest single payload in the binary. The composition
+below is a 1.50.0 measurement through the generator's own pipeline;
+it is kept as the record of the encoding change, not as today's asset count.
+
+The bundled site holds 226 assets over 191 pages (about 5.49 MB of source);
 gzip compresses it to about 1.29 MB, base85 spreads that to about 1.61 MB of
 Ada text, and the generated spec is 1.93 MB. That is 17.3% smaller than the
 2.34 MB spec of 1.49.0, for a saving of about 0.41 MB in the stripped
