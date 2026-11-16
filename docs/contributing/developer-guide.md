@@ -86,12 +86,13 @@ started from a relative `.venv` reports a relative `sys.prefix`, and
 `<frozen site>` then prints a `RuntimeWarning` about it. On Windows the
 recipes pick `.venv/Scripts` instead of `.venv/bin`.
 
-`just check` is the pre-commit gate. It runs `fmt` first, because gnatprove
-and the API docs both read the sources and every later gate must see
-formatted code. It then runs cheap static checks (ASCII, SPARK_Mode-Off
-policy, changelog format, version source, doc-links, markdown links), then
-build, tests, proof, docs, and SBOM, and finishes with the tree-wide
-count-sync checks.
+`just check` is the pre-commit gate. `fmt` and `build` run first and alone,
+because gnatprove, the API docs, and the tests all read the formatted,
+compiled tree. The manual, API-docs, SBOM, proof, and tools-test gates run next as short
+serial steps, then every independent gate (the static checks, native tests,
+CLI end-to-end checks, and prove diagnostics) runs in one parallel phase. The run finishes with the tree-wide count-sync checks. A warm
+tree finishes in about 39 s; the stamps for `fmt` and gnatdoc and the build,
+docs-bundle, and proof memos keep a warm run from repeating work.
 
 Every gate runs a preflight before it runs. A gate whose tool is missing on
 the host is skipped with the reason instead of failing: no `alr` on `PATH`,
@@ -238,7 +239,7 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
 - **Keep docs current**: every code change updates the relevant user docs,
   the Ada docstrings that feed `docs/api-docs`, and the changelog, then
   re-runs the sync gates (`just docs-check`, `just action-parity-check`,
-  `just surface-parity-check`, `just agents-tree`, `just doc-links`,
+  `just surface-parity-check`, `just agents-tree`, `just docs-tree`,
   `just link-check`). Stale docs are a release blocker.
 - **Debug**: `adacovex --verbose` prints pipeline step diagnostics. `adacovex
   status` reports toolchain + platform state. `--no-cache` bypasses the

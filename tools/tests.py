@@ -41,6 +41,7 @@ coverage_gate = importlib.import_module("coverage-gate")
 dev_cmd = importlib.import_module("dev-cmd")
 gen_docs = importlib.import_module("gen-docs")
 import release
+import live_files
 import run
 import tasks
 import versions
@@ -52,6 +53,8 @@ check_docs = importlib.import_module("check-docs")
 check_docs_coverage = importlib.import_module("check-docs-coverage")
 check_surface_parity = importlib.import_module("check-surface-parity")
 check_version = importlib.import_module("check-version-consistency")
+diagnostic_coverage = importlib.import_module("check-diagnostic-coverage")
+gen_docs_tree = importlib.import_module("gen-docs-tree")
 spark_off = importlib.import_module("spark-off-check")
 update_reqs = importlib.import_module("update-requirements")
 
@@ -1154,6 +1157,71 @@ class CheckGateOrderTests(unittest.TestCase):
         self.assertIn("src/tests/adacovex-test_support.ads", sources)
         self.assertNotIn("src/tests/fixtures/ecosystems/ada/src/mini.ads",
                          sources)
+
+
+class CheckParallelPhaseTests(unittest.TestCase):
+    """Every gate runs exactly once, and the writers stay in serial phases."""
+
+    def test_phases_partition_the_gate_list(self) -> None:
+        gates = tasks.check_gate_labels()
+        phases = (tasks.CHECK_SERIAL_HEAD + tasks.CHECK_SERIAL_MID
+                  + [g for g in gates if g not in tasks.CHECK_SERIAL_HEAD
+                     and g not in tasks.CHECK_SERIAL_MID
+                     and g not in tasks.CHECK_SERIAL_TAIL]
+                  + tasks.CHECK_SERIAL_TAIL)
+        self.assertEqual(sorted(phases), sorted(gates))
+        self.assertEqual(len(phases), len(set(phases)),
+                         "a gate is scheduled in more than one phase")
+
+    def test_fmt_and_build_lead_and_syncs_trail(self) -> None:
+        self.assertEqual(tasks.CHECK_SERIAL_HEAD[:2], ["fmt", "build"])
+        self.assertEqual(tasks.CHECK_SERIAL_TAIL[-4:],
+                         ["test counts in sync", "proof metrics in sync",
+                          "description sync", "requirements sync"])
+
+    def test_every_named_parallel_process_is_a_gate(self) -> None:
+        gates = set(tasks.check_gate_labels())
+        for label in tasks.CHECK_PARALLEL_PROCESS:
+            self.assertIn(label, gates)
+            self.assertNotIn(label, tasks.CHECK_SERIAL_HEAD)
+            self.assertNotIn(label, tasks.CHECK_SERIAL_MID)
+
+
+class LiveFilePruneTests(unittest.TestCase):
+    """The metric-sync scan prunes build and vendored trees while walking."""
+
+    def test_generated_and_vendored_trees_are_not_yielded(self) -> None:
+        yielded = {p.relative_to(live_files.ROOT).as_posix()
+                   for p in live_files.iter_live_files()}
+        self.assertIn("AGENTS.md", yielded)
+        for prefix in ("obj/", "bin/", ".git/", "node_modules/",
+                       "docs/_build/", "docs/api-docs/", "tools/"):
+            self.assertFalse(any(p.startswith(prefix) for p in yielded),
+                             f"live scan yielded a {prefix} file")
+
+    def test_past_changelogs_are_historical_but_the_dev_one_is_live(self) -> None:
+        yielded = {p.name for p in live_files.iter_live_files()
+                   if p.parent.name == "changelogs"}
+        self.assertIn(live_files.current_changelog().name, yielded)
+
+
+class CliShardTests(unittest.TestCase):
+    """Every CLI check group runs in at least one shard, and none twice."""
+
+    def test_shards_partition_the_check_groups(self) -> None:
+        e2e = Path(__file__).resolve().parent.parent / "tests" / "e2e"
+        sys.path.insert(0, str(e2e))
+        try:
+            cli_flags = importlib.import_module("cli_flags")
+        finally:
+            sys.path.remove(str(e2e))
+        names = [name for name, _ in cli_flags.CHECKS]
+        self.assertEqual(len(names), len(set(names)))
+        for shard in range(4):
+            selected = names[shard::4]
+            self.assertTrue(selected,
+                            f"shard {shard}/4 selects no check group")
+        self.assertEqual(sorted(names), sorted(set(names)))
 
 
 class CssSpacingTests(unittest.TestCase):
@@ -2941,6 +3009,51 @@ class CheckReuseTests(unittest.TestCase):
             self.assertEqual(tasks.task_build(), 1)
         self.assertEqual(self.calls.count(("tools/build.py",)), 2,
                          "a failed build must not be memoised as a product")
+
+
+class DiagnosticCoverageTests(unittest.TestCase):
+    """The diagnostics matrix, Fix_Hint branches, and fixtures agree."""
+
+    def test_matrix_parses_and_has_supported_rows(self) -> None:
+        rows = diagnostic_coverage.matrix_rows()
+        self.assertTrue(rows, "the diagnostics matrix is empty")
+        cases = {row["case"] for row in rows}
+        self.assertIn("index", cases)
+        self.assertTrue(any(row["status"].startswith("Supported")
+                            for row in rows))
+
+    def test_fix_hint_keywords_are_documented(self) -> None:
+        rows = diagnostic_coverage.matrix_rows()
+        documented = {
+            keyword.strip("`")
+            for row in rows
+            for keyword in row["keywords"].replace(",", " ").split()
+        }
+        for keyword in diagnostic_coverage.fix_hint_keywords():
+            self.assertIn(keyword, documented,
+                          f"Fix_Hint keyword not documented: {keyword}")
+
+    def test_fixtures_have_rows(self) -> None:
+        cases = {row["case"] for row in diagnostic_coverage.matrix_rows()}
+        for name in diagnostic_coverage.fixture_names():
+            self.assertIn(name, cases, f"fixture has no matrix row: {name}")
+
+
+class DocsTreeTests(unittest.TestCase):
+    """The AGENTS.md docs tree is generated from the pages' headings."""
+
+    def test_title_reads_a_heading_after_badges(self) -> None:
+        root = Path(__file__).resolve().parent.parent
+        self.assertEqual(gen_docs_tree.title_of(root / "README.md"),
+                         "adacovex")
+
+    def test_render_lists_usage_and_generated_trees(self) -> None:
+        files, untitled = gen_docs_tree.collect()
+        self.assertEqual(untitled, [])
+        text = "\n".join(gen_docs_tree.render(files))
+        self.assertIn("|-- usage/", text)
+        self.assertIn("api-docs/ (generated by", text)
+        self.assertIn("cli-reference.md -- adacovex CLI Reference", text)
 
 
 if __name__ == "__main__":

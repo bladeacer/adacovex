@@ -308,7 +308,7 @@ codes and coloured when it is printed, so a later run never inherits another
 terminal's decision.
 
 A successful run prints the proof-coverage summary after the replay (the
-numbers are the self tree at v1.71.0):
+numbers are the self tree):
 
 ```
   coverage:  statements 57% (7246/12582) subprograms 18% (122/668) VCs 100% (1058/1058)

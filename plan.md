@@ -23,66 +23,33 @@ than cherry-picking rows across versions.
 | v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
 | v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
 | v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
-| v1.72.0 | planned | Performance close-out and documentation currency | 15c, 8c, 9 close-out, 21, 22, 23 |
+| v1.72.0 | planned | Performance close-out and documentation currency | 15c, 8c, 9 close-out, 21-25 |
 | v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
-## Session status (2026-11-16, v1.72.0 work started)
+## Status (2026-11-16)
 
-v1.72.0 now also carries the tool-hygiene and documentation items 21-23. Item
-21 is done in this change: `fmt` formats only files the root project sees, so
-the ecosystem fixture's `mini.gpr`/`mini.ads` no longer produce the "not
-visible to the provided project" warning, and the e2e suites SKIP a check
-whose prerequisite is absent (a sibling checkout, Playwright/pnpm, Chromium, a
-prover, or git) instead of failing it. Item 22 is the documentation currency
-audit (prove-timing, perf, architecture, and surface pages); item 23 adds
-expected command output to the CLI reference in sparse code blocks.
+v1.71.0 is closed; v1.72.0 is open. The tree holds 2394/2394 native tests,
+165 CLI e2e checks (one skips without a prover), 132 prove-e2e checks, and
+1058 VCs at Gold.
 
-## Session status (2026-11-16)
+Items 21-25 are done. `fmt` formats only the root project's sources, and an
+e2e check whose prerequisite is absent SKIPs with a reason. The CLI reference
+carries sparse expected-output blocks, and the diagnostics support matrix is
+documented and gated. The AGENTS.md docs tree is generated from the pages,
+and the wider docs currency sweep is complete. Item 15c is closed: a warm
+`just check` run passes all 32 gates in 38.77 s, under the 60 s budget.
 
-v1.71.0 is closed. Item 8b removed the padded proof-artefact name array (one
-`Max_Path` check now serves every artefact), documented the tier of every
-`Max_*` constant in the overflow contract, stopped the tool scan reading
-comment text, and added `meson` so the curated table covers the fixture
-projects' build tools. Debt D3, D5, and D14 closed. Item 15b memoises the
-build, the bundled offline manual, and the proof across a `just check` run,
-and moved the build gate before every gate that needs the binary, so the
-compile is one row of the gate table. The tree holds 2394/2394 tests, 165
-CLI e2e checks, and 132 prove-e2e checks at Gold (1058 VCs). The 60 s
-warm-tree budget stays with item 15c in v1.72.0.
-
-## Session status (2026-11-15)
-
-v1.71.0 has landed both SBOM items. Item 6b-i gave the ecosystem table
-every language syft catalogues from a source tree, plus Ada. Item 6b-ii
-reads the lockfiles (Cargo.lock, poetry.lock, Gemfile.lock, composer.lock,
-package-lock.json, packages.lock.json, Package.resolved, pubspec.lock,
-mix.lock), so a package only a lockfile names is a transitive component,
-and it catalogues GitHub Actions workflow actions as dev-scope
-`pkg:github` components. Debt D15 closed: an SPDX licence expression now
-takes CycloneDX `license.expression`. The tree holds 2387/2387 tests. The
-remaining v1.71.0 items (8b's bounded-string debt, 15b's single build and
-single proof run) stay open.
-
-## Session status (2026-11-14)
-
-v1.68.0 through v1.70.0 are closed. v1.70.0 fixed the generated-build-tree
-false positive that put `cargo` and `go` in a C project's SBOM, measured the
-parser against syft, started the debt register, and recorded the per-gate
-`just check` timings. The tree holds 2180/2180 tests, 165 CLI e2e checks, 132
-prove-e2e checks, and 1057 VCs at Gold. The plan now runs to v1.75.0 with the
-SBOM-depth, performance, test-layout, portability, cache-identity,
-diagnostics-coverage, and help-audit workstreams. This file is the single
-source of truth for release scope; completed work is recorded in the
-changelogs.
+## Every change
 
 Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `docs/api-docs`, `docs/changelogs/adacovex-<version>.md`, AGENTS.md source tree
 (if source layout changed), and the `just check` gates
 (`docs-check`, `action-parity-check`, `docs-coverage-check`,
-`surface-parity-check`, `version-consistency-check`, `doc-links`, `link-check`,
-`book-links-check`, `python3 tools/gen-docs.py --check`, then `just book`).
+`diagnostics-coverage-check`, `surface-parity-check`,
+`version-consistency-check`, `docs-tree`, `link-check`, `book-links-check`,
+`python3 tools/gen-docs.py --check`, then `just book`).
 After `just test` and `just prove`, run `just test-count` and
 `just proof-status`.
 
@@ -106,35 +73,17 @@ After `just test` and `just prove`, run `just test-count` and
 Detailed item text for a closed release is removed once its changelog exists;
 the changelog is the durable record of what shipped and why.
 
-- **v1.68.0** delivered the coverage-on-by-default behaviour, UTC+0 timestamp
-  default with `--tz=local`, the 17-character patched-artefact bound, and the
-  API docstring pass. See
-  [`docs/changelogs/adacovex-1.68.0.md`](docs/changelogs/adacovex-1.68.0.md).
-- **v1.69.0** delivered repeated-diagnostic dedup, the unified contextual
-  help frame with option spacing, warm-replay parity, severity colour,
-  GitHub Actions annotations, compiler-style findings with
-  `--diagnostics=json`, the diagnostics mode matrix, the
-  composite-action project-config job, and the main-only release guard. See
-  [`docs/changelogs/adacovex-1.69.0.md`](docs/changelogs/adacovex-1.69.0.md).
-- **v1.70.0** delivered the generated-build-tree fix that removed the false
-  `cargo` / `go` components from a C project's SBOM, the syft comparison and
-  its gap decisions, the technical debt register, and the per-gate `just
-  check` measurement. See
-  [`docs/changelogs/adacovex-1.70.0.md`](docs/changelogs/adacovex-1.70.0.md).
-- **v1.71.0** delivered the syft-complete ecosystem table, the nine lockfile
-  readers and the workflow-action components, the single bounded copy for the
-  proof artefacts, the command-text tool scan and its `meson` coverage, and
-  the build-once / bundle-once / prove-once check pipeline. See
-  [`docs/changelogs/adacovex-1.71.0.md`](docs/changelogs/adacovex-1.71.0.md).
+| Release | Delivered | Record |
+|---------|-----------|--------|
+| v1.68.0 | Coverage on by default, UTC+0 timestamp default, patched-artefact bound, API docstring pass | [`adacovex-1.68.0.md`](docs/changelogs/adacovex-1.68.0.md) |
+| v1.69.0 | Repeated-diagnostic dedup, contextual help frame, warm-replay parity, severity colour, CI annotations, `--diagnostics=json`, action project-config, main-only release guard | [`adacovex-1.69.0.md`](docs/changelogs/adacovex-1.69.0.md) |
+| v1.70.0 | Generated-build-tree fix, syft comparison, debt register, per-gate check timing | [`adacovex-1.70.0.md`](docs/changelogs/adacovex-1.70.0.md) |
+| v1.71.0 | Syft-complete ecosystem table, lockfile readers, workflow actions, bounded artefact copy, command-text tool scan, build-once check pipeline | [`adacovex-1.71.0.md`](docs/changelogs/adacovex-1.71.0.md) |
 
-The v1.65.0-v1.67.0 plan is also closed and `old-plan.md` is deleted.
-Old-plan 3.1 (the action honours a project `adacovex.toml`) closed in
-v1.69.0. Old-plan 3.4 measured a 344 s warm-tree `just check` on 2026-11-06. Item 15a
-retired that figure with the per-gate measurement of 2026-11-14 (452.99 s
-warm, all 31 gates) in
-[`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md),
-and the 60 s gap is carried by item 15c: item 15b removed the repeated build,
-docs bundle, and proof from a run in v1.71.0.
+The v1.65.0-v1.67.0 plan and `old-plan.md` are retired. The warm-tree check
+history (344 s, then 453 s), the 60 s budget, and the closing 38.77 s run are
+on
+[`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md).
 
 ---
 
@@ -167,7 +116,7 @@ a reason instead of failing.
 
 ---
 
-- [ ] Item 22 - Documentation currency audit
+- [x] Item 22 - Documentation currency audit
 
 **Goal:** The user docs and contributor docs describe the tree at v1.72.0, not
 an earlier release. A dated figure stays only where the page needs it (a phase
@@ -192,9 +141,14 @@ reference is removed or restated as current behaviour.
 **Verify:** `just docs-check`, `just docs-coverage-check`,
 `just surface-parity-check`, `just link-check`.
 
+**Result:** the perf pages carry current figures and label historical
+measurements as history. The usage sweep corrected the stale VC counts, gate
+counts, and version references. The check-pipeline page now records the
+v1.72.0 warm run and the parallel-phase layout.
+
 ---
 
-- [ ] Item 23 - Expected command output in the docs
+- [x] Item 23 - Expected command output in the docs
 
 **Goal:** A reader sees what a command prints without running it, in a fenced
 block that matches the real binary. Blocks stay sparse: one per command or
@@ -216,7 +170,49 @@ mode, not one per flag.
 
 ---
 
-- [ ] Item 15c - Close the 344 s -> 60 s warm-tree gap
+- [x] Item 24 - Diagnostics support matrix and gate
+
+**Goal:** The docs state exactly which SPARK checks the diagnostics block and
+counterexamples support, and the claim cannot drift from the code.
+
+**Work:**
+- `docs/contributing/proving-diagnostics.md` carries a matrix between the
+  `diagnostic-matrix` markers: case, check kind, fix-hint keywords,
+  counterexample shape, status (Supported / Hinted / Fallback), and fixture.
+- `tools/check-diagnostic-coverage.py` compares the matrix with the
+  `Fix_Hint` branches in `Adacovex.Prove_Output` and the fixtures in
+  `tests/e2e/prove_diagnostics.py`; `just diagnostics-coverage-check` gates
+  it and the `ci.yml` `diagnostics-coverage` job runs it.
+- The page states the update rule: a new classification adds a `Fix_Hint`
+  branch, a broken/fixed fixture, and a matrix row in one change.
+
+**Verify:** `just diagnostics-coverage-check`, `just docs-check`,
+`just prove-e2e`.
+
+---
+
+- [x] Item 25 - Generated documentation tree and AGENTS.md dry pass
+
+**Goal:** AGENTS.md knows the manual's structure without a hand-maintained
+link list, and both AGENTS.md and plan.md stop repeating retired history.
+
+**Work:**
+- `tools/gen-docs-tree.py` renders the hand-written docs as an ASCII tree with
+  each page's H1 title and the generated `api-docs/` and `changelogs/`
+  directories as notes; it rewrites the `docs-tree` block in AGENTS.md and
+  `--check` is the `docs tree` gate.
+- The flat `tools/doc-links.map` and `tools/update-doc-links.py` are retired;
+  `just doc-links` becomes `just docs-tree`, wired through `tools/tasks.py`,
+  the justfile, the Makefile, and the AGENTS.md task table.
+- AGENTS.md gains a change-to-page routing table and compresses the duplicated
+  CLI, VCS, tool-script, and check-gate prose; plan.md drops the repeated
+  session histories and old-plan retelling.
+
+**Verify:** `just docs-tree`, `just tools-check`, `just docs-check`.
+
+---
+
+- [x] Item 15c - Close the 344 s -> 60 s warm-tree gap
 
 **Goal:** `just check` finishes under a minute on the dev machine with a warm
 cache and a warm gnatprove session. No gate is weakened and no check is
@@ -230,6 +226,26 @@ standard library, a CPU cap, and the unchanged PASS/FAIL/SKIP summary.
 
 **Verify:** a recorded warm run with the complete metric set for the open
 phase's representative version.
+
+**Result:** the warm run on 2026-11-16 passed all 32 gates in **38.77 s**
+(`obj/check-v1.72.0-r18.log`). The sum of gate times is 70.30 s, so the
+parallel phase removes 31.53 s of serial wall time. The work:
+- `tools/live_files.py` prunes build and vendored trees while it walks, so
+the test-count and proof-metrics checks fell from 15.34 s and 9.72 s to
+0.36 s and 0.37 s.
+- `task_fmt` stores a digest of the sources and the dev manifest, skips
+gnatformat on a match, and restores the timestamp of any file whose bytesdid not change. The warm `fmt` fell from 23.84 s to 0.89 s and the build stays a
+no-op.
+- `task_doc` stores the same kind of digest, so a warm API-docs gate fell
+from 3.81 s to 0.02 s.
+- `task_check` runs three short serial phases around one parallel phase. The
+independent gates capture their child output and print in the declared order.
+- The CLI suite runs four shards and the prove-diagnostics suite runs one
+process per fixture case, so the two longest gates overlap the rest.
+- The tools suite stays serial: it compares `git status` around each
+`--check`, so it must not overlap a gate that touches build state.
+All 32 gates still run, no check is dropped, and the summary and exit code
+are unchanged.
 
 ---
 

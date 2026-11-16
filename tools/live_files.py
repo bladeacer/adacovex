@@ -38,6 +38,7 @@ state the SPARK level only. Nothing here syncs a VC count into them, and
 `just description CHECK=1` is the gate that keeps that true.
 """
 
+import os
 import re
 from pathlib import Path
 from typing import Iterator, Optional
@@ -48,6 +49,14 @@ ROOT: Path = Path(__file__).resolve().parent.parent
 GENERATED_DIRS: frozenset = frozenset({
     ".git", ".venv", "obj", "bin", "dist", "docs/api-docs", "docs/badges",
     "docs/_build", "tools",
+})
+
+#  Directory names pruned wherever they appear, before their contents are
+#  read.  A vendored tree (tests/e2e/node_modules) and a build cache can be
+#  larger than the repository, and filtering them after `rglob` made the
+#  metric-sync checks the slowest gates in `just check`.
+PRUNE_NAMES: frozenset = frozenset({
+    ".git", ".venv", "__pycache__", "node_modules", "obj", "bin", "dist",
 })
 
 # Individual generated/build-state files.
@@ -102,38 +111,40 @@ def current_ledger() -> Path:
 def iter_live_files() -> Iterator[Path]:
     """Yield every repo file whose metric phrases may need syncing."""
     current: frozenset = frozenset({current_changelog(), current_ledger()})
-    for p in ROOT.rglob("*"):
-        if not p.is_file():
-            continue
-        rel: Path = p.relative_to(ROOT)
-        parts: tuple = rel.parts
-        # Generated/build/VCS dirs (path-prefix match: an entry matches when
-        # it is an ancestor directory of the file, so both single-segment
-        # ("obj", "bin") and multi-segment ("docs/api-docs",
-        # "docs/_build") entries work).
-        if any(p.is_relative_to(ROOT / d) for d in GENERATED_DIRS):
-            continue
-        if rel.as_posix() in GENERATED_FILES:
-            continue
-        # Historical records: past-release changelogs and past proof
-        # ledgers, except the current ones.  A hub page such as
-        # docs/proof/index.md carries *current* metrics, so it stays live.
-        if parts[:2] == ("docs", "changelogs") and p not in current:
-            continue
-        if parts[:2] == ("docs", "proof") \
-                and p.name.endswith("-ledger.md") and p not in current:
-            continue
-        # Only text files that could carry metric phrases.
-        if p.name != "Makefile" and p.suffix not in TEXT_SUFFIXES:
-            continue
-        # Skip binary files (NUL-byte sniff) and unreadable files.
-        try:
-            data: bytes = p.read_bytes()
-        except OSError:
-            continue
-        if b"\x00" in data:
-            continue
-        yield p
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        rel_dir = Path(dirpath).relative_to(ROOT)
+        kept: list = []
+        for name in sorted(dirnames):
+            rel = (rel_dir / name).as_posix()
+            if name in PRUNE_NAMES or rel in GENERATED_DIRS:
+                continue
+            kept.append(name)
+        dirnames[:] = kept
+        for name in sorted(filenames):
+            p = Path(dirpath) / name
+            rel = p.relative_to(ROOT)
+            parts: tuple = rel.parts
+            if rel.as_posix() in GENERATED_FILES:
+                continue
+            # Historical records: past-release changelogs and past proof
+            # ledgers, except the current ones.  A hub page such as
+            # docs/proof/index.md carries *current* metrics, so it stays live.
+            if parts[:2] == ("docs", "changelogs") and p not in current:
+                continue
+            if parts[:2] == ("docs", "proof") \
+                    and p.name.endswith("-ledger.md") and p not in current:
+                continue
+            # Only text files that could carry metric phrases.
+            if p.name != "Makefile" and p.suffix not in TEXT_SUFFIXES:
+                continue
+            # Skip binary files (NUL-byte sniff) and unreadable files.
+            try:
+                data: bytes = p.read_bytes()
+            except OSError:
+                continue
+            if b"\x00" in data:
+                continue
+            yield p
 
 
 def live_files() -> list:
