@@ -6,12 +6,20 @@ page records how the pipeline is orchestrated and where its wall time goes.
 
 ## What the runner already shares
 
-The gate order lives in `CHECK_GATES` in `tools/tasks.py`. Three rules keep
+The gate order lives in `CHECK_GATES` in `tools/tasks.py`. Five rules keep
 repeated work out of the pipeline:
 
 - **Build once.** `task_build` records a successful build in the process, so
-  the build, native-test, prove, complexity, and SBOM gates reuse one
-  `alr build`. A no-op build is cheap, but a real one is not.
+  the build, native-test, prove, complexity, CLI end-to-end, and SBOM gates
+  reuse one `alr build`. A no-op build is cheap, but a real one is not.
+- **Bundle the manual once.** `tools/build.py` regenerates the bundled offline
+  manual among its pre-build steps, so the offline-manual gate reuses that
+  product and never runs `tools/gen-docs.py` a second time. The committed-spec
+  gate still runs `gen-docs.py --check` against a fresh Sphinx build, because
+  that gate verifies the committed spec rather than producing it.
+- **Prove once.** `task_prove` records a successful proof run, so no later
+  gate re-runs gnatprove. The SBOM gate runs after the proof gate and reads
+  the single run's `obj/gnatprove/` artefacts.
 - **Group the cases.** The native suite, the CLI end-to-end checks, and the
   prove-diagnostics fixtures each run as one invocation. There is no process
   per case or per file.
@@ -19,11 +27,58 @@ repeated work out of the pipeline:
   bundle are content-keyed. The docs bundle records the fingerprint of its
   inputs, so an unchanged tree reads 76 ms instead of running Sphinx.
 
+A failed build is never memoised: the next gate that needs the binary builds
+again, so one broken compile cannot hide behind a stale product.
+
+The build gate runs before every gate that needs the binary. The compile is
+one row of the timing table instead of the first gate that happened to need
+it, so a row like complexity measures the walk and nothing else.
+
 ## Timing the gates
 
 Every `just check` run now prints a gate-timing table after the summary,
 slowest first, plus the sequential total. The table is the measurement to
 compare across changes; no separate benchmark run is needed.
+
+## What v1.71.0 changed in the table
+
+Before v1.71.0 the build was paid by the first gate that needed the binary
+(complexity) and the offline-manual gate re-bundled the manual the build had
+already bundled. The gate order now puts the build before those gates and
+`task_book` reuses the build's bundle, so the same work no longer appears in
+two rows. The v1.70.0 per-gate figures below are the previous order's split
+and are not row-by-row comparable with a run from 1.71.0 onward; compare the
+total and the moved rows with that difference in mind.
+
+## The v1.71.0 run
+
+One full `just check` run on the same development machine on 2026-11-16, with
+a warm result cache and a warm gnatprove session, passed all 31 gates with
+`fmt` first. `fmt` rewrote source files, so the build row below carries a real
+recompile rather than a no-op one; the raw stdout is
+`obj/check-v1.71.0.log`.
+
+| Gate | Seconds |
+|------|---------|
+| tools unit tests | 80.27 |
+| build | 69.65 |
+| prove diagnostics end-to-end | 44.55 |
+| fmt | 23.84 |
+| CLI end-to-end | 17.74 |
+| test counts in sync | 15.34 |
+| proof metrics in sync | 9.72 |
+| native tests | 6.01 |
+| API docs | 3.81 |
+| SPARK proof + badges | 1.93 |
+| the other 21 gates | 8.44 |
+| **total (sequential)** | **281.30** |
+
+The two rows the release targeted moved as intended. The compile is now the
+build row instead of being charged to complexity, and complexity measures its
+own walk at 0.16 s. The offline-manual gate reads 0.00 s and prints
+`Offline manual: already bundled by the build`, because it reuses the build's
+product. The remaining cost sits outside this item: the tools unit tests, the
+prove diagnostics fixtures, and the fmt pass are item 15c's work.
 
 ## Why the gates stay sequential
 
