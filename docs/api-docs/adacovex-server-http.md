@@ -86,6 +86,8 @@ Route_API_Deps,
 Route_Not_Found);
 ```
 
+> The action that a request path routes to. The HTTP server serves the dashboard, the JSON API, the SVG badge endpoints, the server-info payload, the health probe, and the bundled offline manual (every path under /docs/). Every other path returns a 404.
+
 ### type Route_Stats
 
 ```ada
@@ -95,11 +97,15 @@ Not_Found : Natural := 0;
 end record;
 ```
 
+> Response counters for one route kind: how many responses the server sent with a success status and how many with 404.
+
 ### type Route_Stats_Table
 
 ```ada
 type Route_Stats_Table is array (Route_Kind) of Route_Stats;
 ```
+
+> One response counter per route kind.
 
 ### type Runtime_Counts
 
@@ -110,6 +116,8 @@ Keep_Alive     : Natural := 0;
 Uptime_Seconds : Natural := 0;
 end record;
 ```
+
+> A copy of the live server counters, as /api/info serves them. The snapshot is copied under the lock, so no lock is held while a socket send blocks.
 
 ### type Server_State
 
@@ -137,9 +145,13 @@ Assessment_MS   : Natural := 0;
 end record;
 ```
 
+> Everything the worker tasks need to answer a request: the assessed metrics, the dependency graph, the theme, and the run metadata.
+
 ## Functions
 
 ### function Render_Info_JSON (Target_Path : Standard.String; Standard_Label : Standard.String; Version_Text : Standard.String; Port : Standard.Positive; Workers : Standard.Positive; Counts : Adacovex.Server.HTTP.Runtime_Counts; Cache_Hits : Standard.Natural; Cache_Misses : Standard.Natural; Assessment_MS : Standard.Natural) return Standard.String `[Post]` `[Global]`
+
+> Render the /api/info payload: the run metadata (bundled version, audited target, selected standard, port, worker count, result-cache counters, and assessment time) and the live counters (uptime, keep-alive connections, and the per-route response counts). NOTE: Render_Info_JSON is deliberately not SPARK_Mode On, like every other JSON renderer of Adacovex.Renderers.HTML. It assembles the server's runtime state with Unbounded_String concatenation, which is outside the proved surface of this package. Route and Route_Path are the proved surface here, and the native suite pins both.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -157,6 +169,8 @@ end record;
 
 ### function Render_Watch_JSON (Watching : Standard.Boolean; Generation : Standard.Natural) return Standard.String `[Post]` `[Global]`
 
+> Render the /api/watch payload: whether the server watches the target, and the generation of the latest document-metric refresh. A browser polls this and reloads the page when the generation moves.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Generation` | Refresh counter, incremented on every change. |
@@ -166,6 +180,8 @@ end record;
 
 ### function Route (Path : Standard.String) return Adacovex.Server.HTTP.Route_Kind `[Global]` `[SPARK]`
 
+> Map a request path to its handler action. Returns the Route_Kind for the given path. The dashboard is at "/". The JSON APIs are at "/api/metrics", "/api/deps", "/api/spark", "/api/info", and the endpoint catalog at "/api/endpoints". The SVG badge endpoints are at "/badge/*.svg". The health probe is at "/health". The bundled offline manual is at "/docs" and every path under "/docs/" (each page, stylesheet, script, and badge of the bundled Sphinx site). Every other path returns Route_Not_Found. Routing is pure path routing. The socket dispatch in Handle_Request switches on the result. The native test suite pins every route. The function is an expression function: its body is the conditional mapping, so the implicit postcondition (Result = <mapping>) holds by definition and the mapping is proved without case-analysis steps.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Path` | Request path (as extracted by Get_Path). |
@@ -173,6 +189,8 @@ end record;
 **Returns:** Route_Kind for the path.
 
 ### function Route_Path (Kind : Adacovex.Server.HTTP.Route_Kind) return Standard.String `[Global]` `[SPARK]`
+
+> The canonical request path of a route kind, as the server dispatches it. The mapping is the inverse of Route for every routable kind, so the native suite pins `Route (Route_Path (K)) = K` over the whole enumeration. Route_Not_Found is the catch-all bucket of every path the server does not dispatch on, so its entry is "*".
 
 | Parameter | Description |
 |-----------|-------------|
@@ -182,6 +200,8 @@ end record;
 
 ### function Strip_Query (Path : Standard.String) return Standard.String `[Global]` `[SPARK]`
 
+> Strip the query string and fragment off a request path so a URL such as `/?theme=light` or `/api/deps#top` routes to the same handler as `/` or `/api/deps`. Browsers append `?query` and `#fragment` to the path; routing and content negotiation must ignore both. Returns the path up to (and excluding) the first '?' or '#'.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Path` | Request path as extracted by Get_Path. |
@@ -190,11 +210,15 @@ end record;
 
 ### function Watch_Generation return Standard.Natural
 
+> The current watch generation: 0 before the first refresh. The native suite and the /api/watch handler read it.
+
 **Returns:** The refresh counter.
 
 ## Procedures
 
 ### procedure Start (State : Adacovex.Server.HTTP.Server_State) `[Pre]`
+
+> Start the HTTP server (runs until Ctrl+C or socket error). The server creates a bounded task pool of 4 workers for concurrent request handling. It supports HTTP/1.1 keep-alive. The server binds to the configured port. It serves the HTML dashboard, the JSON API, and the SVG badge endpoints.
 
 | Parameter | Description |
 |-----------|-------------|

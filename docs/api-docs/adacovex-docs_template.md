@@ -18,11 +18,15 @@ edit by hand; edit docs/ and run just book.
 type Asset_Body is access constant String;
 ```
 
+> One asset body (plain or gzip-compressed), addressed by the asset that borrows it.
+
 ### type Asset_Index
 
 ```ada
 subtype Asset_Index is Positive range 1 .. Asset_Count;
 ```
+
+> Index range of the bundled asset bodies.
 
 ### type Asset_Ref
 
@@ -36,11 +40,15 @@ Gzip  : Boolean;
 end record;
 ```
 
+> One bundled asset: its request path and MIME type, the body it borrows, and whether that body is gzip-compressed.
+
 ### type Asset_Table
 
 ```ada
 type Asset_Table is array (Positive range <>) of Asset_Ref;
 ```
+
+> The asset table the server looks a request path up in.
 
 ### type Body_Index
 
@@ -48,9 +56,13 @@ type Asset_Table is array (Positive range <>) of Asset_Ref;
 subtype Body_Index is Positive range 1 .. Body_Count;
 ```
 
+> One bundled asset: its request path and MIME type, the body
+
 ## Functions
 
 ### function Base85_Decode (S : Standard.String) return Standard.String
+
+> Decode one base85 chunk into its raw bytes. Four bytes become five characters on the quote-free Z85 alphabet; a short final group carries one character more than its payload bytes and pads with the highest alphabet value.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -59,6 +71,8 @@ subtype Body_Index is Positive range 1 .. Body_Count;
 **Returns:** The decoded bytes.
 
 ### function Body_Bytes (B : Adacovex.Docs_Template.Body_Index; Is_Gzip : Standard.Boolean) return Standard.String
+
+> The decoded bytes of one body: base64-decoded (the gzip stream, served with Content-Encoding: gzip) when Is_Gzip, otherwise the body verbatim. The server streams one chunk at a time, so no worker ever materialises a multi-megabyte body.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -69,6 +83,8 @@ subtype Body_Index is Positive range 1 .. Body_Count;
 
 ### function Content (Idx : Adacovex.Docs_Template.Asset_Index) return Standard.String
 
+> The decoded first body of a table asset (its only body for every asset unless a compressed chunk split it).
+
 | Parameter | Description |
 |-----------|-------------|
 | `Idx` | Asset table entry to decode. |
@@ -76,6 +92,8 @@ subtype Body_Index is Positive range 1 .. Body_Count;
 **Returns:** The decoded first body.
 
 ### function Find (Subpath : Standard.String) return Standard.Natural
+
+> Find the asset for a request subpath. Normalises: "" and "/" map to index.html, a trailing slash appends index.html, and an extensionless leaf tries leaf.html then leaf/index.html. Returns 0 when absent.
 
 | Parameter | Description |
 |-----------|-------------|

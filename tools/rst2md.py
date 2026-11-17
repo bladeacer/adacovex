@@ -23,6 +23,7 @@ MOJIBAKE_EMDASH = "\u00e2\u0080\u0094"
 class ParamDesc(TypedDict):
     params: Dict[str, str]
     returns: str
+    desc: str
 
 
 class SubItem(TypedDict):
@@ -217,7 +218,7 @@ def parse_ada_annotations(
         lines = f.readlines()
     pkg_desc = parse_ada_pkg_desc(lines)
     annotations: Dict[str, ParamDesc] = {}
-    cur: ParamDesc = {"params": {}, "returns": ""}
+    cur: ParamDesc = {"params": {}, "returns": "", "desc": ""}
     in_private = False
     protected_depth = 0
     record_depth = 0
@@ -227,8 +228,15 @@ def parse_ada_annotations(
     #  counter raised and skip every subprogram that follows it.
     type_body_open = False
     private_items: List[Tuple[str, str]] = []
+    #  A wrapped annotation line continues the annotation above it, so it is
+    #  never prose of the description.
+    last_annotation: Optional[Tuple[str, str]] = None
     for line in lines:
         s = line.strip()
+        #  The code part of the line, with any trailing Ada comment removed.
+        #  A multi-line enumeration whose last alternative carries a comment
+        #  still ends with `;`, so it must close the type body.
+        code = re.sub(r'--.*$', '', s).strip()
         if re.match(r'\s*protected\s+type\b', s):
             protected_depth += 1
             continue
@@ -240,16 +248,27 @@ def parse_ada_annotations(
 
         is_rec_start = re.match(r'^\s*type\s+\w+.*\bis\s+record\b', s)
         is_type_is = re.match(r'^\s*type\s+\w+.*\bis\s*$', s) and 'record' not in s
-        if is_rec_start:
-            record_depth += 1
-        elif is_type_is:
+        if is_rec_start or is_type_is:
+            #  A record header or a multi-line type header still carries the
+            #  docstring that describes the type, so its block is recorded
+            #  before the body lines are skipped.
+            tm = re.match(r'type\s+(\w+)', code)
+            if tm:
+                if in_private:
+                    private_items.append(("type", tm.group(1)))
+                annotations[annotation_key(tm.group(1), cur["params"].keys())] = cur
+                cur = {"params": {}, "returns": "", "desc": ""}
+            last_annotation = None
+            if is_rec_start:
+                record_depth += 1
+                continue
             type_body_open = True
             continue
         elif type_body_open:
-            if re.match(r'^record\s*$', s):
+            if re.match(r'^record\s*$', code):
                 type_body_open = False
                 record_depth += 1
-            elif s.endswith(";"):
+            elif code.endswith(";"):
                 type_body_open = False
             continue
         elif re.match(r'^\s*record\s*$', s) and record_depth > 0:
@@ -266,15 +285,34 @@ def parse_ada_annotations(
         #  A blank line ends a docstring block: annotations belong to the
         #  declaration the block sits against, never to a later one.
         if not s:
-            cur = {"params": {}, "returns": ""}
+            cur = {"params": {}, "returns": "", "desc": ""}
+            last_annotation = None
             continue
         pm = re.match(r'--\s*@param\s+(\S+)\s*(.*)', s)
         if pm:
             cur["params"][pm.group(1)] = pm.group(2).strip()
+            last_annotation = ("param", pm.group(1))
             continue
         rm = re.match(r'--\s*@return\s*(.*)', s)
         if rm:
             cur["returns"] = rm.group(1).strip()
+            last_annotation = ("return", "")
+            continue
+        if s.startswith("--"):
+            #  The prose of the docstring is the description gnatdoc leaves
+            #  out of its RST item directives. An annotation line, an HLR
+            #  trace tag, and a rule are not prose.
+            prose = s[2:].strip()
+            if last_annotation is not None:
+                kind, name = last_annotation
+                if kind == "param":
+                    cur["params"][name] = (cur["params"][name] + " " + prose).strip()
+                else:
+                    cur["returns"] = (cur["returns"] + " " + prose).strip()
+            elif prose and not re.match(r'@\w+', prose) \
+                    and not re.match(r'HLR-[A-Za-z]+:', prose) \
+                    and not re.match(r'-{3,}$', prose):
+                cur["desc"] = (cur["desc"] + " " + prose).strip()
             continue
         sm = re.match(
             r'\s*(?:overriding\s+)?(?:procedure\b|function\b|type\b|subtype\b)\s+'
@@ -290,12 +328,14 @@ def parse_ada_annotations(
             #  table, so its annotation block is kept either way.
             key = annotation_key(name, cur["params"].keys())
             annotations[key] = cur
-            cur = {"params": {}, "returns": ""}
+            cur = {"params": {}, "returns": "", "desc": ""}
+            last_annotation = None
         elif not s.startswith("--"):
             #  Any other code line (a package header, an aspect clause) ends
             #  the block too, so example tags in a file header never attach
             #  to the first subprogram.
-            cur = {"params": {}, "returns": ""}
+            cur = {"params": {}, "returns": "", "desc": ""}
+            last_annotation = None
         elif in_private and re.match(r'\w+\s*:', s):
             var_name = s.split(":")[0].strip()
             if not re.match(r'(end|case|when|others|range|type|subtype)\b', var_name):
@@ -346,7 +386,8 @@ def extract_aspects_from_ads(ads_path: str) -> Dict[str, str]:
 
 
 def subprog_short_name(block_name: str) -> str:
-    m = re.match(r'(?:procedure|function)\s+("(?:[^"]|"")+"|\w+)', block_name)
+    m = re.match(r'(?:procedure|function|type|subtype)\s+'
+                 r'("(?:[^"]|"")+"|\w+)', block_name)
     return m.group(1) if m else block_name
 
 
@@ -867,7 +908,8 @@ def render_package(
             params, returns = params_returns
             sname = subprog_short_name(name)
             key = annotation_key(sname, params.keys())
-            anno = annotations.get(key, {"params": {}, "returns": ""})
+            anno = annotations.get(key, {"params": {}, "returns": "", "desc": ""})
+            desc = desc or anno.get("desc", "")
             aspect_text = (subprog_aspects or {}).get(key, "")
             badges = extract_aspect_badges(name + " " + aspect_text)
             badge_str = " " + " ".join(f"`{b}`" for b in badges) if badges else ""
@@ -886,8 +928,9 @@ def render_package(
             else:
                 if decl:
                     lines.append(f"```ada\n{decl}\n```\n")
-                if desc:
-                    lines.append(f"> {desc}\n")
+                item_desc = desc or anno.get("desc", "")
+                if item_desc:
+                    lines.append(f"> {item_desc}\n")
                 merged: Dict[str, str] = {}
                 for pname in sorted(params):
                     merged[pname] = params[pname] or anno.get("params", {}).get(pname, "")
@@ -925,11 +968,37 @@ def prune_test_pages(index_path: str) -> None:
         f.write("\n".join(kept) + "\n")
 
 
+def incomplete_items(page: str) -> List[str]:
+    """Name every item on a rendered page with a missing description.
+    An item is complete when the paragraph under its heading is present,
+    and when no parameter table row and no Returns line is empty."""
+    problems: List[str] = []
+    lines = page.splitlines()
+    for i, line in enumerate(lines):
+        text = line.strip()
+        if re.match(r'^\| `[^`]+` \|\s*\|?\s*$', text):
+            problems.append(f"line {i + 1}: empty parameter description")
+        if re.match(r'^\*\*Returns:\*\* *$', text):
+            problems.append(f"line {i + 1}: empty return description")
+        heading = re.match(r'^### (function|procedure|type|subtype) ', line)
+        if not heading:
+            continue
+        j = i + 1
+        body: List[str] = []
+        while j < len(lines) and not re.match(r'^#{2,3} ', lines[j]):
+            body.append(lines[j].strip())
+            j += 1
+        if not any(b.startswith('>') for b in body):
+            problems.append(f"line {i + 1}: {text[4:]} has no description")
+    return problems
+
+
 def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
     files = sorted(f for f in os.listdir(RST_DIR) if f.endswith(".rst"))
     packages: Dict[str, str] = {}
+    incomplete: List[str] = []
 
     type_map = build_type_map(RST_DIR)
 
@@ -949,8 +1018,16 @@ def main() -> None:
         if not desc:
             desc = pkg_desc
         fn = slug(title)
+        page = render_package(title, desc, blocks, annotations, has_private,
+                              private_items, ads_path, type_map,
+                              subprog_aspects)
         with open(join(OUT_DIR, fn), "w", newline="\n") as f:
-            f.write(render_package(title, desc, blocks, annotations, has_private, private_items, ads_path, type_map, subprog_aspects))
+            f.write(page)
+        #  A test page is dropped after conversion, so its omissions are
+        #  not the user-facing API: the gate covers the pages that stay.
+        if not fn.startswith("test_") and fn != "adacovex-test_support.md":
+            for problem in incomplete_items(page):
+                incomplete.append(f"{fn}: {problem}")
         packages[title] = fn
 
     index_path = join(OUT_DIR, "index.md")
@@ -960,6 +1037,13 @@ def main() -> None:
         prune_test_pages(index_path)
 
     print(f"Wrote {len(packages)} package docs + index to {OUT_DIR}/")
+    if incomplete:
+        print("API items with an incomplete docstring:", file=sys.stderr)
+        for problem in incomplete:
+            print(f"  {problem}", file=sys.stderr)
+        print("Add a description to each item in the .ads docstring.",
+              file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

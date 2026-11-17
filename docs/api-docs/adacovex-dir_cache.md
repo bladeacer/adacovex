@@ -50,6 +50,8 @@ rejected both and made every walker re-enumerate them.
 type Dir_Entry_List is array (1 .. Max_Dir_Entries) of Dir_Entry_Rec;
 ```
 
+> A directory snapshot: up to Max_Dir_Entries entries plus a count.
+
 ### type Dir_Entry_Rec
 
 ```ada
@@ -60,11 +62,15 @@ Kind     : Entry_Kind := K_Other;
 end record;
 ```
 
+> One remembered directory entry. The name comes first: the length and kind fields then share its tail. Packed to 66 bytes, where the v1.61.0 record took 128 and the 1.62.0 one took 72, so 128 entries fit in 8 KiB.
+
 ### type Entry_Kind
 
 ```ada
 type Entry_Kind is (K_File, K_Dir, K_Other);
 ```
+
+> Entry classification (a reduced File_Kind: the walkers only ever branch on file-vs-directory). The size clause keeps the packed record's kind field a whole byte, so no multi-byte field of a slot ever straddles a byte boundary.
 
 ### type Name_Length
 
@@ -72,9 +78,13 @@ type Entry_Kind is (K_File, K_Dir, K_Other);
 subtype Name_Length is Natural range 0 .. Max_Name_Len;
 ```
 
+> Entry name length. The subtype's range is the memo's name bound; the packed record stores it in one byte.
+
 ## Functions
 
 ### function Is_Directory (K : Adacovex.Dir_Cache.Entry_Kind) return Standard.Boolean
+
+> True when K classifies a subdirectory. Walkers branch on this helper instead of the (not directly visible) equality operator.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -86,7 +96,11 @@ subtype Name_Length is Natural range 0 .. Max_Name_Len;
 
 ### procedure Reset
 
+> Drop every memoised snapshot (and reset Misses; Hits stays cumulative). For tests and diagnostics.
+
 ### procedure Snapshot (Dir : Standard.String; Entries : Adacovex.Dir_Cache.Dir_Entry_List; Count : Standard.Natural; Truncated : Standard.Boolean; OK : Standard.Boolean)
+
+> Enumerate Dir, serving a valid memoised snapshot when one exists. Entries (1 .. Count) hold the directory's children; "." and ".." are excluded. Truncated is True when the directory holds more entries than Max_Dir_Entries or an entry name exceeds Max_Name_Len -- the caller must then fall back to direct enumeration, and nothing is memoised. OK is False when Dir cannot be enumerated at all. The memo key is Dir's ABSOLUTE image: a relative Dir is resolved against the process working directory (read once, then cached) so walkers that spell the same directory differently (".", "src", "/abs/src", "./src") share one snapshot instead of memoising duplicates. A key longer than 128 bytes is not memoised; the snapshot is still returned.
 
 | Parameter | Description |
 |-----------|-------------|

@@ -8,6 +8,8 @@ with Adacovex.Types;
 
 package Adacovex.Parsers.DO178C is
 
+   --  One high-level requirement read from HLR.md: its identifier and its
+   --  description, each with a length field.
    type HLR_Info is record
       Id     : String (1 .. Types.Max_Id_Str);
       Id_Len : Natural := 0;
@@ -17,6 +19,8 @@ package Adacovex.Parsers.DO178C is
 
    package HLR_Vectors is new Ada.Containers.Vectors (Positive, HLR_Info);
 
+   --  One low-level requirement read from LLR.md: its identifier, the HLR
+   --  identifier it refines, and its description, each with a length field.
    type LLR_Info is record
       Id      : String (1 .. Types.Max_Id_Str);
       Id_Len  : Natural := 0;

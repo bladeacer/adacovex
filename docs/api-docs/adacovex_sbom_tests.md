@@ -10,6 +10,8 @@ SPDX 2.3 JSON generation.
 
 ### procedure Run (R : Adacovex.Test_Support.Runner'Class)
 
+> Run the SBOM test suite.
+
 | Parameter | Description |
 |-----------|-------------|
 | `R` | Test runner to record results on. |

@@ -12,6 +12,8 @@ command line and then finalises filesystem defaults.
 
 ### function Parse_All (Args : Adacovex.Config.Testing.Arg_Vectors.Vector) return Adacovex.Config.CLI_Config
 
+> Parse an argument vector and apply every cross-flag validation (subcommand gating, --excludes/--serve-workers/--tz rules, derived defaults). This is the testable core of Parse_CLI: the command-line reader builds the vector and delegates here, and the unit tests call it directly without touching Ada.Command_Line.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Args` | Argument strings in command-line order. |
@@ -22,12 +24,16 @@ command line and then finalises filesystem defaults.
 
 ### procedure Parse_Args (Args : Adacovex.Config.Testing.Arg_Vectors.Vector; Cfg : Adacovex.Config.CLI_Config)
 
+> Parse an argument vector into Cfg. The procedure applies each argument (--flag=value and --flag value forms) in order. Flag precedence is last-write-wins per field. --dal sets only the shared tier. --asil and --class set both the standard and the tier. --standard sets only the standard (or the "all" expansion).
+
 | Parameter | Description |
 |-----------|-------------|
 | `Args` | Argument strings in command-line order. |
-| `Cfg` | Config record to populate (fields are overwritten in |
+| `Cfg` | Config record to populate (fields are overwritten in argument order). |
 
 ### procedure Parse_Command_Line (Cfg : Adacovex.Config.CLI_Config)
+
+> Read the real Ada.Command_Line into an argument vector and delegate to Parse_Args. Kept here (non-SPARK). Parse_CLI's body stays free of access-type objects.
 
 | Parameter | Description |
 |-----------|-------------|

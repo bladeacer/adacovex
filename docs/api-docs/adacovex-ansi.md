@@ -15,6 +15,8 @@ HLR-ANSI: Terminal colour support
 
 ### function Blue (S : Standard.String) return Standard.String
 
+> Wrap S in the blue SGR sequence when colour is enabled.
+
 | Parameter | Description |
 |-----------|-------------|
 | `S` | Text to colour. |
@@ -23,6 +25,8 @@ HLR-ANSI: Terminal colour support
 
 ### function Bold (S : Standard.String) return Standard.String
 
+> Bold S when colour is enabled.
+
 | Parameter | Description |
 |-----------|-------------|
 | `S` | Text to embolden. |
@@ -30,6 +34,8 @@ HLR-ANSI: Terminal colour support
 **Returns:** S wrapped in the bold SGR sequence, or S unchanged.
 
 ### function Colour_Allowed (CI_Set : Standard.Boolean; No_Color_Set : Standard.Boolean; Term_Dumb : Standard.Boolean) return Standard.Boolean
+
+> Decide whether colour is allowed for a run from the environment signals. Colour is allowed unless a CI variable is set, NO_COLOR is set, or TERM is "dumb" (or empty). This is the pure, testable core of Init; it never touches the environment itself.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -41,6 +47,8 @@ HLR-ANSI: Terminal colour support
 
 ### function Dim (S : Standard.String) return Standard.String
 
+> Dim S when colour is enabled.
+
 | Parameter | Description |
 |-----------|-------------|
 | `S` | Text to dim. |
@@ -48,6 +56,8 @@ HLR-ANSI: Terminal colour support
 **Returns:** S wrapped in the dim SGR sequence, or S unchanged.
 
 ### function Green (S : Standard.String) return Standard.String
+
+> Wrap S in the green SGR sequence when colour is enabled.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -57,6 +67,8 @@ HLR-ANSI: Terminal colour support
 
 ### function Red (S : Standard.String) return Standard.String
 
+> Wrap S in the requested ANSI SGR sequence when colour is enabled, returning S unchanged otherwise.
+
 | Parameter | Description |
 |-----------|-------------|
 | `S` | Text to colour. |
@@ -64,6 +76,8 @@ HLR-ANSI: Terminal colour support
 **Returns:** S wrapped in the red SGR sequence, or S unchanged.
 
 ### function Yellow (S : Standard.String) return Standard.String
+
+> Wrap S in the yellow SGR sequence when colour is enabled.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -74,3 +88,5 @@ HLR-ANSI: Terminal colour support
 ## Procedures
 
 ### procedure Init
+
+> Resolve colour support once from the environment: enabled unless NO_COLOR is set, a CI variable is set, or TERM is "dumb". Idempotent.

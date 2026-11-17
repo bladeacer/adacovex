@@ -127,6 +127,7 @@ package Adacovex.Server.HTTP is
       Not_Found : Natural := 0;
    end record;
 
+   --  One response counter per route kind.
    type Route_Stats_Table is array (Route_Kind) of Route_Stats;
 
    --  A copy of the live server counters, as /api/info serves them. The
@@ -175,6 +176,8 @@ package Adacovex.Server.HTTP is
    function Strip_Query (Path : String) return String
    with SPARK_Mode => On, Global => null;
 
+   --  Everything the worker tasks need to answer a request: the assessed
+   --  metrics, the dependency graph, the theme, and the run metadata.
    type Server_State is record
       Port            : Positive := 8080;
       --  HTTP server task-pool worker count (default 4; --serve-workers=N).

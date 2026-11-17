@@ -22,6 +22,8 @@
 
 package Adacovex.VCS is
 
+   --  The version-control system that owns the target directory. Unknown
+   --  means no marker file and no command probe identified one.
    type VCS_Kind is (Unknown, Git, Mercurial, Subversion, Fossil, Jujutsu);
 
    --  The command shell a differential mode drives on the running host.

@@ -191,19 +191,6 @@ package Adacovex.Prove is
       GPR_Len    : out Natural;
       Success    : out Boolean);
 
-   --  Run gnatprove against a target project's root .gpr file.
-   --  It resolves gnatprove (see Resolve_GNATprove). It then spawns
-   --  `gnatprove -P <gpr> <options>` directly. When the deployment was not
-   --  already on PATH, it prepends the toolchain bin directory to PATH for the
-   --  child. The options (jobs, level, timeout, steps, memlimit, force,
-   --  unrolling, inlining) are forwarded to gnatprove. On success, gnatprove
-   --  writes a fresh <target>/obj/gnatprove/gnatprove.out, and both the
-   --  success marker and the summary content go into the proof result cache.
-   --  A later run over unchanged inputs short-circuits: it restores the
-   --  cached gnatprove.out (so the assessment pipeline can parse it even
-   --  when obj/gnatprove/ was wiped) and skips the prover entirely. The
-   --  command's stdout and stderr stream to the parent's terminal.
-   --  @param Target_Dir  Project root directory.
    --  Counts gathered by one quiet-mode replay pass over a captured gnatprove
    --  output file. They keep the actionable detail apart from the tool noise:
    --  Hidden is how many informational notice blocks the suppression sets
@@ -314,6 +301,19 @@ package Adacovex.Prove is
       Out_Path : String;
       Stats    : out Replay_Stats);
 
+   --  Run gnatprove against a target project's root .gpr file.
+   --  The procedure resolves gnatprove (see Resolve_GNATprove) and spawns
+   --  `gnatprove -P <gpr> <options>` directly. When the deployment is not
+   --  already on PATH, it prepends the toolchain bin directory to PATH for
+   --  the child. It forwards the options (jobs, level, timeout, steps,
+   --  memlimit, force, unrolling, inlining) to gnatprove. On success,
+   --  gnatprove writes a fresh <target>/obj/gnatprove/gnatprove.out, and
+   --  both the success marker and the summary content go into the proof
+   --  result cache. A later run over unchanged inputs short-circuits: it
+   --  restores the cached gnatprove.out (so the assessment pipeline can
+   --  parse it even when obj/gnatprove/ was wiped) and skips the prover
+   --  entirely. The command's stdout and stderr stream to the parent's
+   --  terminal.
    --  @param Target_Dir  Project root directory.
    --  @param Opts  GNATprove invocation options.
    --  @param Success  True if gnatprove ran and exited 0.

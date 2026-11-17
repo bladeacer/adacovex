@@ -6,6 +6,8 @@
 
 ### procedure Run (R : Adacovex.Test_Support.Runner'Class)
 
+> Run the GNATprove parser tests through R.
+
 | Parameter | Description |
 |-----------|-------------|
 | `R` | Native test runner the cases register on. |

@@ -35,9 +35,13 @@ HLR-SCAN: Per-file opt-out annotations
 type Gate is (Complexity_Scan, Docstrings, SPARK_Proof);
 ```
 
+> The analysis gate a top-of-file marker can disable for one file. Complexity_Scan covers the cyclomatic-complexity/LOC gate (`adacovex complexity`). Docstrings covers the docstring-coverage metrics and the --require-docstrings gate. SPARK_Proof covers the gnatprove run and the proof metrics of the `prove` subcommand.
+
 ## Functions
 
 ### function Dir_Ignored (Dir : Standard.String) return Standard.Boolean
+
+> True when Dir holds the directory-level ignore marker. The marker excludes a subtree from the source scan (docstrings, HLR tags, and the DAL assessment) and from the complexity walk. It does not stop gnatprove, which analyses the whole project: use the per-file no-covex-spark-proof marker or a proof patch for a proved unit. A missing directory reports False (never raise).
 
 | Parameter | Description |
 |-----------|-------------|
@@ -46,6 +50,8 @@ type Gate is (Complexity_Scan, Docstrings, SPARK_Proof);
 **Returns:** True when Dir contains the Directory_Marker file.
 
 ### function File_Opts_Out (Path : Standard.String; G : Adacovex.Opt_Outs.Gate) return Standard.Boolean
+
+> True when the file at Path carries an opt-out marker for the given gate in its leading comment block. Missing or unreadable files report False (never raise). The header block is the run of blank and comment lines at the top of the file; the first non-comment, non-blank line ends it, and at most 24 physical lines are examined.
 
 | Parameter | Description |
 |-----------|-------------|

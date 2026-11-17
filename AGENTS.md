@@ -618,7 +618,9 @@ space in exactly those places, so the gate and the fixer always agree.
 `docs/api-docs/` package pages + index; cross-links to the hand-written
 reference pages live in its `GUIDE_PAGES` / `PACKAGE_GUIDES` tables, **never**
 in `.ads` docstrings (gnatdoc parses comment text as RST and drops markdown
-link URLs).
+link URLs). gnatdoc emits no item description, so rst2md reads the docstring
+prose itself and **fails the run** when a rendered item has no description, an
+empty parameter row, or an empty Returns line.
 `tools/gen-docs.py` (wired as `just book` and run inside `just build`) runs
 `sphinx-build` over `docs/` (with `docs/conf.py`, the Furo theme, and the
 MyST Markdown parser) and bundles the built site -- every page,

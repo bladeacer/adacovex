@@ -122,6 +122,8 @@ Require_Proof_Set      : Boolean := False;
 end record;
 ```
 
+> Every option one run is configured with, as the parser fills it.
+
 ### type Config_Settings
 
 ```ada
@@ -142,6 +144,8 @@ Skip_Paths_Len : Natural := 0;
 end record;
 ```
 
+> The values one configuration file supplies. A key that the file does not mention keeps its "set" flag False (or its -1 / 0 sentinel), so it never overwrites a built-in default or another file. `[prove] jobs`, `level`, `timeout`, `steps`, and `memlimit` take an integer; `[prove] coverage` takes true or false; `[complexity] excludes` and `skip-path` take a comma-separated string. `[init] scaffold` takes true or false; only the global file reads it, and it turns the `init` subcommand off for every project on the machine.
+
 ### type Scaffold_Status
 
 ```ada
@@ -151,13 +155,19 @@ Scaffold_Exists,
 Scaffold_Failed);
 ```
 
+> What `adacovex init` did with the project file.
+
 ## Functions
 
 ### function Flag_List return Standard.String `[Post]` `[Global]`
 
+> All known CLI flag names, space-separated. The "did you mean" suggestion walks the same list. The shell-completion generator embeds the live flag set into the scripts it emits.
+
 **Returns:** Space-separated flag names (without leading dashes).
 
 ### function Merge_Settings (Base : Adacovex.Config.Config_Settings; Override : Adacovex.Config.Config_Settings) return Adacovex.Config.Config_Settings
+
+> Merge two settings sets key by key: every key Override supplies wins, and every key it does not supply keeps the value Base carries. Call it with the global file as Base and the project file as Override, so the project file wins over the global one while the command line still wins over the merged result.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -168,9 +178,13 @@ Scaffold_Failed);
 
 ### function Parse_CLI return Adacovex.Config.CLI_Config `[Post]`
 
+> Parse Ada.Command_Line arguments and return a fully populated config. The parser reads command-line arguments via Ada.Command_Line. Default values are used for any option not provided. It resolves relative target paths to absolute paths. It checks that the target's manifest file exists.
+
 **Returns:** Fully populated CLI_Config from parsed command-line arguments.
 
 ### function Read_Settings (Path : Standard.String) return Adacovex.Config.Config_Settings
+
+> Read one `adacovex.toml`. A missing or unreadable file returns the defaults (every key unset). An unknown key, an unknown section, a comment, and a bare `#` after a value are all ignored, so a file is safe to extend. Values may be quoted; an integer that is not an integer is ignored rather than failing the run.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -180,14 +194,20 @@ Scaffold_Failed);
 
 ### function Write_Sample_Project_File (Target_Dir : Standard.String; Force : Standard.Boolean) return Adacovex.Config.Scaffold_Status
 
+> Write the sample project configuration into Target_Dir. The sample states the default of every supported key and links to the deployed manual. An existing file is left untouched unless Force is True, so a project's own settings are never lost by accident.
+
 | Parameter | Description |
 |-----------|-------------|
-| `Force` |  |
-| `Target_Dir` |  |
+| `Force` | Overwrite an existing file. |
+| `Target_Dir` | Directory that receives adacovex.toml. |
+
+**Returns:** Created, Exists (left alone), or Failed.
 
 ## Procedures
 
 ### procedure Add_Skip_Dir (Cfg : Adacovex.Config.CLI_Config; Name : Standard.String)
+
+> Add a directory name to the comma-separated skip list. The procedure appends Name to the Skip_Dirs field. It inserts a ',' separator if the list is non-empty.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -196,6 +216,8 @@ Scaffold_Failed);
 
 ### procedure Apply_Settings (Cfg : Adacovex.Config.CLI_Config; Settings : Adacovex.Config.Config_Settings)
 
+> Apply Settings to Cfg, key by key, only where the command line left the field unset: a prove integer below zero, an empty excludes or skip-path list, and a coverage state that --coverage or --no-coverage did not choose. Apply the global file first and the project file second, so the project wins over the global file while the command line wins over both.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Cfg` | Parsed configuration to fill in. |
@@ -203,10 +225,14 @@ Scaffold_Failed);
 
 ### procedure Print_Topic_Help (Topic : Standard.String)
 
+> Print contextual help for a single flag or subcommand. The procedure matches Topic case-insensitively, with or without the leading "--" (for example "serve", "--serve", "standard", "--standard"). It prints flag-specific detail (purpose, accepted values, related flags) for known topics. It prints the full usage text for "help" itself. For anything else it prints a short "unknown topic" notice followed by the full usage.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Topic` | Flag or subcommand name to explain. |
 
 ### procedure Print_Usage
+
+> Print usage help text to standard output. The procedure displays all CLI options, default values, and usage examples.
 
 **Returns:** Print usage information to stdout.

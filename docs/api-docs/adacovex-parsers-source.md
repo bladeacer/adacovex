@@ -53,6 +53,8 @@ documented.
 
 ### function Compute_Docstring_Metrics (Packages : Adacovex.Types.Implementation.Package_Vectors.Vector) return Adacovex.Types.Docstring_Metrics `[Global]`
 
+> Compute aggregate docstring-coverage metrics from scanned packages. Tallies documented vs. undocumented subprograms, parameters, and return values across all scanned packages.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Packages` | Vector of scanned packages. |
@@ -63,12 +65,16 @@ documented.
 
 ### procedure Apply_Patches (Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector)
 
+> Apply docstring patches to scanned packages. For each package, checks for a patch file at ``<Target_Dir>/.adacovex/patches/<relative-path>`` and merges its docstring info into the original package's subprograms.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Packages` | In/out vector of scanned packages to patch. |
 | `Target_Dir` | Root directory used for patch path resolution. |
 
 ### procedure Scan_Ads_File (File_Path : Standard.String; Pkg : Adacovex.Types.Implementation.Package_Info; Success : Standard.Boolean) `[Pre]` `[Post]`
+
+> Scan a single .ads file, extracting subprogram info and HLR tags. File_Path must name a readable .ads file. On success, Pkg is populated with subprogram declarations, docstring annotations, and HLR tag entries.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -77,6 +83,8 @@ documented.
 | `Success` | True if file was successfully parsed. |
 
 ### procedure Scan_Project (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Skipped_Ct : Standard.Natural)
+
+> Recursively scan all .ads files under Target_Dir. Walk the directory tree rooted at Target_Dir. Parse every .ads file found. Skip directories whose simple name appears in Skip_List (comma-separated). Append found packages to the vector. Files whose physical lines exceed Types.Max_Line, or whose paths exceed Types.Max_Path, are reported to standard error. They are counted in Skipped_Ct. They do not produce partial results.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -87,6 +95,8 @@ documented.
 
 ### procedure Scan_Project_Cached (Target_Dir : Standard.String; Skip_List : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Skipped_Ct : Standard.Natural; Hits : Standard.Natural; Misses : Standard.Natural; Use_Cache : Standard.Boolean)
 
+> Like Scan_Project, but each .ads file is keyed in the on-disk result cache by its content hash (SHA-256). Unchanged files are served from the cache without re-scanning. Changed files are rescanned and the cache entry is refreshed. Hits/Misses report how many files were served from or written to the cache.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Hits` | Number of files served from the cache. |
@@ -95,4 +105,4 @@ documented.
 | `Skip_List` | Comma-separated directory names to skip. |
 | `Skipped_Ct` | Number of .ads files skipped (line/path overflow). |
 | `Target_Dir` | Root directory to scan recursively. |
-| `Use_Cache` | When False the cache is bypassed and every file is |
+| `Use_Cache` | When False the cache is bypassed and every file is rescanned (reported as a miss); caller controls this from --no-cache. |

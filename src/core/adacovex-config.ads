@@ -9,6 +9,7 @@ with Ada.Strings.Unbounded;
 
 package Adacovex.Config is
 
+   --  Every option one run is configured with, as the parser fills it.
    type CLI_Config is record
       Target_Path     : String (1 .. Types.Max_Path);
       Target_Len      : Natural := 0;

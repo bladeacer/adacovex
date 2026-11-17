@@ -15,6 +15,8 @@ package Adacovex.Complexity is
 
    Max_Message : constant := 256;
 
+   --  One subprogram of a scanned file: its name, its first line, and its
+   --  cyclomatic complexity and line count.
    type Subprogram_Info is record
       Name       : String (1 .. 128);
       Name_Len   : Natural := 0;
@@ -26,6 +28,8 @@ package Adacovex.Complexity is
    package Subprogram_Vectors is new
      Ada.Containers.Vectors (Positive, Subprogram_Info);
 
+   --  Metrics for one scanned file: its path, its line counts by kind, and
+   --  the subprograms it declares.
    type File_Metrics is record
       Path          : String (1 .. 4096);
       Path_Len      : Natural := 0;
@@ -42,6 +46,8 @@ package Adacovex.Complexity is
 
    package File_Vectors is new Ada.Containers.Vectors (Positive, File_Metrics);
 
+   --  One gate failure: the file and the message that states the limit it
+   --  broke.
    type Violation is record
       File_Path : String (1 .. 4096);
       File_Len  : Natural := 0;
@@ -52,6 +58,8 @@ package Adacovex.Complexity is
    package Violation_Vectors is new
      Ada.Containers.Vectors (Positive, Violation);
 
+   --  The outcome of a whole scan: the files measured and the violations
+   --  found.
    type Complexity_Result is record
       Files      : File_Vectors.Vector;
       Total_LOC  : Natural := 0;

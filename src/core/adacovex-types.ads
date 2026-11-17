@@ -48,17 +48,31 @@ package Adacovex.Types is
    Max_Desc_Str : constant := 128;
    Max_Filename : constant := 128;
 
+   --  Bounded description text. A copy stores the leading Max_Desc_Str
+   --  bytes and clamps the rest, with its length kept beside it.
    subtype Desc_Field is String (1 .. Max_Desc_Str);
+
+   --  Bounded file or crate name. A copy clamps at Max_Filename and records
+   --  its length in a companion field.
    subtype Name_Field is String (1 .. Max_Filename);
+
+   --  Bounded filesystem path. A copy clamps at Max_Path and records its
+   --  length in a companion field.
    subtype Path_Field is String (1 .. Max_Path);
 
+   --  One HLR traceability tag found in a source file, with the length of
+   --  its text.
    type HLR_Tag_Entry is record
       Tag : String (1 .. Max_Id_Str);
       Len : Natural := 0;
    end record;
 
+   --  SPARK assurance level from Stone (weakest) to Platinum (strongest).
+   --  The assessment compares it with the level a DAL requires.
    type SPARK_Level is (Stone, Bronze, Silver, Gold, Platinum);
 
+   --  DO-178C design assurance level from DAL_A (most critical) to DAL_E
+   --  (no safety effect).
    type DAL_Level is (DAL_A, DAL_B, DAL_C, DAL_D, DAL_E);
 
    --  Compliance standard target for the assessment. DO_178C covers
@@ -68,8 +82,12 @@ package Adacovex.Types is
    --  standard only re-labels the integrity levels.
    type Compliance_Standard is (DO_178C, ISO_26262, IEC_62304);
 
+   --  Outcome of a DAL assessment. Achieved means every criterion for the
+   --  target level passed. Unmet means at least one failed.
    type DAL_Status is (Achieved, Unmet);
 
+   --  Outcome of one test category: every test passed, or at least one
+   --  failed.
    type Test_Status is (Pass, Fail);
 
    --  Dashboard colour theme for --serve. System_Theme follows the
@@ -162,6 +180,8 @@ package Adacovex.Types is
       Is_System : Boolean := False;
    end record;
 
+   --  One subprogram the scanner found, with the docstring facts the
+   --  docstring-coverage metric counts.
    type Subprogram_Info is record
       Name          : Desc_Field;
       Name_Len      : Natural := 0;
@@ -187,6 +207,9 @@ package Adacovex.Types is
       Checks_Total  : Natural := 0;
    end record;
 
+   --  Totals from one GNATprove run: verified conditions, flow and
+   --  initialisation checks, runtime checks, assertions, termination, and
+   --  the level they earn.
    type Proof_Summary is record
       Total_VCs          : Natural := 0;
       Proved_VCs         : Natural := 0;
@@ -210,6 +233,7 @@ package Adacovex.Types is
       Coverage           : Proof_Coverage;
    end record;
 
+   --  Pass and fail counts for one test category.
    type Test_Metrics is record
       Category   : Desc_Field;
       Cat_Len    : Natural := 0;
@@ -217,6 +241,9 @@ package Adacovex.Types is
       Status     : Test_Status := Pass;
    end record;
 
+   --  Docstring coverage over the scanned tree: how many subprograms,
+   --  parameters, and return values carry a docstring, and the share of
+   --  them that do.
    type Docstring_Metrics is record
       Total_Subprograms   : Natural := 0;
       Documented_Subprogs : Natural := 0;
@@ -241,6 +268,8 @@ package Adacovex.Types is
       package HLR_Tag_Vectors is new
         Ada.Containers.Vectors (Positive, HLR_Tag_Entry);
 
+      --  One scanned Ada package: its name and path, the subprograms it
+      --  declares, and the HLR tags its files mention.
       type Package_Info is record
          Name        : Name_Field;
          Name_Len    : Natural := 0;
@@ -264,6 +293,8 @@ package Adacovex.Types is
       package Test_Metrics_Vectors is new
         Ada.Containers.Vectors (Positive, Test_Metrics);
 
+      --  Every test category with its pass and fail counts, and the totals
+      --  over all categories.
       type Test_Summary is record
          Categories   : Test_Metrics_Vectors.Vector;
          Total_Passed : Natural := 0;
@@ -273,6 +304,8 @@ package Adacovex.Types is
       package DAL_Failure_Vectors is new
         Ada.Containers.Vectors (Positive, Desc_Field);
 
+      --  The compliance verdict for one standard and one target level, with
+      --  the evidence that produced it and the reasons any criterion failed.
       type DAL_Assessment is record
          Target_DAL             : DAL_Level := DAL_C;
          Standard               : Compliance_Standard := DO_178C;
@@ -288,6 +321,8 @@ package Adacovex.Types is
          Failed_Reasons         : DAL_Failure_Vectors.Vector;
       end record;
 
+      --  The values the SVG badges render: the SPARK level, the test
+      --  summary, the compliance assessment, and which badges to emit.
       type Badge_Config is record
          Spark_Lvl   : SPARK_Level := Stone;
          Test_Summ   : Test_Summary;

@@ -10,6 +10,8 @@ Encode X into a blob string suitable for Store.
 
 ### function Deserialize (S : Standard.String; X : Adacovex.Cache.Serialization.T) return Standard.Boolean
 
+> Decode a blob string previously produced by Serialize.
+
 | Parameter | Description |
 |-----------|-------------|
 | `S` | Blob string. |
@@ -18,6 +20,8 @@ Encode X into a blob string suitable for Store.
 **Returns:** True on success. False on malformed input.
 
 ### function Serialize (X : Adacovex.Cache.Serialization.T) return Standard.String
+
+> Encode X into a blob string suitable for Store.
 
 | Parameter | Description |
 |-----------|-------------|
