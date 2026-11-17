@@ -7,8 +7,13 @@ and the changelog records the outcome.
 
 The register is the source of truth for **open** debt. A release that adds
 debt adds a row in the same change, so a later reader sees the cost before
-the next release is planned. Item 8c closes or explicitly accepts every row
-in v1.72.0.
+the next release is planned.
+
+Item 8c closed or accepted every open row in v1.72.0. Two rows stay Open
+because a later release owns them: D11 (cache identity) is item 18 in
+v1.74.0, and D7 (help frames) is item 19 in v1.75.0. Both carry their owning
+release in the State column, so neither is unrecorded debt. No other defect
+that v1.69.0-v1.75.0 surfaced is missing from this table.
 
 ## State
 
@@ -45,6 +50,6 @@ new entry must not propose work that breaks them.
 | D10 | CI output | Annotations were emitted outside GitHub Actions, where no reader consumes them. | An annotation prints only when `GITHUB_ACTIONS` is set, and a local run keeps the text block. | Closed (v1.69.0) |
 | D11 | Cache identity | A proof-cache key folds the caller's target string into the digest, so two working directories produce two keys for one project. | The key uses the resolved absolute path, and per-unit entries miss only a changed unit and its dependents. | Open (v1.74.0, item 18) |
 | D12 | Pipeline | The warm `just check` took 453 s on 2026-11-14, against a 60 s budget, and the per-gate table names the costly gates. | A warm run finishes under a minute with no gate weakened and no check dropped, and the table records it. | Closed (v1.72.0, item 15c): the warm run passes all 32 gates in 38.77 s. The metric-sync scans prune build trees, `fmt` and gnatdoc skip unchanged inputs, and the independent gates run in one parallel phase. The complete table is on [the check pipeline page](perf/check-pipeline.md). |
-| D13 | Docstrings | A few packages changed by recent items still carry a thin or missing docstring. | `just doc` emits no empty description, parameter, or return, and docstring coverage stays 100%. | Open (v1.72.0, item 9) |
+| D13 | Docstrings | gnatdoc left every subprogram description out of its RST directives, and about forty public types carried no docstring at all, so the API reference named items without describing them. | `just doc` emits no empty description, parameter, or return, and docstring coverage stays 100%. | Closed (v1.72.0, item 9): `tools/rst2md.py` renders the docstring prose as the item description and fails the run on an incomplete item, the two parser defects that dropped annotation blocks are fixed, and every public type carries a one-line description. |
 | D14 | SBOM accuracy | The scanner recognises only a curated tool list, so a project's real build tool that is absent from that list (for example `meson`) never appears. | The list covers the build tools of the fixture projects, or the page states the closed list as accepted. | Closed (v1.71.0, item 8b): `meson` joined the table, every build tool the fixture projects name is covered, and the page states the closed list as accepted. |
 | D15 | SBOM output | A licence the manifest states as an SPDX **expression** (`Apache-2.0 OR MIT`, `MIT + file LICENSE`, `Apache-2.0 WITH LLVM-exception`) is written into CycloneDX `license.id`, which permits only a single licence id. The document is then invalid where the project uses an expression. | An expression is emitted as `license.expression` (or as `name`), a single id stays `id`, and a test pins both shapes. | Closed (v1.71.0, item 6b): `Is_SPDX_Id` sends an expression to `license.expression`, and the SBOM suite pins an id, an `OR` expression, and a `WITH` expression. |
