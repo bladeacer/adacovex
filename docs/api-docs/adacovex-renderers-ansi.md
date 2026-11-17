@@ -12,6 +12,8 @@ HLR-RENDER-ANSI: ANSI rendering
 
 ### procedure Render_Summary (Doc_Metrics : Adacovex.Types.Docstring_Metrics; Proof : Adacovex.Types.Proof_Summary; Tests : Adacovex.Types.Implementation.Test_Summary; DAL_Assess : Adacovex.Types.Implementation.DAL_Assessment; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Use_Color : Standard.Boolean; All_Standards : Standard.Boolean; Cache_Hits : Standard.Natural; Cache_Misses : Standard.Natural; Cache_Evictions : Standard.Natural)
 
+> Print a formatted report to standard output. Displays a colour-coded summary of docstring coverage, proof results, test results, and compliance using ANSI escape sequences. The compliance line is standard-aware, or prints one line per standard when All_Standards is True. Set Use_Color to False to suppress ANSI codes. For example, do this for redirected output or the NO_COLOR environment variable.
+
 | Parameter | Description |
 |-----------|-------------|
 | `All_Standards` | Print every standard (else the selected one). |

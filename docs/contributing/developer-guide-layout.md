@@ -61,6 +61,8 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 
 `just doc` regenerates `docs/api-docs/` from the `.ads` docstrings via gnatdoc + `tools/rst2md.py`. It produces one page per package plus `index.md`. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level pages.
 
+gnatdoc does not copy a subprogram or type description into its RST directives, so `tools/rst2md.py` reads the prose of each `.ads` docstring itself and renders it as the item description. The tool fails the run when a rendered item has no description, an empty parameter row, or an empty Returns line. A new public type or subprogram therefore needs a one-line description in its docstring, or `just doc` reports it and exits non-zero.
+
 Cross-links between the generated package pages and the reference pages live in `tools/rst2md.py`. `GUIDE_PAGES` builds the index's "Guides" section. `PACKAGE_GUIDES` builds the per-package "See also" lines. They do **not** live in the `.ads` comments: gnatdoc parses comment text as RST and drops markdown link URLs. To add a package cross-link, extend `PACKAGE_GUIDES` in `tools/rst2md.py`. Then run `just doc` and `just link-check`.
 
 ### Offline manual and Read the Docs

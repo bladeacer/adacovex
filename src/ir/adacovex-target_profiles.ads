@@ -13,16 +13,26 @@ package Adacovex.Target_Profiles is
 
    --  Signed two's-complement fixed-width integer types. Each carries an
    --  explicit Size. IR values map one-to-one onto target machine types.
+   --  Signed 8-bit integer, lowered from int8_t and similar names.
    type IR_Int8 is range -2**7 .. 2**7 - 1 with Size => 8;
+   --  Signed 16-bit integer, lowered from int16_t and similar names.
    type IR_Int16 is range -2**15 .. 2**15 - 1 with Size => 16;
+   --  Signed 32-bit integer, lowered from int32_t and similar names.
    type IR_Int32 is range -2**31 .. 2**31 - 1 with Size => 32;
+   --  Signed 64-bit integer, lowered from int64_t and similar names.
    type IR_Int64 is range -2**63 .. 2**63 - 1 with Size => 64;
 
    --  Unsigned fixed-width integer types. Modular (wrapping) semantics
    --  match C/C++ unsigned behaviour. Arithmetic cannot raise overflow.
+   --  Unsigned 8-bit integer, lowered from uint8_t and similar names.
    type IR_UInt8 is mod 2**8;
+   --  Unsigned 16-bit integer, lowered from uint16_t and similar names.
    type IR_UInt16 is mod 2**16;
+   --  Unsigned 32-bit integer, lowered from uint32_t, size_t, and similar
+   --  names.
    type IR_UInt32 is mod 2**32;
+   --  Unsigned 64-bit integer, lowered from uint64_t, usize, and similar
+   --  names.
    type IR_UInt64 is mod 2**64;
 
    --  A machine word size, in bits.

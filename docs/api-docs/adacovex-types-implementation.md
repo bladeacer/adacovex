@@ -24,6 +24,8 @@ Show_DO178C : Boolean := True;
 end record;
 ```
 
+> The values the SVG badges render: the SPARK level, the test summary, the compliance assessment, and which badges to emit.
+
 ### type Component_Info
 
 ```ada
@@ -52,6 +54,8 @@ Scope_Flags     : Dependency_Scope_Flags;
 end record;
 ```
 
+> A single component of a software bill of materials (SBOM). The root project occupies index 1. Dependency components reference their parent by vector index (0 = direct dependency of the root).
+
 ### type DAL_Assessment
 
 ```ada
@@ -71,6 +75,8 @@ Failed_Reasons         : DAL_Failure_Vectors.Vector;
 end record;
 ```
 
+> The compliance verdict for one standard and one target level, with the evidence that produced it and the reasons any criterion failed.
+
 ### type Package_Info
 
 ```ada
@@ -84,6 +90,8 @@ HLR_Tags    : HLR_Tag_Vectors.Vector;
 Docstrings_Opt_Out : Boolean := False;
 end record;
 ```
+
+> One scanned Ada package: its name and path, the subprograms it declares, and the HLR tags its files mention.
 
 ### type Spark_Coverage_Group
 
@@ -107,6 +115,8 @@ Unit_Ct           : Natural := 0;
 end record;
 ```
 
+> SPARK coverage rolled up over a group of units (one file, one folder, or one Ada package). Every count is a sum, so a group percentage is always a ratio of sums and never a mean of its children.
+
 ### type Spark_Coverage_Totals
 
 ```ada
@@ -126,6 +136,8 @@ Not_Covered_Subs  : Natural := 0;
 Unit_Ct           : Natural := 0;
 end record;
 ```
+
+> The whole-tree rollup: the group with the empty key.
 
 ### type Spark_Coverage_Unit
 
@@ -154,6 +166,8 @@ In_Proof_Run      : Boolean := False;
 end record;
 ```
 
+> SPARK coverage of one Ada source unit (one package, keyed by the base name of its source files). Three metrics are recorded per unit, each with its own numerator and denominator: Stmts_Total / Stmts_Proved   statement coverage (executable statements in the unit's body) Subs_Total / Subs_Proved     subprogram coverage (subprograms gnatprove considered in the unit) Checks_Total / Checks_Proved VC coverage (checks the prover reported, passed or not) A unit gnatprove never reported on holds the zero values, so the Not_Covered count is always derived (see Adacovex.Spark_Coverage) and never a stored total that can drift from its parts.
+
 ### type Spark_Entity_Rec
 
 ```ada
@@ -163,6 +177,8 @@ Name_Len : Natural := 0;
 Class    : Spark_Off_Class := Off_None;
 end record;
 ```
+
+> One named SPARK entity as gnatprove reports it: the qualified Ada name, and (for a skipped entity) the off class this report derived for it. A proved entity is recorded with Off_None.
 
 ### type Spark_Skip_Rec
 
@@ -176,6 +192,8 @@ Line     : Natural := 0;
 end record;
 ```
 
+> One skipped entity as gnatprove reports it: its qualified Ada name, the source file that declares it, and the line the declaration starts on. The line is the entity's first line, so consecutive skip lines in the same file bound the source range that belongs to each unproved subprogram.
+
 ### type Test_Summary
 
 ```ada
@@ -185,3 +203,5 @@ Total_Passed : Natural := 0;
 Total_Failed : Natural := 0;
 end record;
 ```
+
+> Every test category with its pass and fail counts, and the totals over all categories.

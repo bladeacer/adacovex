@@ -31,13 +31,19 @@ refreshes with ``mandb`` (man-db) and falls back to ``makewhatis`` (mandoc).
 type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 ```
 
+> The indexer that refreshed the man database.
+
 ## Functions
 
 ### function Default_Dir return Standard.String
 
+> Default local man root directory (the directory that contains man1/). A home-owned `MANPATH` entry wins. Otherwise the root is the platform data home plus `man`: `$XDG_DATA_HOME/man` or `~/.local/share/man` on Linux and the BSDs, `~/Library/Application Support/man` on macOS, and `%APPDATA%\man` on Windows. A bare environment falls back to the temp directory, so the command still completes there.
+
 **Returns:** Default man root directory path.
 
 ### function Installed_Version (Man_Root : Standard.String) return Standard.String
+
+> Version embedded in the installed man page, or "" when no page is installed under Man_Root/man1/adacovex.1 or its version cannot be parsed. Used by `adacovex man --check` to detect that the machine has a newer version available than the installed page.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -46,6 +52,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 **Returns:** Installed page version (for example "1.10.0") or "".
 
 ### function Manpath_Contains (Manpath_Text : Standard.String; Man_Root : Standard.String) return Standard.Boolean
+
+> Whether a path list names Man_Root. The list is split on the host path separator (`:` on POSIX, `;` on Windows) and on newlines, and trailing separators are ignored on both sides. An empty list never matches.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -56,6 +64,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 
 ### function Manpath_User_Entry (Manpath_Text : Standard.String; Home : Standard.String) return Standard.String
 
+> The first home-owned entry in a man path list. A home-owned entry is the first entry that lies under Home, so an installer can prefer a directory the user can write to over the system man roots.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Home` | User home directory. |
@@ -65,6 +75,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 
 ### function Render_Page (Version : Standard.String) return Standard.String
 
+> Render the full roff man page for the given version. The page carries Version in the .TH header line and in the VERSION section. Installed_Version can recover it from an installed file.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Version` | adacovex version (for example "1.10.0"). |
@@ -72,6 +84,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 **Returns:** Complete man-page source (roff format).
 
 ### function Root_On_Manpath (Man_Root : Standard.String) return Standard.Boolean
+
+> Whether Man_Root is on the man path the reader will search. The program reads `$MANPATH`, otherwise runs `manpath` to ask the reader itself. When neither answers (for example on Windows without a man reader) it reports True, so the installer never prints advice it cannot verify.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -81,6 +95,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 
 ### function Update_Database (Man_Root : Standard.String) return Standard.Boolean
 
+> Refresh the local man database, without reporting the indexer. Kept for callers that only need the boolean outcome.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Man_Root` | Man root directory to index. |
@@ -88,6 +104,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 **Returns:** True when the man database was refreshed.
 
 ### function Update_Database (Man_Root : Standard.String; Tool : Adacovex.Renderers.Man.Database_Tool) return Standard.Boolean
+
+> Refresh the local man database for Man_Root. Runs `mandb Man_Root` when man-db is on PATH. When mandb is absent or fails, it runs `makewhatis Man_Root` (the mandoc indexer used on the BSDs and macOS). It reports which tool ran through Tool. It returns True when one of them exited 0, and False when neither is installed or both failed. Never raises. A missing indexer does not fail the man command: the page is still installed and readable via `man -l`.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -99,6 +117,8 @@ type Database_Tool is (No_Tool, Man_DB, Makewhatis);
 ## Procedures
 
 ### procedure Install (Man_Root : Standard.String; Version : Standard.String; Success : Standard.Boolean)
+
+> Install the man page for Version under Man_Root/man1/adacovex.1. Creates the man1 directory if needed and (re)writes the page. Running `adacovex man` after an upgrade then refreshes the local man page automatically. Never raises. Failures are reported via Success.
 
 | Parameter | Description |
 |-----------|-------------|

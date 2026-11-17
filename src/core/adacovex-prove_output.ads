@@ -56,6 +56,7 @@ package Adacovex.Prove_Output is
       Call_Sites     : Natural := 1;
    end record;
 
+   --  The fixed finding array one diagnostics pass fills, in stream order.
    type Failure_Array is array (1 .. Max_Failure_Items) of Prove_Failure;
 
    --  Counts gathered by one diagnostics pass over a captured gnatprove

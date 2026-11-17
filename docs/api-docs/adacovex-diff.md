@@ -38,6 +38,8 @@ Skipped      : Natural := 0;
 end record;
 ```
 
+> Compact snapshot of one full assessment run. It aggregates the metrics needed to compare a base ref against the current working tree. Has_Proof and Has_Tests show whether GNATprove output and test results were available for the target. They are build artifacts that can be absent from a freshly checked out base.
+
 ### type Coverage_Result
 
 ```ada
@@ -49,28 +51,36 @@ Skipped    : Natural := 0;
 end record;
 ```
 
+> Docstring-coverage snapshot for one target directory. The lightweight --coverage-delta gate uses it. Only source scanning, patch application, and docstring metrics are computed. No GNATprove, test results, or DAL assessment are computed. The snapshot works on a base ref that lacks committed build artifacts.
+
 ## Functions
 
 ### function Assess (Target_Dir : Standard.String; DAL_Target : Adacovex.Types.DAL_Level; Use_Cache : Standard.Boolean) return Adacovex.Diff.Assessment_Result
+
+> Run the full assessment pipeline against a target directory. It scans .ads sources. It parses GNATprove output and test results. It assesses DO-178C DAL compliance. Missing proof or test artifacts are reported through Has_Proof and Has_Tests set to False, not as an error.
 
 | Parameter | Description |
 |-----------|-------------|
 | `DAL_Target` | DAL level to assess against. |
 | `Target_Dir` | Project root directory to assess. |
-| `Use_Cache` | When True the .ads scan and the HLR.md/LLR.md |
+| `Use_Cache` | When True the .ads scan and the HLR.md/LLR.md parses are served from the on-disk result cache when unchanged. When False everything is recomputed (--no-cache). |
 
 **Returns:** Aggregate metrics for the target directory.
 
 ### function Assess_Coverage (Target_Dir : Standard.String; Use_Cache : Standard.Boolean) return Adacovex.Diff.Coverage_Result
 
+> Compute the docstring-coverage snapshot for a target directory. It runs source scanning, patch application, and docstring metrics only.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Project root directory. |
-| `Use_Cache` | When True the .ads scan comes from the on-disk result |
+| `Use_Cache` | When True the .ads scan comes from the on-disk result cache if unchanged. When False, the scan is recomputed. |
 
 **Returns:** Coverage snapshot (documented/total/percentage).
 
 ### function Is_Repo (Target_Dir : Standard.String) return Standard.Boolean
+
+> Check that a directory is managed by a supported VCS (git, mercurial, subversion, fossil, or jj). It uses marker-file detection with a command-tool probe fallback. See Adacovex.VCS.Detect.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -80,6 +90,8 @@ end record;
 
 ### function Repo_Kind_Name (Target_Dir : Standard.String) return Standard.String
 
+> Human-readable name of the VCS managing Target_Dir ("git", "mercurial", "subversion", "fossil", "jj", or "" when unknown).
+
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Directory to check. |
@@ -87,6 +99,8 @@ end record;
 **Returns:** Lowercase VCS name ("" when none is detected).
 
 ### function Report_Coverage_Delta (Base : Adacovex.Diff.Coverage_Result; Cur : Adacovex.Diff.Coverage_Result; Base_Ref : Standard.String; Use_Color : Standard.Boolean) return Standard.Boolean
+
+> Print a compact docstring-coverage delta report for a PR-style gate. A regression is reported when the current docstring coverage percentage is lower than the base. If the base tree has no sources, no regression is reported because there is nothing to compare against.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -99,6 +113,8 @@ end record;
 
 ### function Report_Delta (Base : Adacovex.Diff.Assessment_Result; Cur : Adacovex.Diff.Assessment_Result; Base_Ref : Standard.String; Use_Color : Standard.Boolean) return Standard.Boolean
 
+> Print a side-by-side delta report of the two assessments. It also reports whether the current state regressed versus the base. A regression is when docstring coverage dropped. It is also when HLR traceability was lost or orphan tags were introduced. When both states have comparable data, a regression is also when proved VCs decreased, test failures increased, or the DAL status went from Achieved to Unmet.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Base` | Assessment of the base ref. |
@@ -110,6 +126,8 @@ end record;
 
 ### function UX_Note (Target_Dir : Standard.String) return Standard.String
 
+> UX guidance for the VCS managing Target_Dir. It returns "" for a fully supported VCS. For a legacy VCS with poor snapshot UX (subversion, fossil) it returns a note that recommends conversion to git or a git-compatible VCS.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Directory to check. |
@@ -120,6 +138,8 @@ end record;
 
 ### procedure Make_Worktree (Target_Dir : Standard.String; Base_Ref : Standard.String; Tmp_Path : Standard.String; Tmp_Len : Standard.Natural; Success : Standard.Boolean)
 
+> Snapshot Base_Ref of the target repository into a temporary directory (Tmp_Path, /tmp/adacovex-diff-<pid>) without touching the working tree. It dispatches per VCS: * git:     worktree add * hg:      archive * svn:     export * fossil:  open on a copied DB * jj:      a git worktree against its store
+
 | Parameter | Description |
 |-----------|-------------|
 | `Base_Ref` | Branch/commit/rev/tag to check out. |
@@ -129,6 +149,8 @@ end record;
 | `Tmp_Path` | Output buffer receiving the snapshot path. |
 
 ### procedure Remove_Worktree (Target_Dir : Standard.String; Tmp_Path : Standard.String)
+
+> Remove a snapshot created by Make_Worktree. It deregisters VCS worktrees (git/jj) and deletes the directory. It is best effort. Failures are ignored, for example a path that was never registered.
 
 | Parameter | Description |
 |-----------|-------------|

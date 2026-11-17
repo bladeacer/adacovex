@@ -22,6 +22,8 @@ re-parsed (--no-cache).
 
 ### function Is_DAL_Achieved (Assessment : Adacovex.Types.Implementation.DAL_Assessment) return Standard.Boolean `[Global]`
 
+> Convenience test: if Assessment.Status = Achieved, return True. Equivalent to Assessment.Status = DAL_Status'Val (0).
+
 | Parameter | Description |
 |-----------|-------------|
 | `Assessment` | DAL assessment record. |
@@ -30,6 +32,8 @@ re-parsed (--no-cache).
 
 ### function Min_SPARK_For (Level : Adacovex.Types.DAL_Level) return Adacovex.Types.SPARK_Level `[Post]` `[Global]` `[SPARK]`
 
+> Minimum SPARK proof level required for a target DAL level. DAL-A needs Gold, DAL-B Silver, DAL-C Bronze, and DAL-D/DAL-E Stone.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Level` | Target DAL level (A-E). |
@@ -37,6 +41,8 @@ re-parsed (--no-cache).
 **Returns:** The minimum SPARK level that satisfies the criteria of the level.
 
 ### function Need_Tests (Level : Adacovex.Types.DAL_Level) return Standard.Boolean `[Post]` `[Global]` `[SPARK]`
+
+> Returns True when the DAL level requires a passing test suite. Only DAL-E does not need the test criterion.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -48,6 +54,8 @@ re-parsed (--no-cache).
 
 ### procedure Assess_DAL (Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment; Use_Cache : Standard.Boolean)
 
+> Run DAL compliance assessment for any DAL level (A-E). Evaluates HLR trace coverage, orphan tag absence, test pass rate, and minimum SPARK proof level (per-level criteria). The routine populates Assessment with pass/fail results and detailed failure reasons.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Assessment` | Output DAL assessment record. |
@@ -56,9 +64,11 @@ re-parsed (--no-cache).
 | `Proof_Summary` | GNATprove proof results. |
 | `Target_Dir` | Project root directory. |
 | `Test_Summary` | Test run results. |
-| `Use_Cache` | When True the HLR.md/LLR.md parses are served from |
+| `Use_Cache` | When True the HLR.md/LLR.md parses are served from the on-disk result cache when unchanged; when False they are always re-parsed (--no-cache). |
 
 ### procedure Assess_Standard (Standard : Adacovex.Types.Compliance_Standard; Level : Adacovex.Types.DAL_Level; Target_Dir : Standard.String; Packages : Adacovex.Types.Implementation.Package_Vectors.Vector; Proof_Summary : Adacovex.Types.Proof_Summary; Test_Summary : Adacovex.Types.Implementation.Test_Summary; Assessment : Adacovex.Types.Implementation.DAL_Assessment; Use_Cache : Standard.Boolean)
+
+> Run a standard-aware assessment. The routine delegates to Assess_DAL. The evidence checks are identical across DO-178C, ISO 26262, and IEC 62304. It then records the standard of the level label. Renderers can then print "ASIL B" or "Class A" instead of "DAL C".
 
 | Parameter | Description |
 |-----------|-------------|
@@ -69,4 +79,4 @@ re-parsed (--no-cache).
 | `Standard` | Compliance standard (DO_178C, ISO_26262, IEC_62304). |
 | `Target_Dir` | Project root directory. |
 | `Test_Summary` | Test run results. |
-| `Use_Cache` | When True the HLR.md/LLR.md parses are served from |
+| `Use_Cache` | When True the HLR.md/LLR.md parses are served from the on-disk result cache when unchanged (see Assess_DAL). |

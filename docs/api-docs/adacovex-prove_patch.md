@@ -39,6 +39,8 @@ HLR-PROVE: GNATprove runner and proof patches
 
 ### function Count_Proof_Patches (Target_Dir : Standard.String) return Standard.Natural
 
+> Count the patch files under <target>/.adacovex/patches/ that carry proof aspects (see Has_Proof). A target with no proof patches is proved against its own tree exactly as before. The patched-copy machinery engages only when this returns > 0.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Target project root. |
@@ -47,6 +49,8 @@ HLR-PROVE: GNATprove runner and proof patches
 
 ### function Has_Proof (Text : Standard.String) return Standard.Boolean
 
+> True when the patch text carries SPARK proof aspects rather than docstrings only. The aspects are any of the SPARK_Mode aspect, or a Pre, Post, or Global contract on a declaration. It is used to decide whether a patch file participates in the proof overlay.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Text` | Patch file contents. |
@@ -54,6 +58,8 @@ HLR-PROVE: GNATprove runner and proof patches
 **Returns:** True when the patch carries proof aspects.
 
 ### function Patches_Hash (Target_Dir : Standard.String) return Standard.String
+
+> SHA-256 fold of every file under <target>/.adacovex/patches/. It is folded into the prove result-cache key (Compute_Prove_Input_Hash) so a patch change re-proves instead of serving a stale proof.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -65,15 +71,19 @@ HLR-PROVE: GNATprove runner and proof patches
 
 ### procedure Apply (Original : Standard.String; Patch : Standard.String; Merged : Standard.String; Merged_Len : Standard.Natural; OK : Standard.Boolean)
 
+> Merge the SPARK aspects from a proof patch into a copy of the original vendored source (a spec or a body). The patched source is Original. Every subprogram declaration that the patch re-declares with aspects is replaced by the patch's declaration block. The package declaration is given the patch's package-level aspect when the patch carries one. Subprograms that the patch does not re-declare with aspects stay untouched. On success, OK is True and Merged (1 .. Merged_Len) is the patched source. On failure, OK is False and the result is undefined. Failure is when a patched subprogram has no match in the original, or the merged source is larger than the buffer. The caller then skips the patch and reports.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Merged` | Buffer receiving the patched source. |
 | `Merged_Len` | Length of the patched source (0 on failure). |
 | `OK` | True when the merge succeeded. |
 | `Original` | Original vendored source text. |
-| `Patch` | Patch text (valid Ada .ads with docstrings and/or |
+| `Patch` | Patch text (valid Ada .ads with docstrings and/or SPARK aspects. A body patch mirrors the .adb declarations with stub bodies that are ignored). |
 
 ### procedure Build_Patched_Copy (Target_Dir : Standard.String; Root_GPR : Standard.String; Copy_Dir : Standard.String; Copy_Len : Standard.Natural; Copy_GPR : Standard.String; GPR_Len : Standard.Natural; Success : Standard.Boolean)
+
+> Build the patched proof tree for a target with proof patches. It copies the target tree (excluding .git, obj, and .adacovex) into <target>/obj/adacovex-proof/. It then overwrites each proof-patched spec and body with its merged form. GNATprove then runs against a faithful replica whose vendored sources carry the patch contracts. The root project file of the copy is returned in Copy_GPR. Run_Prove passes it to gnatprove and copies the resulting gnatprove.out back to <target>/obj/gnatprove/gnatprove.out. The copy lives under the target's obj/ so it is excluded from scanning, manifest graphs, and the prove input hash. Patches are hashed separately.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -82,5 +92,5 @@ HLR-PROVE: GNATprove runner and proof patches
 | `Copy_Len` | Length of Copy_Dir. |
 | `GPR_Len` | Length of Copy_GPR. |
 | `Root_GPR` | Absolute path of the root project file. |
-| `Success` | True when the tree was built (a merge failure |
+| `Success` | True when the tree was built (a merge failure reports to standard error and skips that patch). |
 | `Target_Dir` | Target project root. |

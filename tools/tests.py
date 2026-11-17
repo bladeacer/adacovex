@@ -179,6 +179,107 @@ class TestRst2Md(unittest.TestCase):
             self.assertEqual(annotations["Name_Of:L"]["params"]["L"],
                              "Level to name.")
 
+    def test_docstring_prose_becomes_the_description(self) -> None:
+        #  gnatdoc leaves the item description out of its RST directives,
+        #  so the prose of the .ads docstring supplies it.
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp, "adacovex-probe.ads")
+            spec.write_text(
+                "package Adacovex_Probe is\n"
+                "\n"
+                "   --  Scan one file. The scan is read-only.\n"
+                "   --  HLR-SCAN: scanning\n"
+                "   --  @param File_Path  Path to the file.\n"
+                "   --  @return True when the scan succeeded.\n"
+                "   function Scan (File_Path : String) return Boolean;\n"
+                "\n"
+                "end Adacovex_Probe;\n",
+                encoding="utf-8", newline="\n")
+            _, annotations, _, _ = rst2md.parse_ada_annotations(str(spec))
+            self.assertEqual(annotations["Scan:File_Path"]["desc"],
+                             "Scan one file. The scan is read-only.")
+
+    def test_wrapped_annotation_stays_with_its_parameter(self) -> None:
+        #  An @param description may wrap onto the next comment line. The
+        #  continuation belongs to the parameter, never to the description.
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp, "adacovex-probe.ads")
+            spec.write_text(
+                "package Adacovex_Probe is\n"
+                "\n"
+                "   --  Run the prover.\n"
+                "   --  @param Pin  Version pin (\"\" = none. The\n"
+                "   --  manifest pin is still preferred).\n"
+                "   procedure Run (Pin : String);\n"
+                "\n"
+                "end Adacovex_Probe;\n",
+                encoding="utf-8", newline="\n")
+            _, annotations, _, _ = rst2md.parse_ada_annotations(str(spec))
+            self.assertEqual(annotations["Run:Pin"]["desc"], "Run the prover.")
+            self.assertEqual(annotations["Run:Pin"]["params"]["Pin"],
+                             'Version pin ("" = none. The manifest pin is '
+                             'still preferred).')
+
+    def test_enumeration_comment_on_last_alternative_closes_the_body(
+            self) -> None:
+        #  The last alternative of a multi-line enumeration may carry a
+        #  trailing comment; the type still ends at its `;`, so the type
+        #  block must not swallow the subprogram that follows it.
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = Path(tmp, "adacovex-probe.ads")
+            spec.write_text(
+                "package Adacovex_Probe is\n"
+                "\n"
+                "   type Status is\n"
+                "     (Created,  --  the file was written\n"
+                "      Failed);  --  the file could not be written\n"
+                "\n"
+                "   --  Write the file.\n"
+                "   --  @param Force  Overwrite an existing file.\n"
+                "   procedure Write (Force : Boolean);\n"
+                "\n"
+                "end Adacovex_Probe;\n",
+                encoding="utf-8", newline="\n")
+            _, annotations, _, _ = rst2md.parse_ada_annotations(str(spec))
+            self.assertIn("Write:Force", annotations)
+            self.assertEqual(annotations["Write:Force"]["params"]["Force"],
+                             "Overwrite an existing file.")
+
+    def test_incomplete_items_names_each_gap(self) -> None:
+        page = (
+            "### function Name_Of (L : Level) return String\n"
+            "\n"
+            "| Parameter | Description |\n"
+            "|-----------|-------------|\n"
+            "| `L` |  |\n"
+            "\n"
+            "**Returns:** Level name.\n"
+            "\n"
+            "### type Level\n"
+            "\n"
+            "```ada\ntype Level is (Stone, Gold);\n```\n"
+        )
+        problems = rst2md.incomplete_items(page)
+        self.assertEqual(len(problems), 3)
+        self.assertIn("function Name_Of (L : Level) return String has no "
+                      "description", problems[0])
+        self.assertIn("empty parameter description", problems[1])
+        self.assertIn("type Level has no description", problems[2])
+
+    def test_complete_item_passes(self) -> None:
+        page = (
+            "### function Name_Of (L : Level) return String\n"
+            "\n"
+            "> Name one level.\n"
+            "\n"
+            "| Parameter | Description |\n"
+            "|-----------|-------------|\n"
+            "| `L` | Level to name. |\n"
+            "\n"
+            "**Returns:** Level name.\n"
+        )
+        self.assertEqual(rst2md.incomplete_items(page), [])
+
     def test_header_example_tags_do_not_leak(self) -> None:
         #  A docstring example in the file header is prose, not the
         #  annotation block of the first subprogram.

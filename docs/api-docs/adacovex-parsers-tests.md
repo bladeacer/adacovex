@@ -21,6 +21,8 @@ Unity               "N Tests M Failures [K Ignored]"
 
 ### function Find_Test_Result (Target_Dir : Standard.String) return Standard.String `[Pre]`
 
+> Return the path of the first existing conventional test-result file under Target_Dir, or "" if none is present.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Target_Dir` | Root directory to inspect. |
@@ -29,16 +31,20 @@ Unity               "N Tests M Failures [K Ignored]"
 
 ### function Starts_With (S : Standard.String; Pre : Standard.String) return Standard.Boolean `[Global]`
 
+> Whether S starts with the exact character sequence Pre.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Pre` | Required prefix. |
 | `S` | Candidate string. |
 
-**Returns:** True when S'Length >= Pre'Length and the first Pre'Length
+**Returns:** True when S'Length >= Pre'Length and the first Pre'Length characters of S equal Pre.
 
 ## Procedures
 
 ### procedure Parse_Test_Result (File_Path : Standard.String; Summary : Adacovex.Types.Implementation.Test_Summary; Success : Standard.Boolean) `[Pre]`
+
+> Parse a Markdown-format test result file for pass/fail counts. Reads category counts from a pre-formatted test summary Markdown file.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -47,6 +53,8 @@ Unity               "N Tests M Failures [K Ignored]"
 | `Summary` | Output test summary record. |
 
 ### procedure Parse_Test_Result_From_Project (Target_Dir : Standard.String; Summary : Adacovex.Types.Implementation.Test_Summary; Success : Standard.Boolean) `[Pre]`
+
+> Locate and parse the test result file for a target project. Search a conventional list of test-summary file names in the project root (and docs/). Parse the first file that exists. adacovex then accepts common report conventions beyond test_result.md.
 
 | Parameter | Description |
 |-----------|-------------|

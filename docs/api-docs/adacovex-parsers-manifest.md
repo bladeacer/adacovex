@@ -25,6 +25,8 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 
 ### function Extension_Language (Name : Standard.String) return Standard.String
 
+> Language name for a source file, derived from its extension.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Name` | File base name (for example "a.py"). |
@@ -35,15 +37,19 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 
 ### procedure Build_Dependency_Graph (Target_Dir : Standard.String; Manifest_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Success : Standard.Boolean; Use_Cache : Standard.Boolean) `[Pre]`
 
+> Build the dependency graph for a project rooted at Target_Dir. Read alire.toml / alire-dev.toml (root metadata), alire.lock (solved dependencies), and the root .gpr file (project name and with clauses). The root component is stored at index 1. Dependency components reference their parent via the Parent field.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Graph` | Output dependency graph (index 1 = root project). |
 | `Manifest_Path` | Path to the Alire manifest (alire.toml or dev). |
-| `Success` | True if the manifest was readable and the root |
+| `Success` | True if the manifest was readable and the root component was resolved. |
 | `Target_Dir` | Project root directory. |
-| `Use_Cache` | When True the resolved graph is keyed in the on-disk |
+| `Use_Cache` | When True the resolved graph is keyed in the on-disk result cache by the combined content hash of the manifests, the lockfile, and every .gpr file, so an unchanged dependency set is served without re-parsing; when False it is always rebuilt. |
 
 ### procedure Discover_System_Dev_Deps (Target_Dir : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector)
+
+> Discover system-tool dev dependencies referenced by the project. Scan the project's dev-facing files: Makefile variants, build manifests, shell scripts, CI workflows, GNAT project files, and TOML files. Source files and prose are never scanned, and neither is a generated build tree, because a Meson or CMake tree records the developer's environment and PATH. Look for a curated set of known system binaries. Append every tool that the files reference and that is actually installed on PATH to the graph. Append it as a dev-scope dependency of the root. Tools referenced nowhere in the project, or referenced but not installed, are not registered. The SBOM lists only system tools that the project really interacts with and that are actually present. Probe each registered tool's version by running "<Tool> --version" (or the tool-specific subcommand). Extract the version token. The SBOM then carries the installed version. Tools whose probe fails report no version.
 
 | Parameter | Description |
 |-----------|-------------|

@@ -15,9 +15,11 @@ HLR-CLI: shell completion generator
 
 ### function Generate (Shell : Standard.String; Flags : Standard.String) return Standard.String `[Post]` `[Global]`
 
+> Generate a completion script for the named shell. Shell names are case-insensitive. Any name other than fish, zsh, or pwsh falls back to bash. Flags is a space-separated list of CLI option names without leading dashes, for example Config.Flag_List.
+
 | Parameter | Description |
 |-----------|-------------|
 | `Flags` | Space-separated flag names to complete on. |
 | `Shell` | Target shell: bash, fish, zsh, or pwsh. |
 
-**Returns:** The complete script text (ready to feed a shell / save to a
+**Returns:** The complete script text (ready to feed a shell / save to a completion directory).

@@ -12,6 +12,8 @@ registry-metadata stores.
 
 ### procedure Run (R : Adacovex.Test_Support.Runner'Class)
 
+> Run the cache test suite.
+
 | Parameter | Description |
 |-----------|-------------|
 | `R` | Test runner to record results on. |

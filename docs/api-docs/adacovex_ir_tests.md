@@ -11,6 +11,8 @@ arithmetic fixture (Adacovex.IR_Bounds).
 
 ### procedure Run (R : Adacovex.Test_Support.Runner'Class)
 
+> Run the IR test suite.
+
 | Parameter | Description |
 |-----------|-------------|
 | `R` | Test runner to record results on. |
