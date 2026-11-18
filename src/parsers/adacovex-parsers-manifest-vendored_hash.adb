@@ -211,7 +211,8 @@ begin
    --  Language-agnostic vendored directories anywhere in the tree (same
    --  discovery walk as Discover_Generic_Vendored, shallow). Supported-
    --  language project manifests that can own a vendored directory (for
-   --  example tests/e2e/package.json owning tests/e2e/node_modules) are
+   --  example src/tests/e2e/dashboard/package.json owning its
+   --  node_modules) are
    --  hashed so an edit to their test-labelled sections invalidates the
    --  cached graph. The manifests inside vendor roots are already
    --  covered by the Hash_Tree calls above.

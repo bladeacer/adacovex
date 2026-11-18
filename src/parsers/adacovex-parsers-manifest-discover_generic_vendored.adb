@@ -78,7 +78,8 @@ is
    --  stripped), "" when Path has no parent. A Windows path uses '\'
    --  as its separator, so both separators are accepted. The vendor walk
    --  passes full paths, so the owner of a vendor root is its containing
-   --  directory (for example tests/e2e for tests/e2e/node_modules).
+   --  directory (for example src/tests/e2e/dashboard for its
+   --  node_modules).
    --  @param Path  Directory path.
    --  @return The parent directory, or "" when none exists.
    function Parent_Dir (Path : String) return String is
@@ -125,8 +126,8 @@ is
       E2 : Directory_Entry_Type;
 
       --  Test-labelled names declared in the project manifest that owns
-      --  this vendor root (for example tests/e2e/package.json owning
-      --  tests/e2e/node_modules). Collected once per vendor root.
+      --  this vendor root (for example src/tests/e2e/dashboard/package.json
+      --  owning its node_modules). Collected once per vendor root.
       Owner_Test_Names : Name_Vectors.Vector;
 
       --  The vendor root's Go module manifest, parsed once for the whole
