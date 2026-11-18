@@ -273,7 +273,7 @@ package body Adacovex_Server_Tests is
       declare
          Payload : constant String :=
            Render_Info_JSON
-             ("/tmp/prj", "all", "1.62.0", 8080, 4, Counts, 3, 1, 42);
+             ("/opt/prj", "all", "1.62.0", 8080, 4, Counts, 3, 1, 42);
       begin
          R.Check
            (Payload'Length > 0
@@ -287,7 +287,7 @@ package body Adacovex_Server_Tests is
             "the payload carries the bundled version");
          R.Check
            (Ada.Strings.Fixed.Index
-              (Payload, J ("target") & ": " & J ("/tmp/prj"))
+              (Payload, J ("target") & ": " & J ("/opt/prj"))
             > 0,
             "the payload carries the audited target");
          R.Check
@@ -334,11 +334,11 @@ package body Adacovex_Server_Tests is
       declare
          Quoted : constant String :=
            Render_Info_JSON
-             ("/tmp/a""b", "do178c", "1.62.0", 8080, 4, Counts, 0, 0, 0);
+             ("/opt/a""b", "do178c", "1.62.0", 8080, 4, Counts, 0, 0, 0);
       begin
          R.Check
            (Ada.Strings.Fixed.Index
-              (Quoted, J ("target") & ": " & J ("/tmp/a" & '\' & '"' & "b"))
+              (Quoted, J ("target") & ": " & J ("/opt/a" & '\' & '"' & "b"))
             > 0,
             "a quote in the target path is JSON-escaped");
          R.Check

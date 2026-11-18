@@ -1,0 +1,6 @@
+name = "prove_diag_index_broken"
+version = "0.1.0"
+project-files = ["prove_diag_index_broken.gpr"]
+
+[[depends-on]]
+gnatprove = "^16.1.0"

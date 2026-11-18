@@ -1,0 +1,4 @@
+# Expected diagnostics for this contract-error fixture.
+# kind is the check the block must name; empty for a compile error.
+kind = "loop invariant"
+compile_error = false

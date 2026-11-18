@@ -1,0 +1,10 @@
+name = "fixture"
+description = "adacovex action project-config fixture"
+version = "0.1.0"
+authors = ["adacovex"]
+maintainers = ["adacovex <noreply@example.com>"]
+maintainers-logins = ["adacovex"]
+licenses = "MIT"
+
+[[depends-on]]
+gnatprove = "^16.1.0"
