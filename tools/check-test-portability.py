@@ -80,9 +80,9 @@ ALLOW: Tuple[Tuple[str, str, str], ...] = (
      "the shebang is build-script fixture text the scanner reads"),
     ("src/tests/adacovex_sbom_tests.adb", "uname",
      "the tool name is generated build-state fixture text"),
-    ("src/tests/e2e/cli/cli_flags.py", "POSIX shebang",
+    ("src/tests/e2e/cli/checks_prove.py", "POSIX shebang",
      "the fake tldr client is a shell stub; the check skips on Windows"),
-    ("src/tests/e2e/cli/cli_flags.py", "chmod",
+    ("src/tests/e2e/cli/checks_prove.py", "chmod",
      "marks the stub executable; the check skips on Windows"),
 )
 
