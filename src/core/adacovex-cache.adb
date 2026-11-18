@@ -968,13 +968,13 @@ package body Adacovex.Cache is
    Cache_Cap : Positive := 4096;
 
    --  Location of the per-tool version-probe files. Probes describe the
-   --  *machine's* toolchain (which executables exist on PATH and their
+   --  *machine's* toolkit (which executables exist on PATH and their
    --  --version output), not a particular project's scan results, so they
    --  live in a stable directory that --cache-dir changes and cache wipes
    --  do not affect: wiping the result cache must not cost re-probing
    --  every tool (each probe spawns a subprocess; node/hg/mandb boot an
    --  interpreter). A fixed probe root keeps a 7-day TTL the only reason
-   --  a known toolchain ever re-probes.
+   --  a known toolkit ever re-probes.
    function Probe_Root return String is
    begin
       return Adacovex.Paths.Cache_Root & "/probes";

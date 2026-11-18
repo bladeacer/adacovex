@@ -51,7 +51,7 @@ Y. Z` runs that exact version). Floating tags (`vMAJOR`, `vMAJOR. MINOR`, `lates
 
 - **CI platform/compiler**: CI validates the self-assessment (build, prove,
   tests) with the pinned `gnat-version` on `ubuntu-latest`, so the CI-proven
-  combination is the released binary built against that exact toolchain.
+  combination is the released binary built against that exact toolkit.
 - **Attestation**: every release bundle is attested with
   `actions/attest` (OIDC), and the release notes link the
   signed attestation.
@@ -116,11 +116,11 @@ for the foreseeable future, so the only supported path today is a system-install
 GNAT LLVM on `$PATH`:
 
 1. **GNAT LLVM (system-installed).** Install GNAT LLVM on `$PATH`, then force the
-   Ada toolchain in the root `.gpr` so `gprbuild` does not fall back to the
+   Ada toolkit in the root `.gpr` so `gprbuild` does not fall back to the
    GCC GNAT:
 
    ```gpr
-   for Toolchain_Name ("Ada") use "GNAT_LLVM";
+   for Toolkit_Name ("Ada") use "GNAT_LLVM";
    ```
 
    You can confirm which compiler built a given `.ali` file by its first line

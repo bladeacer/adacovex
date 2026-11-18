@@ -37,7 +37,7 @@ count-sync checks.
 (25 for self-assessment, 15 for tests/consumer, 10 for coverage-gate),
 adds `fetch-tags: true` to the coverage-gate checkout (previously
 `fetch-depth: 0` alone could miss tags on shallow clones), and keeps the
-existing `actions/cache` for both the toolchain and the result cache. The
+existing `actions/cache` for both the toolkit and the result cache. The
 docs (`docs/ci-cd.md`) add a **Debugging guide** table that maps every
 `CI GATE:` / `WARNING` / `Skipped_Ct` / `result cache:` line to its meaning
 and the action to take, and spells out the three artifacts that are always

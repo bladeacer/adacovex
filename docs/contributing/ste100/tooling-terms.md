@@ -46,12 +46,23 @@ flags, artefacts, and quality gates of the adacovex tool.
 
 ## Technical Name: Toolchain
 - **Part of Speech:** Noun
-- **Definition:** The set of compiler and proof tools that build and verify
-  the Ada sources. For adacovex this is GNAT, gnatprove, and their solvers.
+- **Definition:** An external set of compiler, build, or proof tools that
+  another project supplies. Alire, GNAT, gnatprove, and Go each publish a
+  toolchain. adacovex does not own or rename it.
 - **Approved Form:** Toolchain (singular), Toolchains (plural)
-- **Do Not Use:** Tool set, Suite, Environment
-- **Correct Example:** *The **toolchain** bin directory is added to PATH.*
-- **Incorrect Example:** *The tool set bin directory is added to PATH.*
+- **Do Not Use:** Toolkit (for an external tool set), Tool set, Suite
+- **Correct Example:** *`alr build` fetches the Alire **toolchain**.*
+- **Incorrect Example:** *`alr build` fetches the Alire toolkit.*
+
+## Technical Name: Toolkit
+- **Part of Speech:** Noun
+- **Definition:** The adacovex-owned proof-tool cache, its resolved
+  directory, and the published proof bundle. The toolkit holds a gnatprove
+  toolchain. It is not the toolchain itself.
+- **Approved Form:** Toolkit (singular), Toolkits (plural)
+- **Do Not Use:** Tool set, Suite, Environment, Toolchain (for the cache)
+- **Correct Example:** *`adacovex status` reports the **toolkit** cache.*
+- **Incorrect Example:** *`adacovex status` reports the tool set cache.*
 
 ## Technical Name: Exit Code
 - **Part of Speech:** Noun

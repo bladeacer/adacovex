@@ -35,8 +35,14 @@ environment still has a writable state directory.
 |`<cache>/<version>/<schema>/`|The content-addressed result cache.|
 |`<cache>/stamps/index.bin`|The persistent stat-stamp index that makes re-runs fast.|
 |`<cache>/probes/`|Cached tool-version probes, with a 7-day expiry.|
-|`<data>/toolchain/`|gnatprove versions deployed by the `prove` subcommand.|
+|`<data>/toolkit/`|gnatprove versions deployed by the `prove` subcommand.|
 |`<data>/meta/`|Cached package-registry metadata, with a 7-day expiry.|
+
+adacovex 1.74.0 renamed this directory from `<data>/toolchain/` to
+`<data>/toolkit/`, and the bundle variable from `ADACOVEX_TOOLCHAIN_URL` to
+`ADACOVEX_TOOLKIT_URL`. The old path and variable are not read. The first
+`prove` run after the upgrade deploys gnatprove into the new directory, so it
+performs one re-download.
 
 The result cache is namespaced by the adacovex version and a cache schema
 token, so an upgrade starts with a clean cache and never serves a record that
@@ -85,7 +91,7 @@ This key pins the gnatprove version that the `prove` subcommand runs. It
 applies **only** when the target project does not declare `gnatprove` in its
 own `alire.toml` or `alire-dev.toml`; a project manifest pin always wins.
 adacovex deploys the pinned version standalone with
-`alr -n get gnatprove=<version>` into `<data>/toolchain/` and runs that
+`alr -n get gnatprove=<version>` into `<data>/toolkit/` and runs that
 binary directly.
 
 The pin is authoritative and never falls back. When the pinned version cannot
@@ -99,7 +105,7 @@ operator is stripped.
 The environment variable `ADACOVEX_GNATPROVE_VERSION` overrides this key. The
 full resolution order is: project manifest pin, then the global pin
 (environment variable, then this file), then a gnatprove on `$PATH`, then the
-cached toolchain under `<data>/toolchain/`, and finally the last-resort
+cached toolchain under `<data>/toolkit/`, and finally the last-resort
 platform download.
 
 ### `[prove] coverage`
@@ -180,7 +186,7 @@ adacovex init -t path/to/project --force
 |`ADACOVEX_STATE_HOME`|Replaces the configuration, cache, and data directories with `DIR`, `DIR/cache`, and `DIR/data`.|
 |`ADACOVEX_OFFLINE`|Set to `1` to skip every package-registry probe (`alr show`, `npm view`, `pnpm show`, `cargo search`, `go list`): the SBOM carries only offline-known versions and licences. The native suite and the CLI e2e checks set it, so `make check` runs without the network.|
 |`ADACOVEX_GNATPROVE_VERSION`|Global gnatprove pin; overrides the config file.|
-|`ADACOVEX_TOOLCHAIN_URL`|URL of the last-resort gnatprove toolchain bundle.|
+|`ADACOVEX_TOOLKIT_URL`|URL of the last-resort gnatprove toolchain bundle.|
 |`ADACOVEX_VERSION`|Build-time version override; the release builds use it.|
 |`ADACOVEX_HOME`|Installer prefix for the binary (`$ADACOVEX_HOME/bin`); the state directories are unaffected.|
 |`ADACOVEX_REPO`|Installer source repository; defaults to `bladeacer/adacovex`.|
@@ -195,12 +201,12 @@ location.
 
 - Delete `<cache>/` to drop every cached result. Pass `--cache-dir=PATH` to
   relocate the result cache instead.
-- Delete `<data>/toolchain/` to force the next `prove` run to deploy its
+- Delete `<data>/toolkit/` to force the next `prove` run to deploy its
   gnatprove again.
 - Delete `<cache>/stamps/index.bin` to drop the stat-stamp fast path; the
   next run re-hashes every file and rebuilds the index.
 - Delete `<cache>/probes/` and `<data>/meta/` to force the next SBOM run to
-  re-probe the toolchain and the package registries.
+  re-probe the toolkit and the package registries.
 
 Result caching is documented in full, including the schema namespace and the
 eviction policy, in

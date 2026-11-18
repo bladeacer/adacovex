@@ -85,6 +85,11 @@ gates, and their documentation, and it adds one test-support unit; the VC
 count stays at 1058 and the prover work is otherwise unchanged. The phase's
 representative and every figure stay at 1.63.0.
 
+**1.74.0 folds into the open phase.** It splits the Python task runner, the
+tooling tests, and the CLI e2e script into modules. The prove path, the VC
+count, and the prover work are unchanged, so the representative and every
+figure stay at 1.63.0.
+
 **Scenario order biases the cold rows, so read every figure with its load.**
 Each scenario loads the box, so one measured late inherits the load the earlier
 ones left behind. `just bench` prints the load in front of every scenario for

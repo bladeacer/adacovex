@@ -56,7 +56,7 @@ and prints `=== Build profile: <name> ===` so the profile in force is never a
 guess. Both switch sets were verified in the compile command lines, and
 `gprbuild -s` does rebuild when the profile changes.
 
-The mechanism is not the one this release planned, because the toolchain does
+The mechanism is not the one this release planned, because the toolkit does
 not have it. gprbuild 26.0.1 has no `profile` block: the parser rejects the name
 with `":=" expected`, reading `profile` as an identifier. It has no conditional
 expressions either, rejecting `cannot be part of an expression`. What works is a

@@ -110,7 +110,7 @@ Threshold failures **fail loudly** at every layer:
 
 **Better debugging output contract.** `ci.yml` now has `timeout-minutes`,
 `concurrency.cancel-in-progress`, `fetch-tags: true`, and `actions/cache` for
-both toolchain and result-cache. After these brittleness fixes, every failure
+both toolkit and result-cache. After these brittleness fixes, every failure
 leaves three things without a re-run:
 
 1. The `::error`/`::notice` annotations at the top of the job page.

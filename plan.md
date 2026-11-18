@@ -25,12 +25,13 @@ than cherry-picking rows across versions.
 | v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
 | v1.72.0 | closed | Performance close-out and documentation currency | changelog `adacovex-1.72.0.md` |
 | v1.73.0 | closed | Test suite portability and layout | changelog `adacovex-1.73.0.md` |
-| v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
+| v1.74.0 | planned | Cache identity, diagnostics, terminology, and modularity | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix), 21 (toolkit terminology), 22 (docs accuracy audit), 23 (modular Python and test scripts) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
 ## Status (2026-11-18)
 
-v1.73.0 is closed; v1.74.0 is next. The tree holds 2413/2413 native tests
+v1.73.0 is closed; v1.74.0 is in progress. Items 21-23 are complete; items
+18 and 17a remain. The tree holds 2413/2413 native tests
 across 30 categories, 165 CLI e2e checks (one skips without a prover), 132
 prove-e2e checks over the committed fixture projects, and 1058 VCs at Gold.
 
@@ -40,7 +41,9 @@ suites in `src/tests/e2e/`, and the fixture projects in
 keep that shape.
 
 The debt register has no unowned open row: D13 closed with the API docstring
-pass, and D11 and D7 stay open with v1.74.0 and v1.75.0.
+pass, and D11 and D7 stay open with v1.74.0 and v1.75.0. The v1.74.0 scope
+also carries the toolkit terminology rename, the documentation accuracy
+audit, and the Python and test script split.
 
 ## Every change
 
@@ -213,6 +216,106 @@ documented fallback shape for the others.
 
 **Verify:** `just prove-e2e`, `just diagnostics-coverage-check`,
 `just docs-check`.
+
+---
+
+- [x] Item 21 - Use "toolkit" for adacovex, keep "toolchain" for upstream tools
+
+**Goal:** Every adacovex-owned tool set, cache, and bundle says **toolkit**.
+An external tool set keeps its own name: Alire, GNAT, gnatprove, and Go each
+publish a **toolchain**, and adacovex does not rename it.
+
+**Work:**
+- Rename the Ada identifiers (`Toolchain_*` to `Toolkit_*`), the cache
+  directory (`<data>/toolkit`), the environment variable
+  (`ADACOVEX_TOOLKIT_URL`), the published bundle
+  (`adacovex-toolkit-<os>-<arch>.tar.gz`), and every status, help, man, and
+  dashboard string.
+- Update the crate description, the README, the user docs, the contributor
+  docs, the Ada docstrings, the STE100 dictionary, and the tests that pin
+  output text.
+- Keep upstream terminology: `alr toolchain`, the GitHub Action
+  `toolchain:` input, the Alire and GNAT toolchain, the gnatprove toolchain,
+  and the Go toolchain. The STE100 dictionary now defines both terms.
+- Do not keep a silent fallback for the old cache directory or environment
+  variable: it would retain the retired name. Document the one-time proof
+  re-download instead.
+- Historical changelogs keep their factual upstream references. A changelog
+  that describes the adacovex cache now uses **toolkit**.
+
+**Tests:** `TerminologyTests` fails when adacovex names its own cache,
+product, or bundle `toolchain`; `status`, `prove`, and the man page pin the
+new strings.
+
+**Verify:** `just tools-check`, `just test`, `just cli-e2e`, `just docs-check`,
+`just docs-coverage-check`, `just surface-parity-check`.
+
+---
+
+- [x] Item 22 - Documentation accuracy audit
+
+**Goal:** Every user-facing page is current, accurate, and free of filler.
+A claim that the code no longer supports is a release blocker.
+
+**Work:**
+- Audit the usage pages against the parser, the server routes, the action
+  inputs, and the current output: flag names, defaults, exit codes, paths,
+  counts, versions, and examples.
+- Audit the contributor pages against the task runner and the gates: every
+  recipe exists, every gate name matches, and every measured figure names
+  its version and profile.
+- Remove meaningless or duplicated prose, AI-slop hedging, and examples that
+  cannot run. Keep one source of truth per fact and link to it.
+- Check every page for British spelling and STE100 sentence rules, and add
+  any missing Technical Name before it appears again.
+- Record every finding and fix in the v1.74.0 changelog; no follow-up list.
+
+**Tests:** the existing link, coverage, surface-parity, and docs gates; plus
+an example command from every usage page where the page carries one.
+
+**Verify:** `just check`, `just book`, `just docs-coverage-check`,
+`just surface-parity-check`.
+
+**Findings (2026-11-18):** The blanket terminology rename had changed the
+real Alire cache path to `~/.local/share/alire/toolkits/`; it is restored to
+`toolchains/`. The `check-pipeline.md` reference run and the debt register
+still claimed 32 gates in 38.77 s; both now use the v1.74.0 run (34 gates,
+37 s). The duplicated phrase in `docs/usage/index.md` is gone, the status
+sample aligns `toolkit cache:`, and the STE100 dictionary now defines both
+Toolkit and Toolchain. Every link, docs-coverage, action-parity, and
+surface-parity gate passes.
+
+---
+
+- [x] Item 23 - Modular Python and test scripts
+
+**Goal:** No Python script hides several responsibilities in one file. Each
+module has one job, a small public surface, and a test that imports it.
+
+**Work:**
+- `tools/tasks.py` is now the entry point and `TASKS` registry. The
+  implementation lives in `tools/taskkit/`: `common` (paths, process helpers,
+  preflights), `build` (build, proof, docs, products), `gates` (cheap gates and
+  sync targets), `e2e` (end-to-end suites), `release` (versioning and
+  publishing), and `checks` (`CHECK_GATES` and the runner).
+- `tools/tests.py` is now a thin runner. The domains live in
+  `tools/test_release.py`, `tools/test_docs_generation.py`,
+  `tools/test_docs_gates.py`, `tools/test_tasks.py`, and
+  `tools/test_misc.py`; `tools/testsupport.py` owns the shared imports and
+  helpers.
+- `src/tests/e2e/cli/cli_flags.py` is now the registry. `cli_support.py` owns
+  the shared helpers, and `checks_basic`, `checks_sbom`, `checks_serve`,
+  `checks_config`, and `checks_prove` own the check groups.
+- The dependency rules are unchanged: standard library only, `typing`
+  annotations, `argparse` for a CLI, and `pathlib` for paths.
+- The developer guide and layout page describe the new modules and the import
+  rule.
+
+**Tests:** `TaskkitLayoutTests` imports every taskkit module and pins the
+registry and the 34-gate order; the tools suite still runs every moved test,
+and the e2e shards still partition the same 23 checks.
+
+**Verify:** `just tools-check`, `just test`, `just cli-e2e`, `just check`.
 
 ---
 

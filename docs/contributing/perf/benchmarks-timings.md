@@ -265,20 +265,20 @@ tree -- the cold tree pays the compile, not the check.
 
 ## Host-side toolchain caches
 
-A cold machine pays for its toolchain once, per host, outside the tree.
+A cold machine pays for its toolkit once, per host, outside the tree.
 Alire fetches `gnat_native` (990 MB unpacked) and `gprbuild` (278 MB) into
 `~/.local/share/alire/toolchains/` on the first `alr build`. The
 dev-manifest commands fetch their binary crates into
 `~/.local/share/alire/releases/`: `gnatdoc_bin` (139 MB) for `just doc`,
 `gnatformat_bin` (53 MB) for `just fmt`, and `gnatprove` (1.3 GB) for the
 proof tools. The `prove` subcommand's own download keeps a second copy
-under `~/.local/share/adacovex/toolchain/`.
+under `~/.local/share/adacovex/toolkit/`.
 
 Nothing in that list is a build dependency of the crate. Once the caches
 exist, the sync costs nothing measurable -- the whole no-op `alr build`
 is 301 ms. The published `alire.toml` declares no dependencies, so a
 consumer build of the `covex` crate fetches nothing beyond the Alire
-toolchain.
+toolkit.
 
 The compile side tells the same story. A full rebuild of all 101 bodies
 takes 39.1 s, and the serial compile totals 99.8 s across those files.

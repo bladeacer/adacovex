@@ -27,7 +27,7 @@ or Markdown.
 
 ## How to read the output
 
-Choose the format that matches your toolchain:
+Choose the format that matches your toolkit:
 
 - **CycloneDX 1.5 JSON** (`--format=cyclonedx-json`) -- drop into any CycloneDX
   consumer (Dependency-Track, OWASP Dependency-Check, and more). The root

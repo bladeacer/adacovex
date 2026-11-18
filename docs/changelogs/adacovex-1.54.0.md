@@ -38,7 +38,7 @@ the STE100 index and toctree list it.
 
 New page `docs/usage/index.md` gives the user guide one landing page, grouped by
 task rather than by feature: install and run, assess a project, read the
-results, publish in CI, and manage the toolchain. Every entry gives a one-line
+results, publish in CI, and manage the toolkit. Every entry gives a one-line
 description and links to the deeper pages, so a reader can find the CLI flags,
 the dashboard, the SBOM, or the standards from one page. The manual index, the
 Getting started toctree, and the documentation table in `README.md` now point at
@@ -79,7 +79,7 @@ about the site all stay.
 The new transparency page ends with a `See also` section that points at the
 third-party notices, the credits, and the bundled offline manual. The offline
 manual link matters for the reader who wants the same pages with no hosting
-provider in the path, and the notices link carries the licences of the toolchain
+provider in the path, and the notices link carries the licences of the toolkit
 that builds the site the page describes.
 
 ## Fixes

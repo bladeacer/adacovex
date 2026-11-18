@@ -7,8 +7,8 @@
 # the output).  The pages stay Markdown: the MyST parser reads `docs/*.md`
 # unchanged, so no page is ever converted to reStructuredText.
 #
-# Only the Toolchain requires Python.  The adacovex binary itself has no
-# Python or docs dependency; sphinx + myst-parser + furo are dev/toolchain
+# Only the docs build requires Python.  The adacovex binary itself has no
+# Python or docs dependency; sphinx + myst-parser + furo are dev-tooling
 # dependencies (docs/../requirements.txt) used by `tools/gen-docs.py`, the
 # `just book` / `book-links-check` targets, and Read the Docs.
 #

@@ -91,7 +91,7 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 
 ### function Data_Directory (P : Adacovex.Paths.Platform_Kind; Home : Standard.String; Xdg_Data : Standard.String; Local_App_Data : Standard.String) return Standard.String `[Global]`
 
-> The adacovex data directory for a platform: the toolchain cache and the machine-local registry-metadata store.
+> The adacovex data directory for a platform: the toolkit cache and the machine-local registry-metadata store.
 
 | Parameter | Description |
 |-----------|-------------|

@@ -83,7 +83,7 @@ level flag (or `--dal`) resolved to.
 
 ### `status`
 
-`adacovex status [--target=PATH]` reports toolchain and platform state. It
+`adacovex status [--target=PATH]` reports toolkit and platform state. It
 runs no assessment and downloads or deploys nothing. It reports the following:
 
 - whether Alire is installed
@@ -122,7 +122,7 @@ adacovex v<version> status
   gnatprove:
     manifest pin:     ^16.1.0
     on PATH:           not found
-    toolchain cache:   <path>/toolchain/gnatprove_16.1.0_<digest>
+    toolkit cache:     <path>/toolkit/gnatprove_16.1.0_<digest>
   platform:
     logical CPUs:      12
     CI environment:    no

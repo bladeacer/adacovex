@@ -3,7 +3,7 @@
 adacovex's architecture spans four pages. This page records the design
 decisions: the zero-dependency rule, the formal-verification policy, and
 result caching. The companion pages cover
-[dependency management and the toolchain](architecture-dependencies.md),
+[dependency management and the toolkit](architecture-dependencies.md),
 [verification and proof patches](architecture-verification.md), and
 [outputs, pipeline, and delivery](architecture-outputs.md).
 

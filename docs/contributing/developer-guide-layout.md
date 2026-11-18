@@ -21,6 +21,8 @@ src/
 resources/dashboard.html           -- the served dashboard's page shell (plain HTML, bundled at build time)
 resources/js/book-nav.js           -- the offline manual's shared-sidebar injector (bundled as _static/adacovex-nav.js)
 tools/*.py                         -- pure-stdlib Python: doc sync, count sync, generators, validators
+tools/taskkit/                     -- task-runner package: common, build, gates, e2e, release, checks
+tools/test_*.py                    -- stdlib-unittest domains; tools/tests.py is the runner
 docs/                              -- all documentation (this guide, CLI reference, standards, and more)
 ```
 

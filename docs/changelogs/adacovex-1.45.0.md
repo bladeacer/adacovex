@@ -67,7 +67,7 @@ with a note when the tree is absent.
 ### C6: Benchmark machine documented
 
 `docs/contributing/perf.md` now records the dev machine behind every
-figure (CPU, cache hierarchy, memory, storage, toolchain) -- the specs
+figure (CPU, cache hierarchy, memory, storage, toolkit) -- the specs
 that plausibly affect a CLI benchmark. The GPU specs are deliberately
 omitted: adacovex is CPU/I/O-bound and no code path touches a GPU.
 

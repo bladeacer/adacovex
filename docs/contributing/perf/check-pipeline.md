@@ -78,34 +78,34 @@ is the number to compare against the 60 s budget.
 
 ## The reference run
 
-The reference measurement is a v1.72.0 development run. One full `just check`
-on the development machine on 2026-11-16, with a warm result cache, a warm
-gnatprove session, and warm formatting and API-docs stamps, passed all 32
-gates in **38.77 s** of wall time. The raw stdout is
-`obj/check-v1.72.0-r18.log`.
+The reference measurement is a v1.74.0 development run. One full `just check`
+on the development machine on 2026-11-18, with a warm result cache, a warm
+gnatprove session, and warm formatting and API-docs stamps, passed all 34
+gates in **37 s** of wall time. The raw stdout is
+`obj/check-v1.74.0-warm.log`.
 
 | Gate | Seconds |
 |------|---------|
-| prove diagnostics end-to-end | 20.94 |
-| CLI end-to-end | 14.75 |
-| native tests | 10.57 |
-| tools unit tests | 5.03 |
-| SPARK proof + badges | 2.76 |
-| user documentation | 2.11 |
-| build | 1.82 |
-| ASCII | 1.76 |
-| SBOM | 1.21 |
-| markdown links | 1.14 |
-| the other 22 gates | 8.21 |
-| **sum of gate times** | **70.30** |
-| **wall time** | **38.77** |
+| prove diagnostics end-to-end | 19.31 |
+| CLI end-to-end | 14.72 |
+| native tests | 10.09 |
+| tools unit tests | 5.90 |
+| user documentation | 2.37 |
+| SPARK proof + badges | 2.22 |
+| ASCII | 1.94 |
+| markdown links | 1.62 |
+| SBOM | 1.28 |
+| bundled offline manual spec | 1.06 |
+| the other 24 gates | 10.47 |
+| **sum of gate times** | **70.98** |
+| **wall time** | **37** |
 
-The warm stamps changed the shape. `fmt` fell from 23.84 s to 0.89 s, the API
-docs gate fell from 3.81 s to 0.02 s, the test-count gate fell from 15.34 s to
-0.34 s, and the proof-metrics gate fell from 9.72 s to 0.48 s. The build is a
-no-op, because the formatter no longer touches an unchanged source. The
-prove-diagnostics gate is the longest parallel row, and it runs its nine
-fixture cases concurrently.
+The warm stamps changed the shape. `fmt` stays near 0.5 s, the API docs gate
+is 0.04 s, and the build is a no-op, because the formatter no longer touches
+an unchanged source. The prove-diagnostics gate is the longest parallel row,
+and it runs its nine fixture cases concurrently. The v1.74.0 script split
+moves no gate into a different phase and changes no measured product, so the
+before/after shape stays the same.
 
 ## The measurement that drove item 15b
 

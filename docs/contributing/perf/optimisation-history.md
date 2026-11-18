@@ -230,7 +230,7 @@ the header rows. Both tables now print in full, and a missing `perf` or
 `strace` fails loudly instead of silently printing nothing.
 
 Deploying a manifest-pinned gnatprove prints a progress line (`deploy:
-gnatprove <v> not in the toolchain cache -- downloading via alr
+gnatprove <v> not in the toolkit cache -- downloading via alr
 (one-time, may take a minute)...`) -- the first deployment downloads a
 ~130 MB bundle through `alr -n get` and a silent minute of nothing read
 as a hang. The deployment is one-time per version; every later run

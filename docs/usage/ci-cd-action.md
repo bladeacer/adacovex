@@ -183,7 +183,7 @@ every action consumer gets it automatically; the existing `cache` input
 controls it.
 
 The Alire crate index and downloaded crates that `setup-alire`'s `cache: true`
-already covers are also persisted by this step, making the toolchain
+already covers are also persisted by this step, making the toolkit
 installation predictable across CI runs on the same toolchain.
 
 ## See also

@@ -1846,7 +1846,7 @@ package body Adacovex_SBOM_Tests is
       --  A C project built with Meson has no Rust or Go dependency. Its
       --  generated build trees record the developer's PATH, so a scan that
       --  read them registered cargo and go from a PATH entry -- a false
-      --  positive that put an unused toolchain in a C project's SBOM. The
+      --  positive that put an unused toolkit in a C project's SBOM. The
       --  scan skips those trees, and a build file outside them is still
       --  read.
       declare

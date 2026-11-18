@@ -845,7 +845,7 @@ begin
       return;
    end if;
 
-   -- Status mode: print toolchain + platform status and exit (no
+   -- Status mode: print toolkit + platform status and exit (no
    -- assessment, no scanning). Run_Status never deploys or downloads
    -- anything, so it prints its own header and skips the normal one.
    if Cfg.Status_Mode then
@@ -1021,7 +1021,7 @@ begin
 
    -- Prove mode: run gnatprove on the target, then fall through to the normal
    -- assessment pipeline (which parses the freshly generated gnatprove.out).
-   -- gnatprove is resolved from the toolchain, so the target needs no
+   -- gnatprove is resolved from the toolkit, so the target needs no
    -- alire.toml dependency.
    if Cfg.Prove_Mode then
       Verbose ("prove mode: resolving gnatprove and running proof...");

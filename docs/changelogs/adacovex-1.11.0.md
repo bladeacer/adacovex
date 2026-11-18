@@ -30,7 +30,7 @@ tools are available on PATH for the differential modes -- git, mercurial
 (`hg`), subversion (`svn`), fossil, jj, and the man-page tool (`mandb`) --
 plus the VCS detected for the target repository. When the target's VCS tool is
 missing from PATH, status prints a note that `--compare-base` /
-`--coverage-delta` will need it. The exit code remains prove-toolchain-driven;
+`--coverage-delta` will need it. The exit code remains prove-toolkit-driven;
 the VCS report is informational.
 
 ### C5: Markdown summaries on every CI run, with loud threshold failures

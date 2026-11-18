@@ -35,7 +35,7 @@ join, strip, home, and executable-name rules on any host.
 
 Some GNAT runtimes declare `GNAT.OS_Lib.To_C` to return `Long_Integer`, and
 others declare `Long_Long_Integer`. A bare assignment therefore compiled on
-one toolchain and failed on another. Each call now wraps its argument in an
+one toolkit and failed on another. Each call now wraps its argument in an
 explicit `Long_Long_Integer` conversion, which is legal for both signatures,
 so a 64-bit time stamp is never shrunk by an implicit 32-bit conversion on
 Win32. The convention is recorded in the platform-agnostic design notes.

@@ -130,7 +130,7 @@ package body Adacovex.Parsers.Manifest is
    --  whose installed binary no longer matches the cached fingerprint. The
    --  refreshed set must then be written back, or the stale blob survives
    --  and every later run re-probes the same tool again. An unchanged
-   --  toolchain leaves this False and still stores nothing on a hit.
+   --  toolkit leaves this False and still stores nothing on a hit.
    Refreshed : Boolean := False;
 
    --  Cache key (and its image) for the miss-store below. Kept at package

@@ -39,18 +39,22 @@ just check        # the whole quality gate CI runs before a release
 
 `just` is the task runner (`just --list` lists every recipe). The `Makefile`
 is a thin shim that delegates to the same Python tasks, so an existing
-`make <task>` reference still works.
+`make <task>` reference still works. The tasks live in `tools/taskkit/`:
+`common` owns paths and process helpers, `build` owns products, `gates` owns
+the cheap checks, `e2e` owns the suites, `release` owns versioning, and
+`checks` owns `CHECK_GATES`. `tools/tasks.py` is only the entry point and the
+`TASKS` registry.
 
 ### Host-side toolchain caches
 
-A cold host pays for its toolchain once, outside the tree. The first
+A cold host pays for its toolkit once, outside the tree. The first
 `alr build` fetches the Alire toolchain into
 `~/.local/share/alire/toolchains/`: `gnat_native` (990 MB unpacked) and
 `gprbuild` (278 MB). The dev-manifest commands fetch their binary crates
 into `~/.local/share/alire/releases/`: `gnatdoc_bin` (139 MB) for
 `just doc`, `gnatformat_bin` (53 MB) for `just fmt`, and `gnatprove`
 (1.3 GB) for the proof tools. The `prove` subcommand's own download keeps
-a second copy under `~/.local/share/adacovex/toolchain/`.
+a second copy under `~/.local/share/adacovex/toolkit/`.
 
 Nothing in that list is a build dependency of the crate itself. The
 published `alire.toml` declares no dependencies, and the committed
@@ -121,7 +125,7 @@ generated artifacts](developer-guide-layout.md).
 
 The test suite is native and zero-dependency. `src/tests/` is the one test root. It holds one file per native category (scanner, config, types, renderers, SBOM, VCS, and more), and each file exposes a `Run (R : in out Runner'Class)` procedure wired into `src/tests/test_runner.adb`. A test is a `R. Check (Condition, "Description")` call.
 
-The Python end-to-end suites live under `src/tests/e2e/` in a category directory: `cli/`, `prove/`, `dashboard/`, `action/`, and the shared `lib/`. A fixture is a real project under `src/tests/projects/`, never an Ada heredoc in a workflow. `just test-layout-check` gates that shape.
+The Python end-to-end suites live under `src/tests/e2e/` in a category directory: `cli/`, `prove/`, `dashboard/`, `action/`, and the shared `lib/`. A fixture is a real project under `src/tests/projects/`, never an Ada heredoc in a workflow. `just test-layout-check` gates that shape. The CLI suite keeps `cli_flags.py` as its registry; `cli_support.py` owns the shared helpers, and `checks_basic`, `checks_sbom`, `checks_serve`, `checks_config`, and `checks_prove` own the check groups.
 
 The runner counts them, prints a per-category table, and writes `docs/test_result.md`.
 
@@ -199,7 +203,7 @@ test sources without a documented allow-list entry.
 
 The pure-stdlib Python gates keep the docs and the dashboard in step with
 the code. They are the drop-in replacements for the npm tools (stylelint,
-and more) that a JavaScript toolchain would use; adacovex keeps its dev
+and more) that a JavaScript toolkit would use; adacovex keeps its dev
 tooling Python-only by convention:
 
 - `tools/csslint.py` (`just csslint-check`) enforces the 4px spacing rule:
@@ -275,7 +279,7 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
   `just surface-parity-check`, `just agents-tree`, `just docs-tree`,
   `just link-check`). Stale docs are a release blocker.
 - **Debug**: `adacovex --verbose` prints pipeline step diagnostics. `adacovex
-  status` reports toolchain + platform state. `--no-cache` bypasses the
+  status` reports toolkit + platform state. `--no-cache` bypasses the
   on-disk result cache when inputs changed without content changing.
 
 ## Related pages

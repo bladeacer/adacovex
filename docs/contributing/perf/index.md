@@ -111,8 +111,9 @@ holds; a methodology shift closes the phase and opens a new one.
 The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0,
 1.57.0-1.60.0, and 1.61.0-1.62.0 phases are closed, represented by 1.55.0,
 1.58.0, and 1.62.0. The **open phase is 1.63.0-**, represented by 1.63.0
-(the v1.72.0 tooling and documentation work folds in without a methodology
-shift):
+(the v1.72.0 tooling and documentation work, the v1.73.0 test-layout
+work, and the v1.74.0 script-modularity work fold in without a prove
+methodology shift):
 that version packed the directory memo again, moved the five pre-build steps
 into one concurrent bundle, and gave `just bench` a per-step build-phase
 breakdown, so the implementation and the measurement methodology both moved.
