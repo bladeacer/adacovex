@@ -20,11 +20,19 @@ MAP = os.path.join(ROOT, "tools", "agents-tree.map")
 StemInfo = Dict[str, bool]  # "ads" / "adb" presence flags
 DirNodes = Dict[str, StemInfo]  # relative dir -> stems
 
-#  Committed mini projects that exist as SBOM test data, not as program
-#  source. They are pruned from the tree (and from the map-coverage check)
-#  because the architecture tree documents the program's source layout, and
-#  a fixture is data a reader opens where it lives.
-PRUNE_DIRS: List[str] = [os.path.join("tests", "fixtures")]
+#  Committed fixture projects that exist as test or SBOM data, not as
+#  program source. They are pruned from the tree (and from the map-coverage
+#  check) because the architecture tree documents the program's source
+#  layout, and a fixture is data a reader opens where it lives.
+PRUNE_DIRS: List[str] = [
+    os.path.join("tests", "fixtures"),
+    os.path.join("tests", "projects"),
+    os.path.join("tests", "e2e"),
+]
+
+#  Tool caches never hold authored source.  They can appear anywhere, so they
+#  are pruned by name as well as by the fixture roots above.
+PRUNE_NAMES: Set[str] = {"__pycache__", "node_modules"}
 
 
 def load_map() -> Dict[str, str]:
@@ -43,7 +51,7 @@ def collect() -> Dict[str, DirNodes]:
     """Return dict: dirpath -> stems (with .ads/.adb presence)."""
     nodes: Dict[str, DirNodes] = {}
     for dirpath, dirnames, filenames in os.walk(SRC):
-        dirnames.sort()
+        dirnames[:] = sorted(d for d in dirnames if d not in PRUNE_NAMES)
         rel = os.path.relpath(dirpath, SRC)
         if any(
             rel == prune or rel.startswith(prune + os.sep) for prune in PRUNE_DIRS

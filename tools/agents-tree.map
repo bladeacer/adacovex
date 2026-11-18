@@ -46,7 +46,7 @@ src/renderers/adacovex-renderers-sbom	CycloneDX 1.5 / SPDX 2.3 / Markdown SBOM g
 src/server/adacovex-server	Parent package for the HTTP server subsystem
 src/server/adacovex-server-http	HTTP/1.1 server (4-worker task pool)
 src/server/adacovex-server-router	Parent package for HTTP request routing (future expansion)
-src/tests/adacovex-test_support	Native test Runner type
+src/tests/adacovex-test_support	Native test Runner + portable temp-dir, command, path, and skip helpers
 src/tests/adacovex_dal_tests	DAL compliance tests (23)
 src/tests/adacovex_types_tests	Type conversion tests (72)
 src/tests/adacovex_scanner_tests	Source scanner tests (89)
@@ -72,11 +72,12 @@ src/tests/adacovex_do178c_tests	HLR/LLR parsing and line-reader tests (33)
 src/tests/adacovex_completion_tests	Shell completion script tests (24)
 src/tests/adacovex_paths_tests	Platform-agnostic path helper tests (43)
 src/tests/adacovex_tldr_tests	tldr installer tests (48)
+src/tests/adacovex_test_support_tests	Test-support helper tests (19)
 src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (580)
-src/tests/test_runner	Test suite entry point (2394 tests)
+src/tests/test_runner	Test suite entry point (2413 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components

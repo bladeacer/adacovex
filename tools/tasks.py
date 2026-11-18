@@ -425,6 +425,14 @@ def task_diagnostics_coverage_check() -> int:
     return py("tools/check-diagnostic-coverage.py")
 
 
+def task_test_layout_check() -> int:
+    return py("tools/check-test-layout.py")
+
+
+def task_portability_check() -> int:
+    return py("tools/check-test-portability.py")
+
+
 def task_docs_tree() -> int:
     return py("tools/gen-docs-tree.py")
 
@@ -594,7 +602,7 @@ def task_cli_e2e() -> int:
     from concurrent.futures import ThreadPoolExecutor
 
     shards = 4
-    script = ROOT / "tests" / "e2e" / "cli_flags.py"
+    script = ROOT / "src" / "tests" / "e2e" / "cli" / "cli_flags.py"
     env = dict(os.environ)
     env["ADACOVEX_ASSUME_BUILT"] = "1"
 
@@ -635,8 +643,10 @@ def task_prove_e2e() -> int:
     rc = task_build()
     if rc != 0:
         return rc
-    script = ROOT / "tests" / "e2e" / "prove_diagnostics.py"
-    cases = re.findall(r'_case\(\s*"([^"]+)"', script.read_text())
+    script = ROOT / "src" / "tests" / "e2e" / "prove" / "prove_diagnostics.py"
+    fixture_root = ROOT / "src" / "tests" / "projects" / "contract-errors"
+    cases = sorted(child.name for child in fixture_root.iterdir()
+                   if child.is_dir())
     jobs: List[Tuple[str, List[str]]] = [
         ("modes", [str(script), "--modes-only"]),
     ] + [(name, [str(script), "--case", name, "--skip-modes"])
@@ -682,10 +692,11 @@ def task_e2e() -> int:
         print("--- SKIP: dashboard e2e: pnpm is not on PATH "
               "(see docs/contributing/developer-guide.md) ---")
         return 0
-    rc = run(["pnpm", "--dir", "tests/e2e", "install"])
+    dashboard = "src/tests/e2e/dashboard"
+    rc = run(["pnpm", "--dir", dashboard, "install"])
     if rc != 0:
         return rc
-    rc = run(["pnpm", "--dir", "tests/e2e", "exec", "playwright",
+    rc = run(["pnpm", "--dir", dashboard, "exec", "playwright",
               "install", "chromium"])
     if rc != 0:
         # A browser download can fail on an offline host or a locked-down CI
@@ -693,7 +704,7 @@ def task_e2e() -> int:
         # failed gate.
         print("--- SKIP: dashboard e2e: the Chromium download failed ---")
         return 0
-    return run(["pnpm", "--dir", "tests/e2e", "test"])
+    return run(["pnpm", "--dir", dashboard, "test"])
 
 
 #  ------------------------------------------------------------------
@@ -825,6 +836,8 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("changelog format", task_changelog_check, None),
     ("action/CLI/docs parity", task_action_parity_check, None),
     ("documentation coverage", task_docs_coverage_check, None),
+    ("test layout", task_test_layout_check, None),
+    ("test portability", task_portability_check, None),
     ("diagnostics coverage", task_diagnostics_coverage_check, None),
     ("CLI surface parity", task_surface_parity_check, None),
     ("tools unit tests", task_tools_check, None),
@@ -1109,6 +1122,8 @@ TASKS: Dict[str, Callable[[], int]] = {
     "publish": task_publish,
     "test-publish": task_test_publish,
     "clean": task_clean,
+    "test-layout-check": task_test_layout_check,
+    "portability-check": task_portability_check,
     "cli-e2e": task_cli_e2e,
     "prove-e2e": task_prove_e2e,
     "e2e": task_e2e,

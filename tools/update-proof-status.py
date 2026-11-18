@@ -207,9 +207,13 @@ def replacements(m: Metrics) -> List[Tuple[Pattern[str], str]]:
         # "all checks proved (369 checks)".
         (re.compile(r"all checks proved \((\d+) checks\)"),
          f"all checks proved ({t} checks)"),
-        # "38 analyzed units".
-        (re.compile(r"(\d+) analyzed units"), f"{n} analyzed units"),
-        (re.compile(r"(\d+) analysed units"), f"{n} analysed units"),
+        # "Gold (369 VCs), 38 analysed units" -- level, total, and units
+        # together. A bare unit count is not rewritten: a measured campaign
+        # note on the perf page states its own historical figure.
+        (re.compile(rf"{LEVEL_RE} \((\d+) VCs\), (\d+) analysed units"),
+         f"{lvl} ({t} VCs), {n} analysed units"),
+        (re.compile(rf"{LEVEL_RE} \((\d+) VCs\), (\d+) analyzed units"),
+         f"{lvl} ({t} VCs), {n} analyzed units"),
         # CI threshold gates pinned to the assessed SPARK level:
         # "--require-spark=Platinum" (Makefile, docs) and
         # "require-spark: Platinum" (workflows).
