@@ -1,0 +1,8 @@
+name = "fixture"
+description = "adacovex action consumer fixture"
+version = "0.1.0"
+authors = ["adacovex"]
+maintainers = ["adacovex <noreply@example.com>"]
+maintainers-logins = ["adacovex"]
+licenses = "MIT"
+executables = ["fixture_main"]

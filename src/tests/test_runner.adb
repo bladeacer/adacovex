@@ -31,6 +31,7 @@ with Adacovex_Spark_Coverage_Tests;
 with Adacovex_Paths_Tests;
 with Adacovex_Install_Tests;
 with Adacovex_Tldr_Tests;
+with Adacovex_Test_Support_Tests;
 
 procedure Test_Runner is
 
@@ -63,18 +64,20 @@ procedure Test_Runner is
    R_Paths       : Runner;
    R_Install     : Runner;
    R_Tldr        : Runner;
+   R_TestSupport : Runner;
 
-   Total_Passed : Natural := 0;
-   Total_Failed : Natural := 0;
+   Total_Passed  : Natural := 0;
+   Total_Failed  : Natural := 0;
+   Total_Skipped : Natural := 0;
 
    procedure Write_Output (Out_File : File_Type; File_Name : String) is
    begin
       Put_Line
         (Out_File,
-         "  | Category                                |  Tests | Status   |");
+         "  | Category                                |  Tests | Skips | Status   |");
       Put_Line
         (Out_File,
-         "  |-----------------------------------------|--------|----------|");
+         "  |-----------------------------------------|--------|-------|----------|");
 
       declare
          procedure Row (Name : String; R : Runner) is
@@ -87,6 +90,8 @@ procedure Test_Runner is
                & (1 .. (40 - Name'Length) => ' ')
                & " | "
                & Natural'Image (TCount)
+               & " | "
+               & Natural'Image (R.Skipped)
                & " |"
                & (if R.Failed = 0 then " PASS     |" else " FAIL     |"));
          end Row;
@@ -120,18 +125,21 @@ procedure Test_Runner is
          Row ("Platform paths", R_Paths);
          Row ("Install method", R_Install);
          Row ("tldr installer", R_Tldr);
+         Row ("Test support", R_TestSupport);
       end;
 
       Put_Line
         (Out_File,
-         "  |-----------------------------------------|--------|----------|");
+         "  |-----------------------------------------|--------|-------|----------|");
       New_Line (Out_File);
       Put_Line
         (Out_File,
          "  Passed:"
          & Natural'Image (Total_Passed)
          & "  Failed:"
-         & Natural'Image (Total_Failed));
+         & Natural'Image (Total_Failed)
+         & "  Skipped:"
+         & Natural'Image (Total_Skipped));
    end Write_Output;
 
    procedure Write_Results is
@@ -162,9 +170,9 @@ procedure Test_Runner is
    begin
       New_Line;
       Put_Line
-        ("  | Category                                |  Tests | Status   |");
+        ("  | Category                                |  Tests | Skips | Status   |");
       Put_Line
-        ("  |-----------------------------------------|--------|----------|");
+        ("  |-----------------------------------------|--------|-------|----------|");
 
       declare
          procedure Row (Name : String; R : Runner) is
@@ -176,6 +184,8 @@ procedure Test_Runner is
                & (1 .. (40 - Name'Length) => ' ')
                & " | "
                & Natural'Image (TCount)
+               & " | "
+               & Natural'Image (R.Skipped)
                & " |"
                & (if R.Failed = 0 then " PASS     |" else " FAIL     |"));
          end Row;
@@ -209,16 +219,19 @@ procedure Test_Runner is
          Row ("Platform paths", R_Paths);
          Row ("Install method", R_Install);
          Row ("tldr installer", R_Tldr);
+         Row ("Test support", R_TestSupport);
       end;
 
       Put_Line
-        ("  |-----------------------------------------|--------|----------|");
+        ("  |-----------------------------------------|--------|-------|----------|");
       New_Line;
       Put_Line
         ("  Passed:"
          & Natural'Image (Total_Passed)
          & "  Failed:"
-         & Natural'Image (Total_Failed));
+         & Natural'Image (Total_Failed)
+         & "  Skipped:"
+         & Natural'Image (Total_Skipped));
    end Print_Summary;
 
 begin
@@ -260,6 +273,7 @@ begin
    Adacovex_Paths_Tests.Run (R_Paths);
    Adacovex_Install_Tests.Run (R_Install);
    Adacovex_Tldr_Tests.Run (R_Tldr);
+   Adacovex_Test_Support_Tests.Run (R_TestSupport);
 
    Total_Passed :=
      R_Types.Passed
@@ -290,7 +304,8 @@ begin
      + R_Completion.Passed
      + R_Paths.Passed
      + R_Install.Passed
-     + R_Tldr.Passed;
+     + R_Tldr.Passed
+     + R_TestSupport.Passed;
    Total_Failed :=
      R_Types.Failed
      + R_DAL.Failed
@@ -320,7 +335,39 @@ begin
      + R_Completion.Failed
      + R_Paths.Failed
      + R_Install.Failed
-     + R_Tldr.Failed;
+     + R_Tldr.Failed
+     + R_TestSupport.Failed;
+   Total_Skipped :=
+     R_Types.Skipped
+     + R_DAL.Skipped
+     + R_Scanner.Skipped
+     + R_Prove.Skipped
+     + R_TestParser.Skipped
+     + R_Config.Skipped
+     + R_RendererSVG.Skipped
+     + R_Renderers.Skipped
+     + R_SBOM.Skipped
+     + R_Cache.Skipped
+     + R_IR.Skipped
+     + R_Man.Skipped
+     + R_VCS.Skipped
+     + R_Server.Skipped
+     + R_ProvePatch.Skipped
+     + R_TZANSI.Skipped
+     + R_Complexity.Skipped
+     + R_OptOuts.Skipped
+     + R_DirCache.Skipped
+     + R_Diff.Skipped
+     + R_SparkCov.Skipped
+     + R_ProveRunner.Skipped
+     + R_ANSI.Skipped
+     + R_CPUs.Skipped
+     + R_Do178C.Skipped
+     + R_Completion.Skipped
+     + R_Paths.Skipped
+     + R_Install.Skipped
+     + R_Tldr.Skipped
+     + R_TestSupport.Skipped;
 
    Print_Summary;
    Write_Results;
@@ -329,6 +376,7 @@ begin
    Put_Line ("=== Results ===");
    Put_Line ("  Passed:" & Natural'Image (Total_Passed));
    Put_Line ("  Failed:" & Natural'Image (Total_Failed));
+   Put_Line ("  Skipped:" & Natural'Image (Total_Skipped));
 
    if Total_Failed = 0 then
       Put_Line ("=== ALL TESTS PASSED ===");

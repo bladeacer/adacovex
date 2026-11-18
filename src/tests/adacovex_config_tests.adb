@@ -524,14 +524,14 @@ package body Adacovex_Config_Tests is
       begin
          Add (A, "man");
          Add (A, "--check");
-         Add (A, "--dir=/tmp/x");
+         Add (A, "--dir=/opt/x");
          Testing.Parse_Args (A, Cfg);
          R.Check (Cfg.Man_Mode, "man --check sets Man_Mode");
          R.Check (Cfg.Man_Check, "--check sets Man_Check");
-         R.Check (Cfg.Man_Dir_Len = 6, "--dir=/tmp/x sets Man_Dir_Len");
+         R.Check (Cfg.Man_Dir_Len = 6, "--dir=/opt/x sets Man_Dir_Len");
          R.Check
-           (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/tmp/x",
-            "--dir=/tmp/x stores the man root");
+           (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/opt/x",
+            "--dir=/opt/x stores the man root");
       end;
 
       --  man --dir PATH (space-separated form) also parses.
@@ -541,10 +541,10 @@ package body Adacovex_Config_Tests is
       begin
          Add (A, "man");
          Add (A, "--dir");
-         Add (A, "/tmp/y");
+         Add (A, "/opt/y");
          Testing.Parse_Args (A, Cfg);
          R.Check
-           (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/tmp/y",
+           (Cfg.Man_Dir (1 .. Cfg.Man_Dir_Len) = "/opt/y",
             "--dir PATH space-separated form parses");
       end;
 
