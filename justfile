@@ -237,6 +237,15 @@ test-publish:
 clean:
     @python3 tools/tasks.py clean
 
+# Check the test layout: one test root, real fixture projects, no inline
+# project heredocs in a workflow.
+test-layout-check:
+    @python3 tools/tasks.py test-layout-check
+
+# Fail when a test carries a POSIX-only literal or shell idiom.
+portability-check:
+    @python3 tools/tasks.py portability-check
+
 # Run the CLI end-to-end checks.
 cli-e2e:
     @python3 tools/tasks.py cli-e2e
