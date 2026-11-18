@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `1058/1058 VCs proved across 76 analyzed units`), and calls out
+  totals (e.g. `1058/1058 VCs proved across 77 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -109,7 +109,7 @@ Pull requests should follow the following conventions.
   coverage (every subprogram the SPARK coverage report assesses proved), and
   the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2394 tests across 29 categories) and run `just test`.
+  (2413 tests across 30 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -161,7 +161,10 @@ Native (zero-dependency) framework (`Adacovex.Test_Support`, no AUnit). Source:
 `src/tests/`; entry point `test_runner.adb` (builds as `bin/test_runner`).
 `just test` builds and runs the suite and writes results to
 [docs/test_result.md](docs/test_result.md) in a Markdown table format
-adacovex itself parses.
+adacovex itself parses. The Python end-to-end suites live under
+`src/tests/e2e/`, and their fixture projects live under
+`src/tests/projects/`. `just test-layout-check` fails when a fixture is not a
+real project or a workflow writes one inline.
 
 Committed test data lives under `src/tests/fixtures/`. The SBOM ecosystem
 suite keeps one **mini project per language** there
@@ -209,4 +212,5 @@ fixture in the same change.
 | Platform paths | 43 |
 | Install method | 23 |
 | tldr installer | 48 |
-| **Total** | **2394** |
+| Test support | 19 |
+| **Total** | **2413** |

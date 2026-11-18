@@ -1,7 +1,7 @@
 # adacovex release plan: v1.68.0 - v1.75.0
 
-Current version: `1.72.0`. Work is scoped across **eight minor releases**:
-`v1.68.0` through `v1.72.0` (closed), then `v1.73.0` through `v1.75.0`.
+Current version: `1.73.0`. Work is scoped across **eight minor releases**:
+`v1.68.0` through `v1.73.0` (closed), then `v1.74.0` and `v1.75.0`.
 Closed releases are recorded in their changelogs, not repeated here.
 
 ## Proof-timing phase note
@@ -24,19 +24,23 @@ than cherry-picking rows across versions.
 | v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
 | v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
 | v1.72.0 | closed | Performance close-out and documentation currency | changelog `adacovex-1.72.0.md` |
-| v1.73.0 | planned | Test suite portability and layout | 20 (test root and fixture projects), 16 (platform-agnostic suite) |
+| v1.73.0 | closed | Test suite portability and layout | changelog `adacovex-1.73.0.md` |
 | v1.74.0 | planned | Cache identity and diagnostics coverage | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
-## Status (2026-11-17)
+## Status (2026-11-18)
 
-v1.72.0 is closed; v1.73.0 is next. The tree holds 2394/2394 native tests,
-165 CLI e2e checks (one skips without a prover), 132 prove-e2e checks, and
-1058 VCs at Gold.
+v1.73.0 is closed; v1.74.0 is next. The tree holds 2413/2413 native tests
+across 30 categories, 165 CLI e2e checks (one skips without a prover), 132
+prove-e2e checks over the committed fixture projects, and 1058 VCs at Gold.
+
+The test tree has one root: `src/tests/` holds the native suite, the e2e
+suites in `src/tests/e2e/`, and the fixture projects in
+`src/tests/projects/`. `just test-layout-check` and `just portability-check`
+keep that shape.
 
 The debt register has no unowned open row: D13 closed with the API docstring
-pass, and D11 and D7 stay open with v1.74.0 and v1.75.0. A warm `just check`
-run passes all 32 gates in 38.77 s.
+pass, and D11 and D7 stay open with v1.74.0 and v1.75.0.
 
 ## Every change
 
@@ -44,9 +48,9 @@ Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `docs/api-docs`, `docs/changelogs/adacovex-<version>.md`, AGENTS.md source tree
 (if source layout changed), and the `just check` gates
 (`docs-check`, `action-parity-check`, `docs-coverage-check`,
-`diagnostics-coverage-check`, `surface-parity-check`,
-`version-consistency-check`, `docs-tree`, `link-check`, `book-links-check`,
-`python3 tools/gen-docs.py --check`, then `just book`).
+`diagnostics-coverage-check`, `test-layout-check`, `portability-check`,
+`surface-parity-check`, `version-consistency-check`, `docs-tree`, `link-check`,
+`book-links-check`, `python3 tools/gen-docs.py --check`, then `just book`).
 After `just test` and `just prove`, run `just test-count` and
 `just proof-status`.
 
@@ -55,9 +59,8 @@ After `just test` and `just prove`, run `just test-count` and
 1. `src/core/adacovex-prove.adb` sits just under the 600 cyclomatic cap. Put
    new I/O helpers in `Adacovex.Prove_Output` or a sibling unit, and run
    `just complexity-check` after a change there.
-2. `tests/e2e/prove_diagnostics.py` sets `NO_COLOR=1` so the text assertions
-   compare plain output. Keep that when adding checks; item 20 moves the file
-   to `src/tests/e2e/prove/`.
+2. `src/tests/e2e/prove/prove_diagnostics.py` sets `NO_COLOR=1` so the text
+   assertions compare plain output. Keep that when adding checks.
 3. `just test-count` rewrites the test count in every historical release
    manifest. Commit the generated manifests as-is.
 4. `Adacovex.Prove_Output` counts as a proof unit. `just proof-status` keeps
@@ -93,83 +96,13 @@ Record: [`adacovex-1.72.0.md`](docs/changelogs/adacovex-1.72.0.md).
 
 ---
 
-## v1.73.0 - Test suite portability and layout
+## v1.73.0 - closed
 
-- [ ] Item 20 - One test root and generated fixture projects
+Test suite portability and layout: item 20 (one test root and real fixture
+projects) and item 16 (platform-agnostic suite).
+Record: [`adacovex-1.73.0.md`](docs/changelogs/adacovex-1.73.0.md).
 
-**Goal:** All tests live under `src/tests`, e2e tests are categorised, and no
-Ada fixture is written inline in a workflow. A fixture project is a real
-directory with its own `alire.toml`, `.gpr`, `src/`, and a README that states
-what it proves.
-
-**Work:**
-- Move `tests/e2e` to `src/tests/e2e` and split it by category:
-  `cli/` (`cli_flags.py`), `prove/` (`prove_diagnostics.py`), `dashboard/`
-  (Playwright specs and server helper), `action/` (action fixtures), and
-  `lib/` for shared Python helpers.
-- Create `src/tests/projects/` with one directory per fixture:
-  `consumer-action/`, `action-project-config/`, and
-  `contract-errors/<class>/{broken,fixed}/`. Each carries an `alire.toml`,
-  a project file, and a README naming the check it exercises.
-- Replace the inline heredocs in `.github/workflows/ci.yml` with a copy of
-  the relevant `src/tests/projects/<name>` tree. Keep the consumer-workspace
-  restructure: the action's consumer branch needs a workspace without
-  `adacovex.gpr`.
-- Keep fixture projects out of the root build: the GPR lists source
-  directories explicitly and `src/tests` is already skipped by the scanner
-  and the proof walk. Add the complexity/docstring opt-out markers to fixture
-  sources that are deliberately incomplete, and confirm `alr build` never
-  compiles them. Confirm that `just run-self`, `just sbom`, and
-  `just complexity-check` do not treat a fixture as a project input; extend
-  the skip lists if they do.
-- Update `just` targets, `.gitignore` (`node_modules`, `playwright-report`,
-  `test-results`), CI paths, `tools/tasks.py`, `tools/agents-tree.map`,
-  `AGENTS.md`, `docs/contributing/developer-guide-layout.md`, and
-  `CONTRIBUTING.md`.
-- Add `tools/check-test-layout.py` (stdlib) as `just test-layout-check`: every
-  `src/tests/projects/*` has a manifest, a project file, and a README, and no
-  workflow contains an inline Ada project heredoc. Wire it into `just check`.
-
-**Tests:** the moved suites still pass from their new paths; `just cli-e2e`,
-`just prove-e2e`, and `just e2e` run the same checks as before.
-
-**Verify:** `just check`, `just e2e`, `alr build` leaves
-`src/tests/projects` uncompiled.
-
----
-
-- [ ] Item 16 - Platform-agnostic test suite
-
-**Goal:** The native suite and the e2e suites pass on Windows, macOS, and
-Linux. A test checks the platform instead of assuming it, and a genuine
-platform dependency is an explicit skip with a reason.
-
-**Work:**
-- Audit the tests for POSIX assumptions: `/tmp`, `/`, `:` in `PATH`, `sh -c`,
-  `rm -rf`, `chmod`, symlinks, case-sensitive names, CRLF, drive letters,
-  `mandb` / `makewhatis`, `/proc`, `uname`, locale, and timezone.
-- Extend `Adacovex.Test_Support` with `Temp_Dir` (create and remove under
-  `$TMPDIR` / `%TEMP%`), `Join`, `To_Native`, `Run_Command` (argument vector,
-  no shell), and `Skip_On` / `Skip_Without` with a named reason. Replace
-  shell-string spawning with argument vectors and use `Adacovex.Paths` for
-  separators and `Expand_User`.
-- Make every skip visible in the run summary. A skipped test is not a pass.
-- Add an OS matrix to CI for `just test` and the Python e2e suites on
-  `ubuntu-latest`, `macos-latest`, and `windows-latest`. Run a fast subset on
-  pull requests and the full matrix on `main`; keep the Playwright dashboard
-  job on Linux. `prove-e2e` SKIPs when no gnatprove is resolvable.
-- Add `tools/check-test-portability.py` (stdlib) as
-  `just portability-check`: flag known POSIX-only literals and shell idioms in
-  tests, with a documented allow-list. Wire it into `just check`.
-- Document the matrix, the skip policy, and the Windows path rules in
-  `docs/usage/platforms.md` and `docs/contributing/developer-guide.md`.
-
-**Tests:** self-tests for `Temp_Dir`, `Run_Command`, and the Windows
-drive-letter / separator cases; the path suite already covers both separator
-shapes.
-
-**Verify:** the CI matrix is green on all three systems; `just portability-check`;
-`just test`.
+<!-- v1.73.0 item detail retired with its changelog -->
 
 ---
 
@@ -274,7 +207,7 @@ pair.
   `just diagnostics-coverage-check`: every fixture directory maps to a matrix
   row and every supported row has a fixture. Wire it into `just check`.
 
-**Tests:** `tests/e2e/prove_diagnostics.py` iterates the fixture projects,
+**Tests:** `src/tests/e2e/prove/prove_diagnostics.py` iterates the fixture projects,
 asserts the classified kind and hint for supported classes, and asserts the
 documented fallback shape for the others.
 
@@ -401,7 +334,8 @@ category in the CONTRIBUTING table. Fix drift in place; no follow-ups.
 11. Item 18: the cache identity is the resolved absolute project path, the
     TTL is 7 days by default, and `--cache-clear` is a flag, not a new
     subcommand, because `cache` already selects `--cache`.
-12. Item 20: one test root under `src/tests`; fixture projects live under
+12. Item 20: one test root under `src/tests`; the e2e suites live in
+    `src/tests/e2e/` by category, and fixture projects live under
     `src/tests/projects` and are never compiled by the root GPR.
 13. Item 17: a class counts as supported only when it is classified and gives
     an actionable fix; otherwise it is documented as fallback or a gap.

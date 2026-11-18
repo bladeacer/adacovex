@@ -115,7 +115,8 @@ The hosting provider injects its own link-preview popup, its analytics, and its 
 |-----------|---------|---------|----------|
 | [Playwright](https://github.com/microsoft/playwright) | test dependency | Apache-2.0 | End-to-end dashboard layout tests (`just e2e`) |
 
-[Playwright](https://github.com/microsoft/playwright) is a development dependency of the e2e fixture (`tests/e2e/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
+[Playwright](https://github.com/microsoft/playwright) is a development dependency of the e2e fixture
+(`src/tests/e2e/dashboard/package.json`, `devDependencies`). It runs automated browser tests of the dashboard. adacovex classifies it as a **test** dependency: the package name `@playwright/test` carries the test label. It is not vendored or redistributed with adacovex releases.
 
 ## Performance-engineering tools
 

@@ -80,6 +80,11 @@ VCs with 0 unproved, 7 924 warm `newfstatat`, and a stripped binary of
 6 552 528 bytes (6.2 MiB). The reading notes carry the paired comparison
 against 1.62.0, which is the evidence that the release did not regress.
 
+**1.73.0 folds into the open phase.** It changes the test tree, two developer
+gates, and their documentation, and it adds one test-support unit; the VC
+count stays at 1058 and the prover work is otherwise unchanged. The phase's
+representative and every figure stay at 1.63.0.
+
 **Scenario order biases the cold rows, so read every figure with its load.**
 Each scenario loads the box, so one measured late inherits the load the earlier
 ones left behind. `just bench` prints the load in front of every scenario for

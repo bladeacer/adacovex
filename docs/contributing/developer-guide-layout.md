@@ -17,7 +17,7 @@ src/
 |-- compliance/                    -- DO-178C DAL assessment logic
 |-- server/                        -- HTTP/1.1 server (4-worker task pool) for --serve
 |-- ir/                            -- bounded IR types + future-use synthesiser
-`-- tests/                         -- the native test suite (test_runner entry point)
+`-- tests/                         -- the one test root: native suite, e2e/ suites, projects/ fixtures
 resources/dashboard.html           -- the served dashboard's page shell (plain HTML, bundled at build time)
 resources/js/book-nav.js           -- the offline manual's shared-sidebar injector (bundled as _static/adacovex-nav.js)
 tools/*.py                         -- pure-stdlib Python: doc sync, count sync, generators, validators
@@ -49,7 +49,8 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 | Change the dashboard page | Edit `resources/dashboard.html` (plain HTML/CSS/JS), then run `tools/gen-dashboard.py` to regenerate `src/adacovex-dashboard_template.ads` |
 | Change the offline manual's sidebar | Edit `resources/js/book-nav.js`, then run `just book` to bundle it as `_static/adacovex-nav.js` |
 | Change assessment criteria | `src/compliance/adacovex-compliance-dal.adb` (+ the DAL levels doc) |
-| Add tests | `src/tests/` -- see the [contributor guide](developer-guide.md#testing) |
+| Add tests | `src/tests/` -- the native suite, or a category under `src/tests/e2e/`; see the [contributor guide](developer-guide.md#testing) |
+| Add a fixture project | `src/tests/projects/<name>/` with `alire.toml`, a `.gpr`, `src/`, and a README |
 | Regenerate API docs | `just doc` (gnatdoc -> `tools/rst2md.py` -> `docs/api-docs/`) |
 | Regenerate the offline manual | `just book` (Sphinx -> `tools/gen-docs.py` -> `src/adacovex-docs_template.ads`) |
 | Sync test counts | `just test-count` (reads `docs/test_result.md`, rewrites every anchored count) |

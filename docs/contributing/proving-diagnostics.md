@@ -207,8 +207,9 @@ they drift:
 
 1. add or change the branch in `Fix_Hint` in
    `src/core/adacovex-prove_output.adb`;
-2. add a broken/fixed fixture pair to `tests/e2e/prove_diagnostics.py`
-   (later `src/tests/projects/contract-errors/<class>/`);
+2. add a broken/fixed fixture pair under
+   `src/tests/projects/contract-errors/<class>/`, with its `case.toml` and
+   README;
 3. change the row above, including its keyword and counterexample shape.
 
 A check kind absent from this matrix is a fallback by definition, so a new
@@ -264,13 +265,14 @@ The block marks such a finding as `(provers gave up)`, and its fix hint raises
 
 ## Seeing the before and after yourself
 
-`tests/e2e/prove_diagnostics.py` generates one project per case on this page,
-each with a broken variant and a fixed counterpart. The cases are `index`,
-`overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`,
-`typo_attribute`, and `typo_identifier`.
+`src/tests/e2e/prove/prove_diagnostics.py` copies one committed project per
+case on this page into a scratch root, each with a broken variant and a fixed
+counterpart under `src/tests/projects/contract-errors/`. The cases are
+`index`, `overflow`, `division`, `precondition`, `invariant`,
+`invariant_entry`, `flow`, `typo_attribute`, and `typo_identifier`.
 
 ```bash
-python3 tests/e2e/prove_diagnostics.py --keep
+python3 src/tests/e2e/prove/prove_diagnostics.py --keep
 adacovex prove --target=obj/prove-diagnostics/prove_diag_index_broken
 adacovex prove --target=obj/prove-diagnostics/prove_diag_index_fixed
 ```

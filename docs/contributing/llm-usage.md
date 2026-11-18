@@ -81,7 +81,7 @@ Because the gates are cheap and deterministic, the safest workflow is to
 iterate locally and let `just check` be the arbiter:
 
 ```bash
-just build && just test      # native suite must stay 2394/2394
+just build && just test      # native suite must stay 2413/2413
 just prove                   # 0 unproved, 0 justified
 just check                   # full gate: format, build, products, parallel
                              # checks, then tree-wide count-sync checks

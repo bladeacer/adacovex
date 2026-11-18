@@ -1,5 +1,7 @@
 # Platforms and the `status` subcommand
 
+<!-- no-covex-docs-loc: platform and reader reference, the line cap does not apply -->
+
 adacovex supports any platform that can run alire: packaging and delivery go
 through Alire, so adacovex runs wherever Alire itself builds. The tool targets
 Ada 2012 and later together with SPARK 2014, and uses only the GNAT runtime, so
@@ -29,15 +31,14 @@ Alire's own crate-publishing checks exercise on a pull request against the
 community index, which is the public proof that the crate installs and builds
 for that platform.
 
-The `platform-build` job in `.github/workflows/release.yml` builds the tree
-with a plain `alr build` and runs the native suite on macOS and Windows,
-which is the evidence behind the **Run by the maintainers** column. It runs
-only when a release tag is pushed: the publish job waits for it, so an
-ordinary push or pull request never pays for the two extra runners and a
-release never ships a binary the other platforms could not build. It uses
-the same build path a consumer and Alire's crate-index CI use, so a green
-job means the crate installs and builds on that platform without the local
-`just` tooling.
+The `platform-tests` job in `.github/workflows/ci.yml` runs the native suite
+on Linux, macOS, and Windows, which is the evidence behind the **Run by the
+maintainers** column. The `platform-build` job in
+`.github/workflows/release.yml` builds the tree with a plain `alr build` on
+macOS and Windows, and it runs only when a release tag is pushed. The
+release uses the same build path a consumer and Alire's crate-index CI use,
+so a green job means the crate installs and builds on that platform without
+the local `just` tooling.
 
 | Platform | Architecture | Officially supported | Run by the maintainers | Alire index CI |
 |----------|--------------|----------------------|------------------------|----------------|
@@ -65,6 +66,30 @@ The `man` and `tldr` subcommands follow the readers and clients that the host
 runs; see [Local man page](#local-man-page) and
 [Local tldr page](#local-tldr-page). Every other feature works on every
 platform above.
+
+## Test suite on each platform
+
+The native suite runs on Ubuntu, macOS, and Windows in the `platform-tests`
+CI job. A pull request runs the native suite on all three hosts, and a push
+to main adds `cli-e2e` and `prove-e2e` (the second SKIPs when no prover is
+resolvable). The Playwright dashboard suite stays on Linux, because it needs
+Chromium and the dashboard has no platform-specific code.
+
+A test that needs one host, one tool, or a sibling checkout reports `SKIP`
+with the reason, and a skip is never counted as a pass.
+`Adacovex.Test_Support` owns the policy through `Skip`, `Skip_On`, and
+`Skip_Without`, and the run summary prints a `Skips` column and a `Skipped:`
+total. The two conditional helpers return True when they record a skip, so
+the test body returns at once. `just portability-check` fails when a test
+hard-codes a POSIX path, a shell invocation, or a permission bit that its
+allow-list does not explain.
+
+Use `Temp_Dir` and `Remove_Tree` for scratch space, `Join` and `To_Native`
+for paths, `Run_Command` for an argument vector, and `Executable_On_Path` for
+a tool probe. Windows accepts `/` and `\` as separators, and
+`Adacovex.Paths.Is_Absolute` recognises a drive letter (`C:\project`) and a
+UNC prefix (`\\server\share`). The executable suffix is `.exe` and the temp
+directory comes from `%TEMP%`, so a test never names `/tmp` or `sh`.
 
 ## Platform-agnostic design
 
