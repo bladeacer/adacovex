@@ -86,7 +86,7 @@ jobs:
           verbose: true
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2394
+          require-tests: 2413
           require-proof: 100
           #  Statement-coverage gate: the action runs
           #  `spark-coverage --require-coverage=... --gate-metric=statements`
@@ -116,12 +116,44 @@ jobs:
           cache: true
           result-cache: true
 
+  platform-tests:
+    #  The native suite on every supported host.  A pull request runs the fast
+    #  subset (the native suite); a push to main adds the two Python e2e
+    #  suites.  The Playwright dashboard suite stays on Linux (`just e2e`),
+    #  because it needs a browser and the dashboard has no platform-specific
+    #  code.  The release workflow keeps the macOS/Windows build matrix.
+    name: Native tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
+      - name: Build and run the native suite
+        shell: bash
+        run: python3 tools/tasks.py test
+      - name: CLI end-to-end checks (main only)
+        if: github.event_name == 'push'
+        shell: bash
+        run: python3 tools/tasks.py cli-e2e
+      - name: Prove diagnostics (main only, skips without a prover)
+        if: github.event_name == 'push'
+        shell: bash
+        run: python3 tools/tasks.py prove-e2e
+
   #  The macOS/Windows build matrix used to live here as `platform-build`.
   #  It now runs in release.yml only: the cross-platform build check is a
   #  release gate, so an ordinary push or pull request does not pay for the
-  #  two extra runners.  Linux coverage stays with the action jobs above,
-  #  and docs/usage/platforms.md points at the release workflow for the
-  #  non-Linux rows.
+  #  two extra runners, and the native suite above covers the runtime.  Linux
+  #  coverage stays with the action jobs above, and docs/usage/platforms.md
+  #  points at the release workflow for the non-Linux build rows.
   no-spark-off:
     name: SPARK_Mode Off gate
     runs-on: ubuntu-latest
@@ -190,6 +222,26 @@ jobs:
       - name: Enforce diagnostics coverage
         run: python3 tools/tasks.py diagnostics-coverage-check
 
+  test-layout:
+    # Feature gate: one test root, every fixture a real project, and no
+    # workflow writing a project inline with a heredoc.
+    name: Test layout gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce the test layout
+        run: python3 tools/tasks.py test-layout-check
+
+  portability:
+    # Feature gate: a test may not hard-code a POSIX path, shell invocation,
+    # or permission bit without a documented allow-list entry.
+    name: Test portability gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enforce test portability
+        run: python3 tools/tasks.py portability-check
+
   surface-parity:
     # Feature gate: the --help, man, tldr, cli-reference, and completion
     # surfaces must advertise the same subcommands and flag shapes, and the
@@ -243,33 +295,9 @@ jobs:
           # The fixture is the workspace root: a tiny Alire crate whose
           # `alr build` produces ./fixture_main (Exec_Dir ".").
           cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
-          mkdir -p src obj
-          cat > alire.toml <<'FIXTURE'
-          name = "fixture"
-          description = "adacovex action consumer fixture"
-          version = "0.1.0"
-          authors = ["adacovex"]
-          maintainers = ["adacovex <noreply@example.com>"]
-          maintainers-logins = ["adacovex"]
-          licenses = "MIT"
-          executables = ["fixture_main"]
-          FIXTURE
-          cat > fixture.gpr <<'FIXTURE'
-          project fixture is
-             for Languages use ("Ada");
-             for Source_Dirs use ("src");
-             for Object_Dir use "obj";
-             for Exec_Dir use ".";
-             for Main use ("fixture_main.adb");
-          end fixture;
-          FIXTURE
-          cat > src/fixture_main.adb <<'FIXTURE'
-          with Ada.Text_IO;
-          procedure Fixture_Main is
-          begin
-             Ada.Text_IO.Put_Line ("fixture tests passed");
-          end Fixture_Main;
-          FIXTURE
+          # Copy the committed fixture tree; no project is written inline.
+          cp -R "$SRC/src/tests/projects/consumer-action/." \
+             "$GITHUB_WORKSPACE/"
       - uses: ./
         with:
           target: .
@@ -307,49 +335,9 @@ jobs:
           mv "$GITHUB_WORKSPACE"/* "$SRC/" 2>/dev/null || true
           shopt -u dotglob
           cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
-          mkdir -p src obj
-          cat > alire.toml <<'FIXTURE'
-          name = "fixture"
-          description = "adacovex action project-config fixture"
-          version = "0.1.0"
-          authors = ["adacovex"]
-          maintainers = ["adacovex <noreply@example.com>"]
-          maintainers-logins = ["adacovex"]
-          licenses = "MIT"
-
-          [[depends-on]]
-          gnatprove = "^16.1.0"
-          FIXTURE
-          cat > fixture.gpr <<'FIXTURE'
-          project Fixture is
-             for Languages use ("Ada");
-             for Source_Dirs use ("src");
-             for Object_Dir use "obj";
-          end Fixture;
-          FIXTURE
-          cat > src/fixture.ads <<'FIXTURE'
-          package Fixture with SPARK_Mode => On is
-             --  Add one to a bounded value.
-             --  @param X  Value to increment.
-             --  @return X plus one.
-             function Next_Of (X : Integer) return Integer
-               with Pre  => X in 0 .. 100,
-                    Post => Next_Of'Result = X + 1;
-          end Fixture;
-          FIXTURE
-          cat > src/fixture.adb <<'FIXTURE'
-          package body Fixture with SPARK_Mode => On is
-             function Next_Of (X : Integer) return Integer is
-             begin
-                return X + 1;
-             end Next_Of;
-          end Fixture;
-          FIXTURE
-          cat > adacovex.toml <<'FIXTURE'
-          [prove]
-          coverage = false
-          level = 1
-          FIXTURE
+          # Copy the committed fixture tree; no project is written inline.
+          cp -R "$SRC/src/tests/projects/action-project-config/." \
+             "$GITHUB_WORKSPACE/"
       - uses: ./
         with:
           target: .
@@ -364,14 +352,8 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          LOG="$RUNNER_TEMP/adacovex-prove.out"
-          test -f "$LOG"
-          grep -F -- '--level 1' "$LOG"
-          if grep -F 'coverage:' "$LOG"; then
-            echo "::error::[prove] coverage = false was not honoured through the action"
-            exit 1
-          fi
-          grep -F 'Success: all checks proved' "$LOG"
+          python3 src/tests/e2e/action/assert_project_config.py \
+            "$RUNNER_TEMP/adacovex-prove.out"
 
   coverage-gate:
     name: Docstring coverage gate (release tags)
@@ -395,7 +377,7 @@ jobs:
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, diagnostics-coverage, version-consistency, consumer-run-tests, action-project-config, coverage-gate]
+    needs: [self-assessment, adacovex-tests, platform-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, diagnostics-coverage, test-layout, portability, version-consistency, consumer-run-tests, action-project-config, coverage-gate]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
@@ -403,11 +385,14 @@ jobs:
         env:
           SELF: ${{ needs.self-assessment.result }}
           TESTS: ${{ needs.adacovex-tests.result }}
+          PLATFORM: ${{ needs.platform-tests.result }}
           OFFOFF: ${{ needs.no-spark-off.result }}
           COMPLEX: ${{ needs.complexity-gate.result }}
           PARITY: ${{ needs.action-parity.result }}
           DOCS: ${{ needs.docs-coverage.result }}
           DIAG: ${{ needs.diagnostics-coverage.result }}
+          LAYOUT: ${{ needs.test-layout.result }}
+          PORTABLE: ${{ needs.portability.result }}
           VERSION: ${{ needs.version-consistency.result }}
           CONSUMER: ${{ needs.consumer-run-tests.result }}
           ACTIONCFG: ${{ needs.action-project-config.result }}
@@ -422,18 +407,21 @@ jobs:
             echo '|-----|--------|'
             echo "| Self-assessment (all standards) | $SELF |"
             echo "| Build + native tests | $TESTS |"
+            echo "| Native tests (Linux, macOS, Windows) | $PLATFORM |"
             echo "| SPARK_Mode Off gate | $OFFOFF |"
             echo "| Complexity gate (no god objects) | $COMPLEX |"
             echo "| Action/CLI/docs parity gate | $PARITY |"
             echo "| Documentation coverage gate | $DOCS |"
             echo "| Diagnostics coverage gate | $DIAG |"
+            echo "| Test layout gate | $LAYOUT |"
+            echo "| Test portability gate | $PORTABLE |"
             echo "| Version consistency gate | $VERSION |"
             echo "| Action run-tests (consumer workspace) | $CONSUMER |"
             echo "| Action project config (adacovex.toml) | $ACTIONCFG |"
             echo "| Coverage gate (push only) | $GATE |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$DIAG" "$VERSION" "$CONSUMER" "$ACTIONCFG" "$GATE"; do
+          for R in "$SELF" "$TESTS" "$PLATFORM" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$DIAG" "$LAYOUT" "$PORTABLE" "$VERSION" "$CONSUMER" "$ACTIONCFG" "$GATE"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2
