@@ -23,8 +23,8 @@ __pycache__/
 alire
 !alire/releases
 node_modules
-tests/e2e/test-results
-tests/e2e/playwright-report
+src/tests/e2e/dashboard/test-results
+src/tests/e2e/dashboard/playwright-report
 
 
 # Sphinx build output: regenerated locally by `just book` (gitignored so the

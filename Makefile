@@ -15,6 +15,7 @@
         description proof-status test-count docs-tree link-check \
         requirements changelog-check action-parity-check docs-coverage-check \
         diagnostics-coverage-check surface-parity-check tools-check \
+        test-layout-check portability-check \
         bench perf-bench complexity-check csslint-check \
         version-consistency-check sync docs-check para-split-check tldr-check \
         tldr-lint book-links-check cli-e2e prove-e2e e2e check
@@ -120,6 +121,12 @@ docs-coverage-check:
 
 diagnostics-coverage-check:
 	@python3 tools/tasks.py diagnostics-coverage-check
+
+test-layout-check:
+	@python3 tools/tasks.py test-layout-check
+
+portability-check:
+	@python3 tools/tasks.py portability-check
 
 surface-parity-check:
 	@python3 tools/tasks.py surface-parity-check
