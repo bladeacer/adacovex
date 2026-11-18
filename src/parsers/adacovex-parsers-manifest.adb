@@ -296,8 +296,8 @@ package body Adacovex.Parsers.Manifest is
    --  unchanged. A physical line longer than Max_Line stops the read;
    --  no partial set is kept.
    --  @param Owner_Dir  Directory holding the project manifest that owns a
-   --    vendored directory (for example tests/e2e owns
-   --    tests/e2e/node_modules).
+   --    vendored directory (for example src/tests/e2e/dashboard owns
+   --    src/tests/e2e/dashboard/node_modules).
    --  @param Test_Names  Collected test-labelled dependency names.
    procedure Collect_Owner_Test_Names
      (Owner_Dir : String; Test_Names : in out Name_Vectors.Vector)
