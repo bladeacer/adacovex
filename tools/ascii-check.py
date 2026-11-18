@@ -19,10 +19,10 @@ semantics of the check itself are the old gate's:
   (including CRLF line endings and UTF-8 multi-byte characters) is a
   violation.
 
-Generated e2e artefacts (`tests/e2e/playwright-report/`,
-`tests/e2e/test-results/`) are gitignored but still land under the scanned
-`.md` extension, so they are excluded by name the same way `node_modules`
-is.
+Generated e2e artefacts (`src/tests/e2e/dashboard/playwright-report/`,
+`src/tests/e2e/dashboard/test-results/`) are gitignored but still land under
+the scanned `.md` extension, so they are excluded by name the same way
+`node_modules` is.
 
 Usage:
   python3 tools/ascii-check.py   # scan the repo; exit 1 when any file fails

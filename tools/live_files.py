@@ -52,7 +52,8 @@ GENERATED_DIRS: frozenset = frozenset({
 })
 
 #  Directory names pruned wherever they appear, before their contents are
-#  read.  A vendored tree (tests/e2e/node_modules) and a build cache can be
+#  read.  A vendored tree (src/tests/e2e/dashboard/node_modules) and a build
+#  cache can be
 #  larger than the repository, and filtering them after `rglob` made the
 #  metric-sync checks the slowest gates in `just check`.
 PRUNE_NAMES: frozenset = frozenset({

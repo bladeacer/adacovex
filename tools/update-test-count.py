@@ -73,6 +73,7 @@ CATEGORY_KEY: Dict[str, str] = {
     "Platform paths": "src/tests/adacovex_paths_tests",
     "Install method": "src/tests/adacovex_install_tests",
     "tldr installer": "src/tests/adacovex_tldr_tests",
+    "Test support": "src/tests/adacovex_test_support_tests",
 }
 
 TEST_RUNNER_KEY: str = "src/tests/test_runner"

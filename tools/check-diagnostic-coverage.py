@@ -9,8 +9,8 @@ and which fixture proves it.
 This gate fails when the three sources drift:
 
 * a `Fix_Hint` keyword in `Adacovex.Prove_Output` has no matrix row;
-* a fixture in `tests/e2e/prove_diagnostics.py` (or a fixture directory
-  under `src/tests/projects/contract-errors/`) has no matrix row;
+* a fixture directory under `src/tests/projects/contract-errors/` has no
+  matrix row;
 * a row marked Supported names a fixture that does not exist.
 
 Usage: python3 tools/check-diagnostic-coverage.py
@@ -26,7 +26,6 @@ from typing import Dict, List, Set, Tuple
 ROOT: Path = Path(__file__).resolve().parent.parent
 MATRIX: Path = ROOT / "docs" / "contributing" / "proving-diagnostics.md"
 PROVE_OUTPUT: Path = ROOT / "src" / "core" / "adacovex-prove_output.adb"
-FIXTURES: Path = ROOT / "tests" / "e2e" / "prove_diagnostics.py"
 CONTRACT_DIR: Path = ROOT / "src" / "tests" / "projects" / "contract-errors"
 
 BEGIN_MARKER: str = "<!-- diagnostic-matrix:begin -->"
@@ -70,9 +69,6 @@ def fix_hint_keywords() -> Set[str]:
 
 def fixture_names() -> Set[str]:
     names: Set[str] = set()
-    if FIXTURES.is_file():
-        text = FIXTURES.read_text(encoding="utf-8")
-        names.update(re.findall(r'_case\(\s*"([^"]+)"', text))
     if CONTRACT_DIR.is_dir():
         for child in CONTRACT_DIR.iterdir():
             if child.is_dir():

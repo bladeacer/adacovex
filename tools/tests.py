@@ -54,6 +54,8 @@ check_docs_coverage = importlib.import_module("check-docs-coverage")
 check_surface_parity = importlib.import_module("check-surface-parity")
 check_version = importlib.import_module("check-version-consistency")
 diagnostic_coverage = importlib.import_module("check-diagnostic-coverage")
+test_layout = importlib.import_module("check-test-layout")
+test_portability = importlib.import_module("check-test-portability")
 gen_docs_tree = importlib.import_module("gen-docs-tree")
 spark_off = importlib.import_module("spark-off-check")
 update_reqs = importlib.import_module("update-requirements")
@@ -1310,7 +1312,8 @@ class CliShardTests(unittest.TestCase):
     """Every CLI check group runs in at least one shard, and none twice."""
 
     def test_shards_partition_the_check_groups(self) -> None:
-        e2e = Path(__file__).resolve().parent.parent / "tests" / "e2e"
+        e2e = (Path(__file__).resolve().parent.parent
+               / "src" / "tests" / "e2e" / "cli")
         sys.path.insert(0, str(e2e))
         try:
             cli_flags = importlib.import_module("cli_flags")
@@ -3138,6 +3141,35 @@ class DiagnosticCoverageTests(unittest.TestCase):
         cases = {row["case"] for row in diagnostic_coverage.matrix_rows()}
         for name in diagnostic_coverage.fixture_names():
             self.assertIn(name, cases, f"fixture has no matrix row: {name}")
+
+
+class TestLayoutTests(unittest.TestCase):
+    """The layout and portability gates keep their documented shape."""
+
+    def test_inline_project_heredoc_is_detected(self) -> None:
+        line = "          cat > alire.toml <<'FIXTURE'"
+        match = test_layout.INLINE_TARGET.search(line)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group("target"), "alire.toml")
+        self.assertIsNone(test_layout.INLINE_TARGET.search("cp fixture.gpr ."))
+
+    def test_inline_check_ignores_a_non_project_target(self) -> None:
+        match = test_layout.INLINE_TARGET.search("cat > notes.txt <<'EOF'")
+        self.assertIsNotNone(match)
+        self.assertFalse(match.group("target").endswith(
+            test_layout.INLINE_SUFFIXES))
+
+    def test_ada_comment_text_is_not_scanned(self) -> None:
+        path = Path("x.adb")
+        self.assertEqual(test_portability._code_text(path, "  --  use /tmp"),
+                         "  ")
+        self.assertIn("/tmp", test_portability._code_text(
+            path, '  X : String := "/tmp";'))
+
+    def test_allow_list_entries_carry_a_reason(self) -> None:
+        self.assertTrue(test_portability.ALLOW)
+        for path, rule, reason in test_portability.ALLOW:
+            self.assertTrue(path and rule and reason.strip())
 
 
 class DocsTreeTests(unittest.TestCase):
