@@ -11,7 +11,7 @@ and interactive dashboards.
 - **Language**: Ada 2012 and later / SPARK 2014 (GNAT, Alire)
 - **Zero library dependency**: uses only the GNAT runtime. gnatprove is *not* a
   declared dependency -- the `prove` subcommand resolves it at run time
-  (per-project manifest, `$PATH`, `<data>/toolchain/`, or download) and
+  (per-project manifest, `$PATH`, `<data>/toolkit/`, or download) and
   lives only in the dev manifest for local task targets.
 - **SPARK level**: Platinum is the target; the tree currently assesses at Gold
   because Platinum also requires full proof coverage (every subprogram the
@@ -175,7 +175,7 @@ src/
 |   |-- adacovex-install.ads/.adb             -- Installation-method detection for the running binary (source checkout / Alire global / on PATH) + the SBOM scope rule for a project's adacovex reference
 |   |-- adacovex-opt_outs.ads/.adb            -- Per-file opt-out annotation detector (no-covex-complexity-scan / -docstrings / -spark-proof / -analysis header markers)
 |   |-- adacovex-paths.ads/.adb               -- Platform-agnostic path helpers (Is_Absolute / Join / Expand_User / Home_Directory; DOS vs Unix separators)
-|   |-- adacovex-prove.ads/.adb               -- GNATprove runner (alire-first toolchain resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
+|   |-- adacovex-prove.ads/.adb               -- GNATprove runner (alire-first toolkit resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 |   |-- adacovex-prove_output.ads/.adb        -- Proof diagnostics and output (finding model, captured-stream pass, diagnostics block, CI annotations, coloured replay printer, replay cache)
 |   |-- adacovex-prove_patch.ads/.adb         -- Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
 |   |-- adacovex-spark_coverage.ads/.adb      -- SPARK proof-coverage report (statement / subprogram / VC coverage and the three off classes, read from gnatprove.out and gnatprove.sarif)
@@ -391,7 +391,7 @@ exit codes, the `sbom` subcommand, the per-standard level flags
 (`--dal`, `--asil`, `--class`), and the `--standard` flag (including
 `--standard=all`): [docs/usage/cli-reference.md](docs/usage/cli-reference.md).
 
-`adacovex status` reports toolchain + platform state (Alire installed,
+`adacovex status` reports toolkit + platform state (Alire installed,
 how adacovex itself is installed -- `source-checkout`, `alire-global`,
 `on-path` -- plus the binary path, gnatprove
 dependency-managed/detectable, CPU count, CI status, and which VCS
@@ -543,12 +543,17 @@ for paths, and no `pip install` / external imports. Run them with
 proof-status`, `just requirements`, `just docs-tree`, and `just link-check`
 (markdown link
 verification, run as a cheap static gate in `just check`).
-`tools/tasks.py` is the task runner. It owns every build, sync, and gate
-recipe as a Python function, and two thin front ends call it: the `justfile`
+`tools/tasks.py` is the task-runner entry point. The implementation lives in
+`tools/taskkit/`: `common` owns paths, process helpers, and gate preflights;
+`build` owns the build, proof, docs, and product tasks; `gates` owns the
+cheap checks and sync targets; `e2e` owns the end-to-end suites; `release`
+owns versioning and publishing; and `checks` owns `CHECK_GATES` and the
+`check` runner. Two thin front ends call the entry point: the `justfile`
 (`just <task>`, the primary developer runner) and the `Makefile` (a
 compatibility shim that delegates each target, so an existing `make <task>`
 reference in CI or the docs keeps working). The `check` gate order lives in
-`tools/tasks.py` (`CHECK_GATES`), and `tools/tests.py` reads it from there.
+`tools/taskkit/checks.py`, and `tools/tests.py` reads `CHECK_GATES` from
+there.
 The multi-step tasks delegate their orchestration to dedicated
 scripts so the runner stays declarative: `just build` runs
 tools/build.py (version + dashboard regeneration, `alr build` with the
@@ -562,8 +567,11 @@ invocation shape; `run.py assess-args` feeds release.py), and `just
 release` runs tools/release.py (`--dry-run` skips commit/tag/push; the
 recipe refuses to start on any branch other than `main`, and the release
 workflow refuses a tag whose commit is not on `main`).
-The tools' own pure logic is covered by a stdlib-unittest suite at
-tools/tests.py, wired as the `tools-check` gate in `just check`.
+The tools' own pure logic is covered by a stdlib-unittest suite whose runner
+is `tools/tests.py`, wired as the `tools-check` gate in `just check`. The
+test domains live in `tools/test_release.py`, `tools/test_docs_generation.py`,
+`tools/test_docs_gates.py`, `tools/test_tasks.py`, and `tools/test_misc.py`;
+`tools/testsupport.py` owns their shared imports and helpers.
 `tools/check-action-parity.py` is a pure check (no writes) wired as
 `just action-parity-check` -- a feature gate in `just check` and CI that
 fails when the GitHub Action stops mirroring the base CLI option set.
@@ -740,7 +748,7 @@ compatibility shim. The table names the canonical target for each task.
 | `release` | Build the release binary and verify its version, prove, validate, run coverage gate vs last release, bundle + tag & push |
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
-| `cli-e2e` | Run the CLI end-to-end checks against the real binary (src/tests/e2e/cli/cli_flags.py): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `just check` |
+| `cli-e2e` | Run the CLI end-to-end checks against the real binary (registry: src/tests/e2e/cli/cli_flags.py; groups: checks_basic / checks_sbom / checks_serve / checks_config / checks_prove): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `just check` |
 | `prove-e2e` | Run the prove diagnostics end-to-end suite (src/tests/e2e/prove/prove_diagnostics.py): it proves one committed SPARK fixture project per contract-writing mistake -- `index`, `overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`, `typo_attribute`, `typo_identifier` under src/tests/projects/contract-errors/ -- each with a broken variant and a fixed counterpart, runs the real `prove` command over both, and checks the quiet replay (no phase banners, no unconditional filtered footer), the diagnostics block (prover identity, source location, check kind, fix hint) for a finding, the compile-error shape (replay keeps the error with its location, non-zero exit, no block) for a typo, the fixed variant proving cleanly, the coverage-summary line (`--no-coverage` removes it and leaves the proof alone), and the `--verbose` raw stream (no block). 132 checks. `--keep` writes the projects to `obj/prove-diagnostics/` and `--case`/`--debug` narrow and expand the run. Part of `just check`; SKIPped when no gnatprove is resolvable |
 | `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium). SKIPs the browser half when pnpm is absent or the Chromium download fails |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `just build`) |
@@ -988,7 +996,7 @@ docs/
 |   |-- target-projects.md -- Target project requirements
 |   `-- vcs.md -- VCS support and differential assessment
 |-- contributing/
-|   |-- architecture-dependencies.md -- Architecture: dependency management and the toolchain
+|   |-- architecture-dependencies.md -- Architecture: dependency management and the toolkit
 |   |-- architecture-outputs.md -- Architecture: outputs and formats
 |   |-- architecture-pipeline.md -- Architecture: pipeline, platforms, and delivery
 |   |-- architecture-verification.md -- Architecture: verification and proof patches

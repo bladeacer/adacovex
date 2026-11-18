@@ -21,7 +21,7 @@ jobs:
         #  dev-only dependency: it lives in alire-dev.toml so the
         #  published covex crate stays zero-dependency.  Without the
         #  swap `alr build` provisions nothing for the prover, and the
-        #  prove step fetches a toolchain instead of using the
+        #  prove step fetches a toolkit instead of using the
         #  dependency the manifest pins -- the same swap `just doc`,
         #  `just fmt`, and `just prove` perform locally through
         #  tools/dev-cmd.py.  This job only assesses this tree, so the
@@ -110,7 +110,7 @@ jobs:
           build: true
           run-tests: true
           assess: false
-          #  Toolchain + adacovex result cache.  Content-addressed entries
+          #  Toolkit + adacovex result cache.  Content-addressed entries
           #  make a restore either an exact hit or absent, so it can never
           #  mask a regression.
           cache: true
@@ -307,7 +307,7 @@ jobs:
           run-tests: true
           test-command: ./fixture_main
           assess: false
-          #  Toolchain + adacovex result cache (content-addressed, so a
+          #  Toolkit + adacovex result cache (content-addressed, so a
           #  restore is either an exact hit or absent).
           cache: true
           result-cache: true

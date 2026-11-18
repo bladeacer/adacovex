@@ -61,12 +61,11 @@ terms used on the [site transparency](../site-transparency.md) page live in
   [the composite action](ci-cd-action.md), and the release path is on
   [release bundling, tags, and consumer manifests](ci-cd-release.md).
 
-## Manage the toolchain
+## Manage the toolkit
 
-- [Global configuration and state](configuration.md) -- the optional
-  the global configuration file file, the environment variables, and the cache
-  and toolchain directories.
-- [Platform support](platforms.md) -- supported platforms and the toolchain
+- [Global configuration and state](configuration.md) --  the optional global configuration file, the environment variables, and the
+  cache and toolkit directories.
+- [Platform support](platforms.md) -- supported platforms and the toolkit
   state of each.
 
 ## Where to look next

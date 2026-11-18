@@ -43,10 +43,10 @@ from ~16 ms to ~10 ms. Cold wall drops from ~91 ms to ~86 ms.
 The first deployment of a manifest-pinned gnatprove downloads a ~130 MB
 bundle through `alr -n get` and can take a minute on a slow link. It now
 prints a progress line up front (`deploy: gnatprove <v> not in
-~/.adacovex/toolchain -- downloading via alr (one-time, may take a
+~/.adacovex/toolkit -- downloading via alr (one-time, may take a
 minute)...`) instead of sitting silent for the duration -- a silent
 minute read as a hang. The deployment remains one-time per version:
-every later run reuses the deployed crate under `~/.adacovex/toolchain/`
+every later run reuses the deployed crate under `~/.adacovex/toolkit/`
 with no download, and two projects pinning different versions keep both
 toolchains side by side.
 
@@ -95,7 +95,7 @@ faster).
 - No new HLRs. The release changes performance internals, cache
   behaviour, and documentation only; the existing tags below cover it.
 - `HLR-ARCH` -- C1 the cached-proof restore and C3 the deployment
-  progress line (the on-disk result cache and the toolchain resolution
+  progress line (the on-disk result cache and the toolkit resolution
   are build/architecture infrastructure).
 - `HLR-SCAN` / `HLR-MANIFEST` -- C2 the completed walk skip sets.
 - `HLR-PROVE` -- the installation guide's resolution-tier documentation

@@ -68,7 +68,7 @@ package Adacovex.Paths is
       Local_App_Data : String) return String
    with Global => null;
 
-   --  The adacovex data directory for a platform: the toolchain cache and
+   --  The adacovex data directory for a platform: the toolkit cache and
    --  the machine-local registry-metadata store.
    --  @param P               Platform family.
    --  @param Home            User home directory.

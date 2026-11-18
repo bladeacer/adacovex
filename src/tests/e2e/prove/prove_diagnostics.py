@@ -39,7 +39,7 @@ diagnostics block appears.  A finding is not an error.
 
 The fixture pins gnatprove in its own `alire.toml` (the same version
 `alire-dev.toml` pins), so a host that ran `just prove` already holds the
-deployment and no check downloads a toolchain.  The check skips itself when
+deployment and no check downloads a toolkit.  The check skips itself when
 no gnatprove is resolvable.
 
 Exit code 0 when every check passes, 1 otherwise.

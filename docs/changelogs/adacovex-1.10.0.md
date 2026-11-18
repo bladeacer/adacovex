@@ -45,11 +45,11 @@ there.
 
 ### C5: `adacovex status` subcommand
 
-A new `adacovex status` subcommand reports the toolchain + platform state
+A new `adacovex status` subcommand reports the toolkit + platform state
 without running an assessment and without downloading or deploying anything:
 whether Alire (`alr`) is installed, whether gnatprove is dependency-managed
 (target manifest pin) or detectable (global pin, on `$PATH`, or cached in
-`~/.adacovex/toolchain`), the host logical-CPU count and CI status, and the
+`~/.adacovex/toolkit`), the host logical-CPU count and CI status, and the
 resulting default GNATprove parallelism. It also prints the release-note that
 the CI binary is Linux x86-64 only.
 

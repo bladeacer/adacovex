@@ -60,7 +60,7 @@ stays a quick reference instead of accumulating every flag's full detail:
   instead of contributor build targets, the documentation table moved to the
   top (right after Quick start), the duplicated standards paragraph was
   removed, and sections that duplicate dedicated pages (platforms,
-  toolchain resolution, VCS, AI disclosure, dashboard) now point at them.
+  toolkit resolution, VCS, AI disclosure, dashboard) now point at them.
 
 ### C4: contributor guide, link checker, and a tighter README
 
@@ -76,7 +76,7 @@ stays a quick reference instead of accumulating every flag's full detail:
   `docs/platforms.md` (a `README.md` reference missing the `../` prefix),
   now fixed.
 - **README trimmed further** (318 -> 229 lines over this release): the
-  platform/toolchain/VCS sections merged into one compact section, the
+  platform/toolkit/VCS sections merged into one compact section, the
   docstring example folded into a pointer, the DAL table moved out (the
   standards table + links remain), and the example list cut to the six most
   common invocations.

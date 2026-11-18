@@ -162,7 +162,7 @@ begin
    --  restored probe is re-validated against the identity digest of the
    --  tool's installed binary before its version is trusted: a tool
    --  upgraded since the set was cached re-probes here (and refreshes
-   --  both cache layers), while an unchanged toolchain serves entirely
+   --  both cache layers), while an unchanged toolkit serves entirely
    --  from cache with no subprocess probes.
    if From_Cache then
       for PI in 1 .. Integer (Probes.Length) loop
@@ -259,7 +259,7 @@ begin
                   GNAT.OS_Lib.Free (Exe);
                   --  Version probing spawns a subprocess per tool. Cache
                   --  the result on disk (7-day TTL), validated against
-                  --  the binary fingerprint. Unchanged toolchains then do
+                  --  the binary fingerprint. Unchanged toolkits then do
                   --  not pay tens of milliseconds per referenced tool on
                   --  every run; an upgrade re-probes exactly once.
                   declare

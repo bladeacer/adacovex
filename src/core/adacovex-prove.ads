@@ -11,7 +11,7 @@ with Ada.Strings.Unbounded;
 --    1. If the target's alire.toml or alire-dev.toml declares gnatprove as
 --       a dependency, deploy only the gnatprove binary crate. This crate is
 --       a self-contained bundle with no dependencies. Deploy it into
---       <data>/toolchain via `alr -n get gnatprove=<version>`, then run
+--       <data>/toolkit via `alr -n get gnatprove=<version>`, then run
 --       it directly. This avoids the fragile `alr exec` path. That path
 --       used to compose the target's entire dev-manifest dependency set
 --       (covex, gnatdoc_bin, gnatformat_bin, and more). Flaky third-party
@@ -26,7 +26,7 @@ with Ada.Strings.Unbounded;
 --       projects whose manifest does not declare gnatprove. The first
 --       deployment downloads a ~130 MB bundle through alr (one-time per
 --       version; a progress line says so up front). Every later run reuses
---       the deployed crate under <data>/toolchain with no download, and
+--       the deployed crate under <data>/toolkit with no download, and
 --       two projects pinning different versions keep both toolchains side
 --       by side there.
 --    2. A gnatprove version pinned globally. The pin comes from the
@@ -39,9 +39,9 @@ with Ada.Strings.Unbounded;
 --       It is folded into the proof result-cache identity. A different pinned
 --       version can never reuse a stale proof.
 --    3. A gnatprove already on $PATH.
---    4. A cached gnatprove in <data>/toolchain/bin (download layout) or a
+--    4. A cached gnatprove in <data>/toolkit/bin (download layout) or a
 --       previously `alr get`-deployed gnatprove_*/ crate under the same dir.
---    5. Last resort: a platform toolchain download. It uses curl. It is
+--    5. Last resort: a platform toolkit download. It uses curl. It is
 --       used only when no deployable, on-PATH, or cached gnatprove is
 --       available.
 --  So the order is: manifest pin > global pin (config/env) > PATH > cache >
@@ -140,7 +140,7 @@ package Adacovex.Prove is
    --  Resolve how to run gnatprove for a target project.
    --  The priority is manifest-declared deployment via `alr get`. Then the
    --  global version pin follows (see Pinned_Version in the package comment).
-   --  Then PATH, then <data>/toolchain/bin, then a platform toolchain
+   --  Then PATH, then <data>/toolkit/bin, then a platform toolkit
    --  download.
    --  Pinned_Version applies only when the manifest does not declare
    --  gnatprove. The manifest pin is authoritative and always wins. When
@@ -151,7 +151,7 @@ package Adacovex.Prove is
    --  across projects that do not pin one themselves.
    --  Exe_Path always holds a directly-executable gnatprove binary. It is
    --  never the `alr` wrapper. The deployment path runs the deployed binary
-   --  itself. Toolchain_Dir is the bin directory to prepend to PATH for the
+   --  itself. Toolkit_Dir is the bin directory to prepend to PATH for the
    --  child. It is empty when the binary is already on PATH. Identity is a
    --  short fingerprint of the resolved prover. For the deploy path it is the
    --  pinned version. Otherwise it is the executable or toolchain path.
@@ -162,8 +162,8 @@ package Adacovex.Prove is
    --  manifest pin is still preferred when the target declares one).
    --  @param Exe_Path  Output buffer for the executable path.
    --  @param Exe_Len  Length of the resolved executable path.
-   --  @param Toolchain_Dir  Output buffer for the toolchain bin directory.
-   --  @param Dir_Len  Length of the toolchain bin directory path.
+   --  @param Toolkit_Dir  Output buffer for the toolkit bin directory.
+   --  @param Dir_Len  Length of the toolkit bin directory path.
    --  @param Identity  Output buffer for the prover identity fingerprint.
    --  @param Ident_Len  Length of the identity fingerprint.
    --  @param Success  True if a usable gnatprove was found.
@@ -172,7 +172,7 @@ package Adacovex.Prove is
       Pinned_Version : String;
       Exe_Path       : out String;
       Exe_Len        : out Natural;
-      Toolchain_Dir  : out String;
+      Toolkit_Dir    : out String;
       Dir_Len        : out Natural;
       Identity       : out String;
       Ident_Len      : out Natural;
@@ -304,7 +304,7 @@ package Adacovex.Prove is
    --  Run gnatprove against a target project's root .gpr file.
    --  The procedure resolves gnatprove (see Resolve_GNATprove) and spawns
    --  `gnatprove -P <gpr> <options>` directly. When the deployment is not
-   --  already on PATH, it prepends the toolchain bin directory to PATH for
+   --  already on PATH, it prepends the toolkit bin directory to PATH for
    --  the child. It forwards the options (jobs, level, timeout, steps,
    --  memlimit, force, unrolling, inlining) to gnatprove. On success,
    --  gnatprove writes a fresh <target>/obj/gnatprove/gnatprove.out, and
@@ -328,12 +328,12 @@ package Adacovex.Prove is
    --  @param Target_Dir  Project root whose obj/gnatprove artefacts are read.
    procedure Report_Coverage (Target_Dir : String);
 
-   --  Print a non-mutating toolchain and platform report for the `adacovex
+   --  Print a non-mutating toolkit and platform report for the `adacovex
    --  status` subcommand. It checks, in order, whether:
    --    * Alire (`alr`) is installed on $PATH.
    --    * the target manifest declares gnatprove (dependency-managed), a
    --      global pin is set, or a gnatprove is already on $PATH or cached in
-   --      <data>/toolchain.
+   --      <data>/toolkit.
    --    * the host logical-CPU count and CI status drive GNATprove
    --      parallelism.
    --  Unlike Resolve_GNATprove and Run_Prove, it never deploys or downloads
@@ -352,7 +352,7 @@ package Adacovex.Prove is
    --  Write the `adacovex status` report as machine-readable JSON for the
    --  `status --export[=PATH]` mode. The JSON holds the version, the target,
    --  alire and gnatprove detectability (manifest or global pin, PATH,
-   --  toolchain cache), the platform (logical CPUs, CI, default -j), the VCS
+   --  toolkit cache), the platform (logical CPUs, CI, default -j), the VCS
    --  tool report, and the overall OK verdict. Like Run_Status, it never
    --  deploys or downloads anything. When Out_Path is empty, the JSON prints
    --  to stdout. Otherwise it is written to Out_Path, which is created or

@@ -188,7 +188,7 @@ unproved, 0 justified.
 
 ## Fixes
 
-### H1: Cold-cache runs no longer re-probe the whole toolchain
+### H1: Cold-cache runs no longer re-probe the whole toolkit
 
 Before 1.28.0-era cache wipes, a wiped `--cache-dir` re-probed every
 referenced tool. After these changes a fresh result cache on a machine

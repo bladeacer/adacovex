@@ -28,7 +28,7 @@ Reliability is grounded in proof and design, not implicit trust:
 
 > *Still skeptical?* See Ken Thompson's landmark paper,
 > [*Reflections on Trusting Trust*](https://dl.acm.org/doi/epdf/10.1145/358198.358210),
-> on the fundamental nature of trust in software toolchains. The point is that no
+> on the fundamental nature of trust in software toolkits. The point is that no
 > software, compiler, or model is trustworthy purely by assertion. It must be
 > inspectable and independently verifiable.
 

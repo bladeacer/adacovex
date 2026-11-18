@@ -42,7 +42,7 @@ count, and the DO-178C / ISO 26262 / IEC 62304 tiers. Click any badge for the
   Subversion, Fossil, or jj** without touching the working tree.
 - **Result caching** -- a content-addressed on-disk cache (`<cache>`)
   serves unchanged scan, proof, test, HLR/LLR, and dependency-graph results.
-- **Tooling** -- `status` reports toolchain and VCS state, `man` and `tldr`
+- **Tooling** -- `status` reports toolkit and VCS state, `man` and `tldr`
   install local pages, and `just check` runs the full quality gate in one command.
 - **Scalable** -- package and subprogram collections use
   `Ada.Containers.Vectors` (no compile-time count limits); fixed-size buffers
@@ -59,7 +59,7 @@ alr install covex gnatprove       # Alire: binary on ~/.local/bin
 # Assess a project (strict mode; DAL-C by default)
 adacovex --target=.
 
-# Toolchain + platform report
+# Toolkit + platform report
 adacovex status --target=.
 
 # Web dashboard at http://localhost:8080
@@ -102,7 +102,7 @@ the full position.
 | [HLR Index](https://adacovex.readthedocs.io/en/latest/HLR.html) | High-level requirements traceability index |
 | [LLR Mapping](https://adacovex.readthedocs.io/en/latest/LLR.html) | Low-level requirement-to-HLR mapping |
 | [Proving and Writing Proofs](https://adacovex.readthedocs.io/en/latest/contributing/proving.html) | How proving works, SPARK contracts, proof patches for vendored deps |
-| [Architecture](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html) | Design decisions, patches, toolchain resolution, overflow contract |
+| [Architecture](https://adacovex.readthedocs.io/en/latest/contributing/architecture.html) | Design decisions, patches, toolkit resolution, overflow contract |
 | [Developer Guide](https://adacovex.readthedocs.io/en/latest/contributing/developer-guide.html) | Codebase structure and repo setup for contributors |
 | [API Reference](https://adacovex.readthedocs.io/en/latest/api-docs/index.html) | Auto-generated package API docs (developers / auditors) |
 | [Docstring Spec](https://adacovex.readthedocs.io/en/latest/api-docs/adacovex-docstring-spec.html) | Annotation format, placement, conventions |
@@ -150,7 +150,7 @@ adacovex --target=. --serve                         # web dashboard at :8080
 adacovex --target=. --compare-base=HEAD             # differential assessment
 adacovex prove --target=.                           # run gnatprove, then assess
 adacovex sbom --format=cyclonedx-json --target=.    # proof-aware SBOM
-adacovex status --target=.                          # toolchain + platform report
+adacovex status --target=.                          # toolkit + platform report
 adacovex complexity --target=.                      # cyclomatic complexity check
 ```
 

@@ -10,7 +10,7 @@ Resolution priority (lightweight: adacovex only requires ``alr`` on PATH):
 #. If the target's alire.toml or alire-dev.toml declares gnatprove as
 a dependency, deploy only the gnatprove binary crate. This crate is
 a self-contained bundle with no dependencies. Deploy it into
-<data>/toolchain via ``alr -n get gnatprove=<version>``, then run
+<data>/toolkit via ``alr -n get gnatprove=<version>``, then run
 it directly. This avoids the fragile ``alr exec`` path. That path
 used to compose the target's entire dev-manifest dependency set
 (covex, gnatdoc_bin, gnatformat_bin, and more). Flaky third-party
@@ -25,7 +25,7 @@ always come from the pinned prover. Priorities 2 to 5 apply only to
 projects whose manifest does not declare gnatprove. The first
 deployment downloads a ~130 MB bundle through alr (one-time per
 version; a progress line says so up front). Every later run reuses
-the deployed crate under <data>/toolchain with no download, and
+the deployed crate under <data>/toolkit with no download, and
 two projects pinning different versions keep both toolchains side
 by side there.
 
@@ -41,10 +41,10 @@ version can never reuse a stale proof.
 
 #. A gnatprove already on $PATH.
 
-#. A cached gnatprove in <data>/toolchain/bin (download layout) or a
+#. A cached gnatprove in <data>/toolkit/bin (download layout) or a
 previously ``alr get``-deployed gnatprove_*/ crate under the same dir.
 
-#. Last resort: a platform toolchain download. It uses curl. It is
+#. Last resort: a platform toolkit download. It uses curl. It is
 used only when no deployable, on-PATH, or cached gnatprove is
 available.
 
@@ -52,7 +52,7 @@ So the order is: manifest pin > global pin (config/env) > PATH > cache >
 download.
 HLR-PROVE: GNATprove subcommand
 
-**See also:** [Architecture -- toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand)
+**See also:** [Architecture -- toolkit resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand)
 
 > **Note:** All items in this package are public.
 
@@ -198,7 +198,7 @@ end record;
 
 ### procedure Export_Status (Target_Dir : Standard.String; Out_Path : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 
-> Write the `adacovex status` report as machine-readable JSON for the `status --export[=PATH]` mode. The JSON holds the version, the target, alire and gnatprove detectability (manifest or global pin, PATH, toolchain cache), the platform (logical CPUs, CI, default -j), the VCS tool report, and the overall OK verdict. Like Run_Status, it never deploys or downloads anything. When Out_Path is empty, the JSON prints to stdout. Otherwise it is written to Out_Path, which is created or overwritten.
+> Write the `adacovex status` report as machine-readable JSON for the `status --export[=PATH]` mode. The JSON holds the version, the target, alire and gnatprove detectability (manifest or global pin, PATH, toolkit cache), the platform (logical CPUs, CI, default -j), the VCS tool report, and the overall OK verdict. Like Run_Status, it never deploys or downloads anything. When Out_Path is empty, the JSON prints to stdout. Otherwise it is written to Out_Path, which is created or overwritten.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -237,13 +237,13 @@ end record;
 |-----------|-------------|
 | `Target_Dir` | Project root whose obj/gnatprove artefacts are read. |
 
-### procedure Resolve_GNATprove (Target_Dir : Standard.String; Pinned_Version : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolchain_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
+### procedure Resolve_GNATprove (Target_Dir : Standard.String; Pinned_Version : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolkit_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
-> Resolve how to run gnatprove for a target project. The priority is manifest-declared deployment via `alr get`. Then the global version pin follows (see Pinned_Version in the package comment). Then PATH, then <data>/toolchain/bin, then a platform toolchain download. Pinned_Version applies only when the manifest does not declare gnatprove. The manifest pin is authoritative and always wins. When Pinned_Version is not empty, the exact gnatprove version is deployed via `alr -n get gnatprove=<version>` and run directly. A failure to deploy is a failure to run. It is never a silent fallback to a different prover. This is how mission-critical CI fixes the proof toolchain across projects that do not pin one themselves. Exe_Path always holds a directly-executable gnatprove binary. It is never the `alr` wrapper. The deployment path runs the deployed binary itself. Toolchain_Dir is the bin directory to prepend to PATH for the child. It is empty when the binary is already on PATH. Identity is a short fingerprint of the resolved prover. For the deploy path it is the pinned version. Otherwise it is the executable or toolchain path. Run_Prove folds Identity into the result-cache key. Proofs from different gnatprove deployments are then never mixed.
+> Resolve how to run gnatprove for a target project. The priority is manifest-declared deployment via `alr get`. Then the global version pin follows (see Pinned_Version in the package comment). Then PATH, then <data>/toolkit/bin, then a platform toolkit download. Pinned_Version applies only when the manifest does not declare gnatprove. The manifest pin is authoritative and always wins. When Pinned_Version is not empty, the exact gnatprove version is deployed via `alr -n get gnatprove=<version>` and run directly. A failure to deploy is a failure to run. It is never a silent fallback to a different prover. This is how mission-critical CI fixes the proof toolchain across projects that do not pin one themselves. Exe_Path always holds a directly-executable gnatprove binary. It is never the `alr` wrapper. The deployment path runs the deployed binary itself. Toolkit_Dir is the bin directory to prepend to PATH for the child. It is empty when the binary is already on PATH. Identity is a short fingerprint of the resolved prover. For the deploy path it is the pinned version. Otherwise it is the executable or toolchain path. Run_Prove folds Identity into the result-cache key. Proofs from different gnatprove deployments are then never mixed.
 
 | Parameter | Description |
 |-----------|-------------|
-| `Dir_Len` | Length of the toolchain bin directory path. |
+| `Dir_Len` | Length of the toolkit bin directory path. |
 | `Exe_Len` | Length of the resolved executable path. |
 | `Exe_Path` | Output buffer for the executable path. |
 | `Ident_Len` | Length of the identity fingerprint. |
@@ -251,11 +251,11 @@ end record;
 | `Pinned_Version` | Global gnatprove version pin ("" = none. The manifest pin is still preferred when the target declares one). |
 | `Success` | True if a usable gnatprove was found. |
 | `Target_Dir` | Project root directory. |
-| `Toolchain_Dir` | Output buffer for the toolchain bin directory. |
+| `Toolkit_Dir` | Output buffer for the toolkit bin directory. |
 
 ### procedure Run_Prove (Target_Dir : Standard.String; Opts : Adacovex.Prove.Prove_Options; Success : Standard.Boolean)
 
-> Run gnatprove against a target project's root .gpr file. The procedure resolves gnatprove (see Resolve_GNATprove) and spawns `gnatprove -P <gpr> <options>` directly. When the deployment is not already on PATH, it prepends the toolchain bin directory to PATH for the child. It forwards the options (jobs, level, timeout, steps, memlimit, force, unrolling, inlining) to gnatprove. On success, gnatprove writes a fresh <target>/obj/gnatprove/gnatprove.out, and both the success marker and the summary content go into the proof result cache. A later run over unchanged inputs short-circuits: it restores the cached gnatprove.out (so the assessment pipeline can parse it even when obj/gnatprove/ was wiped) and skips the prover entirely. The command's stdout and stderr stream to the parent's terminal.
+> Run gnatprove against a target project's root .gpr file. The procedure resolves gnatprove (see Resolve_GNATprove) and spawns `gnatprove -P <gpr> <options>` directly. When the deployment is not already on PATH, it prepends the toolkit bin directory to PATH for the child. It forwards the options (jobs, level, timeout, steps, memlimit, force, unrolling, inlining) to gnatprove. On success, gnatprove writes a fresh <target>/obj/gnatprove/gnatprove.out, and both the success marker and the summary content go into the proof result cache. A later run over unchanged inputs short-circuits: it restores the cached gnatprove.out (so the assessment pipeline can parse it even when obj/gnatprove/ was wiped) and skips the prover entirely. The command's stdout and stderr stream to the parent's terminal.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -265,7 +265,7 @@ end record;
 
 ### procedure Run_Status (Target_Dir : Standard.String; TZ_Spec : Standard.String; Success : Standard.Boolean)
 
-> Print a non-mutating toolchain and platform report for the `adacovex status` subcommand. It checks, in order, whether: * Alire (`alr`) is installed on $PATH. * the target manifest declares gnatprove (dependency-managed), a global pin is set, or a gnatprove is already on $PATH or cached in <data>/toolchain. * the host logical-CPU count and CI status drive GNATprove parallelism. Unlike Resolve_GNATprove and Run_Prove, it never deploys or downloads anything. Success is True when a usable gnatprove is detectable without a download and alr is present whenever the deploy path is the only option. It also prints the release note. The CI release binary is Linux x86-64 only for now.
+> Print a non-mutating toolkit and platform report for the `adacovex status` subcommand. It checks, in order, whether: * Alire (`alr`) is installed on $PATH. * the target manifest declares gnatprove (dependency-managed), a global pin is set, or a gnatprove is already on $PATH or cached in <data>/toolkit. * the host logical-CPU count and CI status drive GNATprove parallelism. Unlike Resolve_GNATprove and Run_Prove, it never deploys or downloads anything. Success is True when a usable gnatprove is detectable without a download and alr is present whenever the deploy path is the only option. It also prints the release note. The CI release binary is Linux x86-64 only for now.
 
 | Parameter | Description |
 |-----------|-------------|

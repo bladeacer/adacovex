@@ -239,7 +239,7 @@ package body Adacovex_Cache_Tests is
            (not Probe_Found,
             "Test 11b: probe fingerprint mismatch invalidates");
          --  The probe store lives at <platform cache>/probes/<tool>.v2.
-         --  Remove the test's entry so it never leaks into a real toolchain
+         --  Remove the test's entry so it never leaks into a real toolkit
          --  probe set. Probe_Path is private to Adacovex.Cache, so rebuild
          --  the path here from the documented layout.
          declare

@@ -52,7 +52,7 @@ scattered mentions. The new [Global configuration and
 state](../usage/configuration.md) page documents the `[prove]
 gnatprove-version` pin (its exact resolution precedence and never-fall-back
 rule), every environment variable adacovex reads, the `~/.adacovex/` state
-directories (result cache, toolchain, probes, registry metadata, stat-stamp
+directories (result cache, toolkit, probes, registry metadata, stat-stamp
 index), and how to reset each one. The installation, CLI-options, and docs
 index pages link it.
 

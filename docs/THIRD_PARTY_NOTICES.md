@@ -33,16 +33,17 @@ it documents with, and the skill is the reason the manual reads as it does.
 
 | Component | Version | Licence | Used for |
 |-----------|---------|---------|----------|
-| GNAT compiler (GNAT Community / FSF GNAT) | toolchain-managed | GPL-3.0-or-later (with GCC Runtime Library Exception for runtime) | Compiling adacovex and target projects |
-| GNATprove | toolchain-managed | GPL-3.0-or-later | SPARK proof analysis (`covex prove`) |
-| Python 3 | toolchain-managed | PSF-2.0 | Build-time only: `tools/gen-docs.py` bundles the offline manual into the binary |
+| GNAT compiler (GNAT Community / FSF GNAT) | dependency-managed | GPL-3.0-or-later (with GCC Runtime Library Exception for runtime) | Compiling adacovex and target projects |
+| GNATprove | dependency-managed | GPL-3.0-or-later | SPARK proof analysis (`covex prove`) |
+| Python 3 | dependency-managed | PSF-2.0 | Build-time only: `tools/gen-docs.py` bundles the offline manual into the binary |
 
 Python 3 is required at **build time** to bundle the docs into the binary, but the shipped binary itself has no Python dependency -- the manual is embedded as generated Ada string constants. Sphinx, MyST and Furo (below) run inside Python to produce that manual; Python itself is not bundled or redistributed.
 | Z3 / Alt-Ergo / CVC5 solvers | bundled with GNATprove | MIT / CeCILL-C / Apache-2.0 respectively | Satisfying SPARK verification conditions |
 
-The GNAT toolchain is **not** embedded in the adacovex release bundle. gnatprove is **not** a declared dependency of the `covex` crate. adacovex resolves gnatprove at run time. `covex prove` prefers the own gnatprove dependency of the target project when the alire.toml / alire-dev.toml of the target project declares one. It deploys only the pinned gnatprove binary crate into `<data>/toolchain/` via `alr -n get` and runs the deployed binary directly (one-time per version; later runs reuse it). adacovex itself then requires only `alr` on `$PATH`. If no dependency is declared, it falls back to a globally pinned version, then a gnatprove on `$PATH`. Then it falls back to a cached `the toolchain cache bin/gnatprove`.
+The GNAT toolchain is **not** embedded in the adacovex release bundle. gnatprove is **not** a declared dependency of the `covex` crate. adacovex resolves gnatprove at run time. `covex prove` prefers the own gnatprove dependency of the target project when the alire.toml / alire-dev.toml of the target project declares one. It deploys only the pinned gnatprove binary crate into `<data>/toolkit/` via `alr -n get` and runs the deployed binary directly (one-time per version; later runs reuse it). adacovex itself then requires only `alr` on `$PATH`. If no dependency is declared, it falls back to a globally pinned version, then a gnatprove on `$PATH`. Then it falls back to the gnatprove binary in the toolkit cache
+(`<data>/toolkit/bin/gnatprove`).
 
-Finally it falls back to a platform toolchain download. This download is a GPL-licensed GNAT/gnatprove distribution. Distributing it requires the end user to accept the GPL for that component.
+Finally it falls back to a platform toolkit download. This download is a GPL-licensed GNAT/gnatprove distribution. Distributing it requires the end user to accept the GPL for that component.
 
 ## Specifications
 
@@ -93,9 +94,9 @@ The highlighter is adapted from ESM/TypeScript to a single plain-script binding 
 
 | Component | Version | Licence | Used for |
 |-----------|---------|---------|----------|
-| [Sphinx](https://www.sphinx-doc.org) | toolchain-managed | BSD-3-Clause | Building the manual from `docs/` (Furo theme + MyST) for the deployed site and the bundled offline manual |
-| [MyST-Parser](https://github.com/executablebooks/MyST-Parser) | toolchain-managed | MIT | Reading the `docs/*.md` pages unchanged inside Sphinx (no reStructuredText conversion) |
-| [Furo](https://github.com/pradyunsg/furo) | toolchain-managed | MIT | The Sphinx HTML theme used by the manual (light/dark, no external assets) |
+| [Sphinx](https://www.sphinx-doc.org) | dependency-managed | BSD-3-Clause | Building the manual from `docs/` (Furo theme + MyST) for the deployed site and the bundled offline manual |
+| [MyST-Parser](https://github.com/executablebooks/MyST-Parser) | dependency-managed | MIT | Reading the `docs/*.md` pages unchanged inside Sphinx (no reStructuredText conversion) |
+| [Furo](https://github.com/pradyunsg/furo) | dependency-managed | MIT | The Sphinx HTML theme used by the manual (light/dark, no external assets) |
 
 Sphinx, MyST-Parser and Furo are build-time tools (pinned in `requirements.txt`, installed into the Python venv). They compile the Markdown manual; their output is embedded into the binary as Ada strings. They are not bundled or redistributed with adacovex. The user-facing documentation, and the offline manual served at `/docs`, credit Sphinx as the docs generator and Furo as the theme.
 

@@ -2398,7 +2398,7 @@ package body Adacovex.Config is
                & "or sbom");
          end if;
 
-         -- Status mode is a pure toolchain/platform report: no assessment runs.
+         -- Status mode is a pure toolkit/platform report: no assessment runs.
          if Cfg.Status_Mode
            and then (Cfg.Prove_Mode
                      or Cfg.SBOM_Mode
@@ -3084,7 +3084,7 @@ package body Adacovex.Config is
         ("                        Also accepts a combined tier token: dal-A..E,");
       Opt ("                        asil-A..D, asil-QM, class-A..C (e.g.");
       Opt ("                        --standard=asil-b == --asil=B)");
-      Opt ("  status                Report toolchain + platform status (no");
+      Opt ("  status                Report toolkit + platform status (no");
       Opt
         ("                        assessment); exit 0 when alire + gnatprove are");
       Opt ("                        available or dependency-managed");
@@ -3694,7 +3694,7 @@ package body Adacovex.Config is
             & "  --class=LEVEL        IEC 62304 class (sets standard + tier)"
             & ASCII.LF
             & ASCII.LF
-            & "Run `adacovex status` for toolchain state; see docs/standards.md"
+            & "Run `adacovex status` for toolkit state; see docs/standards.md"
             & ASCII.LF
             & "for the full tier mapping.");
       elsif T = "target" or else T = "manifest" then
@@ -3859,7 +3859,7 @@ package body Adacovex.Config is
       elsif T = "status" then
          Print_Section
            ("adacovex status",
-            "Report toolchain + platform state without running an assessment"
+            "Report toolkit + platform state without running an assessment"
             & ASCII.LF
             & "or downloading anything: alire/gnatprove detectability, CPU"
             & ASCII.LF

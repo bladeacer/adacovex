@@ -52,7 +52,7 @@ probe results within a release. No hand-maintained salt is needed now.
 targets), but the README's *Requirements* list only mentioned `gnatpp` /
 `gnatdoc` as optional tools. The list now states that **gnatdoc_bin** and
 **gnatformat_bin** are managed by Alire as dev dependencies, so the published
-crate still installs and builds with no toolchain beyond the GNAT compiler.
+crate still installs and builds with no toolkit beyond the GNAT compiler.
 
 ## Fixes
 

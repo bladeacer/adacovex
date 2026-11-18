@@ -27,7 +27,7 @@ gnatprove = "^16.1.0"
 
 Then `alr build` produces `bin/adacovex` inside the project. `covex prove`
 deploys the pinned gnatprove crate standalone via `alr -n get` and runs it
-directly. Each project pins its own exact toolchain version. No global install
+directly. Each project pins its own toolchain version. No global install
 is needed:
 
 ```bash
@@ -48,12 +48,12 @@ resolution works like this:
    the leading operator is stripped because `alr -n get` accepts a bare
    version only).
 2. adacovex looks for an already-deployed `gnatprove_<version>_<hash>/`
-   crate under `<data>/toolchain/`. One found, it is reused directly
+   crate under `<data>/toolkit/`. One found, it is reused directly
    -- no download, no `alr exec`, and no composition of your project's
    whole dependency set (flaky third-party downloads can never fail a
    proof run).
 3. Not deployed yet: adacovex runs `alr -n get gnatprove=<version>`
-   **into `<data>/toolchain/`** (not into your project's workspace)
+   **into `<data>/toolkit/`** (not into your project's workspace)
    and prints a progress line -- the first deployment downloads a ~130 MB
    bundle and may take a minute on a slow link. It is one-time per
    version: every later run (and every other project pinning the same
@@ -69,15 +69,15 @@ of one release proves with the same prover.
 
 The deployment is keyed by the exact version, so two projects pinning
 different gnatprove versions keep both toolchains side by side under
-`<data>/toolchain/` without interfering. A manifest that declares
+`<data>/toolkit/` without interfering. A manifest that declares
 gnatprove with an unparseable version expression fails loudly rather than
 guessing.
 
 Projects that do *not* declare gnatprove fall back to (in order): a global
 pin (`ADACOVEX_GNATPROVE_VERSION`, or `[prove] gnatprove-version` in
 the global configuration file, deployed through the same `alr -n get` path),
-a gnatprove on `$PATH`, a cached toolchain in `<data>/toolchain/`, and
-finally the platform toolchain download. `adacovex status` reports which
+a gnatprove on `$PATH`, a cached toolchain in `<data>/toolkit/`, and
+finally the platform toolkit download. `adacovex status` reports which
 tier applies without deploying anything. The global pin, the environment
 variables, and the state directories are documented in full on
 [Global configuration and state](configuration.md).

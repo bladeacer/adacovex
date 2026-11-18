@@ -149,7 +149,7 @@ jobs:
           build: true
           release-build: true
           prove: true
-          #  Toolchain + adacovex result cache.  Result-cache entries are
+          #  Toolkit + adacovex result cache.  Result-cache entries are
           #  keyed by SHA-256 content hashes, so a restore is either an
           #  exact hit or absent; the prove result cache also refuses a
           #  stored summary whose Total row reports unproved VCs.

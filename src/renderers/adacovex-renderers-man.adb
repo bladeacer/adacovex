@@ -310,7 +310,7 @@ package body Adacovex.Renderers.Man is
                return
                  "Subcommand: run GNATprove then assess (see --jobs/--level/...).";
             elsif Flag = "status" then
-               return "Subcommand: report toolchain + platform status.";
+               return "Subcommand: report toolkit + platform status.";
             elsif Flag = "export" then
                return
                  "With status: write the report as JSON to PATH "
@@ -386,7 +386,7 @@ package body Adacovex.Renderers.Man is
         (Buf,
          Len,
          "status",
-         "Report toolchain + platform state without running an "
+         "Report toolkit + platform state without running an "
          & "assessment, including which VCS tools (git, mercurial, "
          & "subversion, fossil, jj, mandb, makewhatis) are available on "
          & "PATH for the differential modes and the VCS managing the "

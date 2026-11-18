@@ -25,16 +25,16 @@ package body Adacovex.Prove is
    use GNAT.OS_Lib;
    use Ada.Strings.Fixed;
 
-   --  The toolchain cache lives in the platform data directory
+   --  The toolkit cache lives in the platform data directory
    --  (Adacovex.Paths.Data_Root: XDG_DATA_HOME on Linux, ~/Library/
    --  Application Support on macOS, %LOCALAPPDATA% on Windows, or
-   --  $ADACOVEX_STATE_HOME/data when that override is set), under toolchain/.
+   --  $ADACOVEX_STATE_HOME/data when that override is set), under toolkit/.
    Bin_Subdir : constant String := "/bin/gnatprove";
 
-   function Toolchain_Cache return String is
+   function Toolkit_Cache return String is
    begin
-      return Adacovex.Paths.Data_Root & "/toolchain";
-   end Toolchain_Cache;
+      return Adacovex.Paths.Data_Root & "/toolkit";
+   end Toolkit_Cache;
 
    --  The global configuration file: <config>/adacovex.toml. The
    --  configuration directory is the platform one (Adacovex.Paths.Config_Root:
@@ -130,14 +130,14 @@ package body Adacovex.Prove is
       end if;
    end Strip_Trailing_Slash;
 
-   --  The gnatprove binary under a toolchain directory: the host executable
+   --  The gnatprove binary under a toolkit directory: the host executable
    --  suffix is tried first ("gnatprove.exe" on Windows, from
    --  Adacovex.Paths.Executable_Suffix), then the bare name. Ada.Directories
    --  never guesses an extension, so a bare-name test silently misses an
-   --  already deployed Windows toolchain and the runner re-downloads a
+   --  already deployed Windows toolkit and the runner re-downloads a
    --  prover it already has (the `alr -n get` re-deploy then fails, because
    --  the crate is present).
-   --  @param Dir  Toolchain or deployed-crate directory (its bin/ is probed).
+   --  @param Dir  Toolkit or deployed-crate directory (its bin/ is probed).
    --  @return The path of the gnatprove binary under Dir/bin.
    function Gnatprove_Binary (Dir : String) return String is
       With_Suffix : constant String :=
@@ -408,7 +408,7 @@ package body Adacovex.Prove is
 
    --  True when a directory name is generated or dependency content that a
    --  unit-file walk must never descend into (the proof tree copies live
-   --  under obj/, and .adacovex/ holds patches and toolchain state, never
+   --  under obj/, and .adacovex/ holds patches and toolkit state, never
    --  project units).
    function Proof_Skip_Dir (N : String) return Boolean is
    begin
@@ -952,25 +952,25 @@ package body Adacovex.Prove is
                   (Strip_Trailing_Slash (Target_Dir) & "/alire.toml");
    end Manifest_Declares_GNATprove;
 
-   --  Download and unpack the platform toolchain bundle into the toolchain
-   --  cache (see Toolchain_Cache). Last-resort fallback only: used when neither
+   --  Download and unpack the platform toolkit bundle into the toolkit
+   --  cache (see Toolkit_Cache). Last-resort fallback only: used when neither
    --  an alire-managed gnatprove nor a gnatprove on $PATH nor a cached
-   --  toolchain is available. Uses the ADACOVEX_TOOLCHAIN_URL environment
+   --  toolkit is available. Uses the ADACOVEX_TOOLKIT_URL environment
    --  variable if set, otherwise the default GitHub release asset
-   --  adacovex-toolchain-<os>-<arch>.tar.gz from the project's releases.
-   procedure Download_Toolchain (Success : out Boolean) is
-      Dst     : constant String := Toolchain_Cache;
+   --  adacovex-toolkit-<os>-<arch>.tar.gz from the project's releases.
+   procedure Download_Toolkit (Success : out Boolean) is
+      Dst     : constant String := Toolkit_Cache;
       Tmp     : constant String :=
-        Adacovex.CPUs.Get_Temp_Directory & "/adacovex-toolchain.tar.gz";
+        Adacovex.CPUs.Get_Temp_Directory & "/adacovex-toolkit.tar.gz";
       URL     : String (1 .. Types.Max_Path);
       URL_Len : Natural := 0;
    begin
       Ada.Directories.Create_Path (Dst);
 
-      if Ada.Environment_Variables.Exists ("ADACOVEX_TOOLCHAIN_URL") then
+      if Ada.Environment_Variables.Exists ("ADACOVEX_TOOLKIT_URL") then
          declare
             V : constant String :=
-              Ada.Environment_Variables.Value ("ADACOVEX_TOOLCHAIN_URL");
+              Ada.Environment_Variables.Value ("ADACOVEX_TOOLKIT_URL");
          begin
             if V'Length <= Types.Max_Path then
                URL_Len := V'Length;
@@ -983,7 +983,7 @@ package body Adacovex.Prove is
          declare
             V : constant String :=
               "https://github.com/bladeacer/adacovex/releases/latest/download/"
-              & "adacovex-toolchain-linux-x86_64.tar.gz";
+              & "adacovex-toolkit-linux-x86_64.tar.gz";
          begin
             URL_Len := V'Length;
             for I in 1 .. V'Length loop
@@ -1033,7 +1033,7 @@ package body Adacovex.Prove is
       end;
 
       Success := True;
-   end Download_Toolchain;
+   end Download_Toolkit;
 
    --  Strip a version-set expression (`^16.1.0`, `~16.1.0`, `>=16.0.0`,
    --  `16.1.0`) down to the bare numeric version alr accepts on the
@@ -1115,7 +1115,7 @@ package body Adacovex.Prove is
    end Find_Deployed_GNATprove;
 
    --  Deploy ONLY the gnatprove binary crate (a self-contained bundle, no
-   --  dependencies) into <data>/toolchain/ via
+   --  dependencies) into <data>/toolkit/ via
    --  `alr -n get gnatprove=<bare-version>` when the target manifest declares
    --  gnatprove. The deployed binary -- not the `alr` wrapper -- is what
    --  Run_Prove executes, so no dev-manifest swap and no composition of the
@@ -1123,16 +1123,16 @@ package body Adacovex.Prove is
    --  path pulled in covex/gnatdoc_bin/gnatformat_bin etc., whose flaky
    --  downloads could fail CI proof runs). Idempotent: an existing crate for
    --  the same version is reused without re-running alr, so a restored
-   --  toolchain cache never re-downloads.
+   --  toolkit cache never re-downloads.
    procedure Deploy_GNATprove
-     (Bare          : String;
-      Exe_Path      : out String;
-      Exe_Len       : out Natural;
-      Toolchain_Dir : out String;
-      Dir_Len       : out Natural;
-      Success       : out Boolean)
+     (Bare        : String;
+      Exe_Path    : out String;
+      Exe_Len     : out Natural;
+      Toolkit_Dir : out String;
+      Dir_Len     : out Natural;
+      Success     : out Boolean)
    is
-      Dst  : constant String := Toolchain_Cache;
+      Dst  : constant String := Toolkit_Cache;
       Dir  : String (1 .. Types.Max_Path);
       DLen : Natural := 0;
       OK   : Boolean;
@@ -1141,12 +1141,12 @@ package body Adacovex.Prove is
       Find_Deployed_GNATprove (Dst, Bare, Dir, DLen, Success);
       if Success then
          Copy_To (Exe_Path, Exe_Len, Gnatprove_Binary (Dir (1 .. DLen)));
-         Copy_To (Toolchain_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
+         Copy_To (Toolkit_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
          return;
       end if;
 
       --  First deployment of this gnatprove version: alr downloads a
-      --  ~130 MB toolchain bundle and unpacks it, which can take a minute
+      --  ~130 MB toolkit bundle and unpacks it, which can take a minute
       --  on a slow link. Say so up front -- a silent minute of nothing
       --  looks like a hang. The deployment is one-time per version: every
       --  later run reuses the deployed crate above without any download.
@@ -1172,7 +1172,7 @@ package body Adacovex.Prove is
       Find_Deployed_GNATprove (Dst, Bare, Dir, DLen, Success);
       if Success then
          Copy_To (Exe_Path, Exe_Len, Gnatprove_Binary (Dir (1 .. DLen)));
-         Copy_To (Toolchain_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
+         Copy_To (Toolkit_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
       end if;
    end Deploy_GNATprove;
 
@@ -1181,15 +1181,15 @@ package body Adacovex.Prove is
       Pinned_Version : String;
       Exe_Path       : out String;
       Exe_Len        : out Natural;
-      Toolchain_Dir  : out String;
+      Toolkit_Dir    : out String;
       Dir_Len        : out Natural;
       Identity       : out String;
       Ident_Len      : out Natural;
       Success        : out Boolean)
    is
-      Toolchain : constant String := Toolchain_Cache;
-      Bin_Dir   : constant String := Toolchain & "/bin";
-      Exe       : String_Access;
+      Toolkit : constant String := Toolkit_Cache;
+      Bin_Dir : constant String := Toolkit & "/bin";
+      Exe     : String_Access;
 
       --  Identity is a short fingerprint folded into the proof result-cache
       --  key so proofs from different gnatprove deployments are never mixed:
@@ -1223,7 +1223,7 @@ package body Adacovex.Prove is
          begin
             if Bare'Length > 0 then
                Deploy_GNATprove
-                 (Bare, Exe_Path, Exe_Len, Toolchain_Dir, Dir_Len, Success);
+                 (Bare, Exe_Path, Exe_Len, Toolkit_Dir, Dir_Len, Success);
                if Success then
                   Set_Identity ("alr:" & Bare);
                   return;
@@ -1281,7 +1281,7 @@ package body Adacovex.Prove is
                return;
             end if;
             Deploy_GNATprove
-              (Bare, Exe_Path, Exe_Len, Toolchain_Dir, Dir_Len, Success);
+              (Bare, Exe_Path, Exe_Len, Toolkit_Dir, Dir_Len, Success);
             if not Success then
                Ada.Text_IO.Put_Line
                  (Ada.Text_IO.Standard_Error,
@@ -1308,11 +1308,11 @@ package body Adacovex.Prove is
          return;
       end if;
 
-      --  Priority 4: the local toolchain directory -- the download layout
-      --  (<toolchain>/bin) or a previously alr-get-deployed gnatprove_* crate.
+      --  Priority 4: the local toolkit directory -- the download layout
+      --  (<toolkit>/bin) or a previously alr-get-deployed gnatprove_* crate.
       if Ada.Directories.Exists (Gnatprove_Binary (Bin_Dir)) then
          Copy_To (Exe_Path, Exe_Len, Gnatprove_Binary (Bin_Dir));
-         Copy_To (Toolchain_Dir, Dir_Len, Bin_Dir);
+         Copy_To (Toolkit_Dir, Dir_Len, Bin_Dir);
          Set_Identity ("cache:" & Bin_Dir);
          Success := True;
          return;
@@ -1321,25 +1321,24 @@ package body Adacovex.Prove is
          Dir  : String (1 .. Types.Max_Path);
          DLen : Natural := 0;
       begin
-         Find_Deployed_GNATprove (Toolchain, "", Dir, DLen, Success);
+         Find_Deployed_GNATprove (Toolkit, "", Dir, DLen, Success);
          if Success then
             Copy_To (Exe_Path, Exe_Len, Gnatprove_Binary (Dir (1 .. DLen)));
-            Copy_To (Toolchain_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
-            Set_Identity ("cache:" & Toolchain_Dir (1 .. Dir_Len));
+            Copy_To (Toolkit_Dir, Dir_Len, Dir (1 .. DLen) & "/bin");
+            Set_Identity ("cache:" & Toolkit_Dir (1 .. Dir_Len));
             return;
          end if;
       end;
 
-      --  Priority 5: last resort, download the platform toolchain into the
-      --  toolchain cache (see Toolchain_Cache).
+      --  Priority 5: last resort, download the platform toolkit into the
+      --  toolkit cache (see Toolkit_Cache).
       Ada.Text_IO.Put_Line
-        ("  gnatprove not found via alire, PATH, or " & Toolchain);
-      Ada.Text_IO.Put_Line
-        ("  last resort: downloading platform toolchain...");
+        ("  gnatprove not found via alire, PATH, or " & Toolkit);
+      Ada.Text_IO.Put_Line ("  last resort: downloading platform toolkit...");
       declare
          OK : Boolean;
       begin
-         Download_Toolchain (OK);
+         Download_Toolkit (OK);
          if not OK then
             Ada.Text_IO.Put_Line
               (Ada.Text_IO.Standard_Error,
@@ -1347,7 +1346,7 @@ package body Adacovex.Prove is
             Ada.Text_IO.Put_Line
               (Ada.Text_IO.Standard_Error,
                "  Declare gnatprove in your alire.toml, install gnatprove,"
-               & " or set ADACOVEX_TOOLCHAIN_URL.");
+               & " or set ADACOVEX_TOOLKIT_URL.");
             Success := False;
             return;
          end if;
@@ -1355,13 +1354,13 @@ package body Adacovex.Prove is
 
       if Ada.Directories.Exists (Gnatprove_Binary (Bin_Dir)) then
          Copy_To (Exe_Path, Exe_Len, Gnatprove_Binary (Bin_Dir));
-         Copy_To (Toolchain_Dir, Dir_Len, Bin_Dir);
+         Copy_To (Toolkit_Dir, Dir_Len, Bin_Dir);
          Set_Identity ("cache:" & Bin_Dir);
          Success := True;
       else
          Ada.Text_IO.Put_Line
            (Ada.Text_IO.Standard_Error,
-            "  ERROR: toolchain unpacked but gnatprove missing.");
+            "  ERROR: toolkit unpacked but gnatprove missing.");
          Success := False;
       end if;
    end Resolve_GNATprove;
@@ -1953,10 +1952,10 @@ package body Adacovex.Prove is
       --  can change the (cached) gnatprove.out: the source tree content, the
       --  .gpr, the options, AND the prover identity. Folding the prover
       --  identity in means a different gnatprove deployment (pinned version,
-      --  on-PATH upgrade, or re-downloaded toolchain) can never reuse a stale
-      --  proof from a previous toolchain. Stale cache entries simply miss and
+      --  on-PATH upgrade, or re-downloaded toolkit) can never reuse a stale
+      --  proof from a previous toolkit. Stale cache entries simply miss and
       --  are transparently re-proved, so no explicit cache invalidation is
-      --  needed when the toolchain changes.
+      --  needed when the toolkit changes.
       function Prove_Cache_Key return String is
       begin
          return
@@ -2403,7 +2402,7 @@ package body Adacovex.Prove is
       --  Resolve_GNATprove always returns a directly-executable gnatprove binary
       --  (the `alr get` deployment path runs the deployed binary itself, never
       --  the alr wrapper), so there is exactly one spawn shape. Prepend the
-      --  toolchain bin dir to PATH so gnatprove finds its solvers
+      --  toolkit bin dir to PATH so gnatprove finds its solvers
       --  (Z3/CVC5/Alt-Ergo), which live in the deployment's bin/libexec dirs.
       if TLen > 0 then
          declare
@@ -2768,7 +2767,7 @@ package body Adacovex.Prove is
    end record;
 
    --  Fill a Status_Data record by probing PATH, the target manifest, the
-   --  global pin, and the toolchain cache. Never deploys or downloads
+   --  global pin, and the toolkit cache. Never deploys or downloads
    --  anything (same contract as Run_Status).
    --  Resolve the display timezone: --tz=local opts into the operator's
    --  wall-clock timezone; any other explicit spec is parsed; otherwise the
@@ -2875,7 +2874,7 @@ package body Adacovex.Prove is
          Free (Exe);
       end if;
       Find_Deployed_GNATprove
-        (Toolchain_Cache, "", S.Cached_Dir, S.Cached_Len, S.Cached);
+        (Toolkit_Cache, "", S.Cached_Dir, S.Cached_Len, S.Cached);
       S.Cores := Adacovex.CPUs.Detect_Core_Count;
       S.In_CI := Adacovex.CPUs.Is_Running_In_CI;
       for I in 1 .. 7 loop
@@ -3015,10 +3014,10 @@ package body Adacovex.Prove is
       end if;
       if S.Cached then
          Ada.Text_IO.Put_Line
-           ("    toolchain cache:   "
+           ("    toolkit cache:     "
             & Adacovex.Paths.Display (S.Cached_Dir (1 .. S.Cached_Len)));
       else
-         Ada.Text_IO.Put_Line ("    toolchain cache:   empty");
+         Ada.Text_IO.Put_Line ("    toolkit cache:     empty");
       end if;
 
       --  Platform support / parallelism basis.

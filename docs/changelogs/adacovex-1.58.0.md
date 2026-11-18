@@ -26,7 +26,7 @@ each:
   summary. It names the upstream project, the vendored path, the four files the
   directory holds, the MIT licence, and the link to the licence terms.
 - `docs/THIRD_PARTY_NOTICES.md` gains a `## Vendored agent skill: SimpleEnglish`
-  section ahead of the toolchain section, in the table shape the rest of the
+  section ahead of the toolkit section, in the table shape the rest of the
   file uses. The row states the version (1.3.0, ASD-STE100 Issue 9 of
   2025-01-15), the MIT licence with its URL, and the use.
 - Both files state the two project overrides outside `AGENTS.md`: British

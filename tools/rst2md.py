@@ -682,7 +682,7 @@ PACKAGE_GUIDES: Dict[str, List[Tuple[str, str]]] = {
         ("DAL Levels", "adacovex-dal-levels.md"),
     ],
     "Adacovex.Prove": [
-        ("Architecture -- toolchain resolution",
+        ("Architecture -- toolkit resolution",
          "../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand"),
     ],
     "Adacovex.Cache": [

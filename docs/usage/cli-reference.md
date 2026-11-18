@@ -181,7 +181,7 @@ adacovex --target=. --standard=iso26262 --dal=C
 # Emit badges for every standard at the shared tier
 adacovex --target=. --standard=all
 
-# Report toolchain + platform status
+# Report toolkit + platform status
 adacovex status --target=.
 
 # Assess a CRDT library at DAL-C in relaxed mode

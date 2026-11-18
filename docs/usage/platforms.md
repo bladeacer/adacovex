@@ -134,7 +134,7 @@ To keep the tool free of 32/64-bit and endian surprises, adacovex:
 
 ## `status` subcommand
 
-`adacovex status` reports platform and toolchain state without running
+`adacovex status` reports platform and toolkit state without running
 an assessment and without downloading anything:
 
 - **Alire**: installed and the version it reports;
@@ -159,7 +159,7 @@ assessment.
 ## Installing on other platforms
 
 The published installers cover the platforms above. To install on a
-platform that has no installer, install the `alire` toolchain, then run:
+platform that has no installer, install Alire, then run:
 
 ```sh
 git clone https://github.com/bladeacer/adacovex

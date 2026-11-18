@@ -23,7 +23,7 @@ machine (a CPU/I/O-bound CLI; the GPU is irrelevant to every code path):
 | Cache | 12 MiB L3 shared; 2x2.0 MiB + 2x1.25 MiB L2; 8x32+8x64 KiB L1 (P), 2x48+2x32 KiB L1 (E) |
 | Memory | 16 GiB DDR4 (15.33 GiB visible) |
 | Storage | SK hynix BC711 512 GiB NVMe SSD |
-| Toolchain | gnatprove 16.1.0 (via Alire), hyperfine 1.20, perf 7.2, strace 7.0 |
+| Toolkit | gnatprove 16.1.0 (via Alire), hyperfine 1.20, perf 7.2, strace 7.0 |
 
 The i7-1255U is a hybrid laptop part: 10 of the 12 threads are E-cores,
 and gnatprove's solver jobs fan out across all of them. Single-threaded
@@ -91,7 +91,7 @@ so a regression in I/O or data layout is visible before a release.
 tool that the target's build references, installed on `$PATH` (for
 example `gcc`, `alr`, `git`, `make`). It probes each with `<tool> <flag>`
 to capture its version, and each probe spawns a subprocess (tens of
-milliseconds per tool, ~150 ms end to end on an 11-tool toolchain). The
+milliseconds per tool, ~150 ms end to end on an 11-tool toolkit). The
 probed versions were first cached under `<cache-root>/probes/<tool>` with
 a 7-day TTL, so a wiped result cache re-probed every tool on the next
 run -- 1.28.0 moved the store into the tools-set cache blob.

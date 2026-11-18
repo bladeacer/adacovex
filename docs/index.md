@@ -42,7 +42,7 @@ a technical word in any doc, docstring, or changelog.
 
 - [Usage guide](usage/index.md) -- the self-contained user guide, grouped by
   task: install and run, assess a project, read the results, publish in CI,
-  and manage the toolchain. Start at
+  and manage the toolkit. Start at
   [installation](usage/installation.md).
 - [CLI reference](usage/cli-reference.md) -- every command, flag, and exit
   code. The detailed flag pages are
@@ -59,7 +59,7 @@ a technical word in any doc, docstring, or changelog.
   [syft comparison](usage/sbom-syft.md).
 - [Global configuration and state](usage/configuration.md) -- the optional
   the global configuration file file, the environment variables, and the cache
-  and toolchain directories.
+  and toolkit directories.
 - [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
   levels. The per-standard detail is on
   [DO-178C and the DAL levels](usage/standards-do-178c.md),
@@ -68,7 +68,7 @@ a technical word in any doc, docstring, or changelog.
   [Selecting a standard](usage/standards-selection.md).
 - [Performance and benchmarks](usage/performance.md) -- run times and the
   cache shapes behind them.
-- [Platforms](usage/platforms.md) -- supported platforms and toolchain
+- [Platforms](usage/platforms.md) -- supported platforms and toolkit
   state.
 - [VCS support](usage/vcs.md) -- differential assessment across git, hg,
   svn, fossil, and jj.
@@ -92,7 +92,7 @@ a technical word in any doc, docstring, or changelog.
   [reading a prove failure](contributing/proving-diagnostics.md).
 - [Architecture](contributing/architecture.md) -- the full technical
   design. The deeper pages are
-  [dependency management and the toolchain](contributing/architecture-dependencies.md),
+  [dependency management and the toolkit](contributing/architecture-dependencies.md),
   [verification and proof patches](contributing/architecture-verification.md),
   [outputs and formats](contributing/architecture-outputs.md), and
   [pipeline, platforms, and delivery](contributing/architecture-pipeline.md).

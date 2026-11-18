@@ -68,10 +68,10 @@ need an interactive shell.
 The SBOM's dev-scope dependency scan probes every referenced system tool's
 version by spawning `<tool> <flag>` -- tens of milliseconds per tool. The
 result is now cached on disk under `<cache-root>/probes/<tool>` with a
-**7-day TTL**, so unchanged toolchains stop paying the spawn cost on every
+**7-day TTL**, so unchanged toolkits stop paying the spawn cost on every
 run.
 
-Measured on an 11-tool toolchain (self-assessment, this repo):
+Measured on an 11-tool toolkit (self-assessment, this repo):
 
 | | before | after |
 |---|---|---|

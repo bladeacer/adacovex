@@ -137,7 +137,7 @@ inputs:
     required: false
     default: 'cyclonedx-json'
   cache:
-    description: 'Enable dependency/toolchain caching with actions/cache.'
+    description: 'Enable dependency/toolkit caching with actions/cache.'
     required: false
     default: 'true'
   result-cache:
@@ -285,7 +285,7 @@ runs:
       #  (which covers the compiler + gprbuild) does not reliably cache it.
       #  The prove subcommand resolves gnatprove at run time from the target
       #  project's manifest (alire-dev.toml preferred, then alire.toml), then
-      #  $PATH, then the cached toolchain under <data>/toolchain/, then
+      #  $PATH, then the cached toolchain under <data>/toolkit/, then
       #  download as last resort.  This step makes the downloaded/installed
       #  gnatprove binary -- and the Alire crate index + downloaded crates
       #  (gnatdoc_bin, gnatformat_bin, and any other dev-manifest tools) --

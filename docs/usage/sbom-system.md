@@ -63,7 +63,7 @@ binary it was probed from: the PATH-resolved executable path plus its
 size and mtime. A cached version is served only after adacovex re-resolves
 the tool on `PATH` and compares that identity, so an upgraded, replaced,
 or PATH-shadowed binary re-probes on the next run while an unchanged
-toolchain serves from cache with no subprocess spawn. Every version in
+toolkit serves from cache with no subprocess spawn. Every version in
 the SBOM describes the binary that is installed now.
 
 ## Scope and language

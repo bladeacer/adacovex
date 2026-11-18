@@ -36,7 +36,7 @@ Each category has its own lexicon page:
   core. Lexicon: [hardware and system entities](entities.md).
 - **Code Identifier Names** -- exact package, type, subtype, subprogram,
   tool, and file names as declared in the source code or used by the
-  toolchain. For example, `System.Storage_Elements`, `gnatprove`, `Alire`.
+  toolkit. For example, `System.Storage_Elements`, `gnatprove`, `Alire`.
   Lexicons: [tools and files](identifiers.md) and
   [reports and concepts](concepts.md).
 - **Web Site Terms** -- what the online manual records about a reader, and what

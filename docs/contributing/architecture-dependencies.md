@@ -1,7 +1,7 @@
-# Architecture: dependency management and the toolchain
+# Architecture: dependency management and the toolkit
 
 adacovex keeps its publishing manifest dependency-free and resolves its proof
-toolchain at run time. This page records the dependency-management
+toolkit at run time. This page records the dependency-management
 decisions: the Alire manifests, the gnatprove resolution order, and the
 system and vendored tools the SBOM records. The companion pages are
 [the architecture decisions](architecture.md),
@@ -24,7 +24,7 @@ In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gna
   dev-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) needed for
   `just prove`, `just doc`, and `just fmt`. The `prove` subcommand reads the
   gnatprove pin from it and deploys that exact version into
-  `<data>/toolchain/` via `alr -n get` (reused after the first run);
+  `<data>/toolkit/` via `alr -n get` (reused after the first run);
   `just doc`/`just fmt` run their tools through `alr exec`.
 
 When both files exist, `Build_Dependency_Graph` reads **both**: a dependency
@@ -43,7 +43,7 @@ executable in this order:
 
 1. **Per-project manifest (authoritative)**: if `<target>/alire.toml` /
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
-   gnatprove binary crate is deployed standalone into `<data>/toolchain/`
+   gnatprove binary crate is deployed standalone into `<data>/toolkit/`
    via `alr -n get gnatprove=<version>` and executed directly (the version-set
    expression, for example `^16.1.0`, is reduced to the bare version alr
    accepts). This isolates the proof run from the target's other dev-manifest
@@ -55,10 +55,10 @@ executable in this order:
    `alr -n get gnatprove=<version>`. It uses the same never-fall-back
    semantics. It is folded into the proof result-cache identity.
 3. **`$PATH`**: a `gnatprove` already installed (for example `alr install gnatprove`).
-4. **Cached toolchain**: `<data>/toolchain/`. The download layout
-   (`<toolchain>/bin/gnatprove`) is used. A previously `alr get`-deployed
+4. **Cached toolkit**: `<data>/toolkit/`. The download layout
+   (`<toolkit>/bin/gnatprove`) is used. A previously `alr get`-deployed
    `gnatprove_*/` crate is also used.
-5. **Download**: last-resort platform toolchain bundle.
+5. **Download**: last-resort platform toolkit bundle.
 
 Effective order: **manifest pin > global pin (config/env) > PATH > cache >
 download**. If a project manifest declares `gnatprove` but `alr` is missing,
@@ -75,7 +75,7 @@ dev-only tool declarations never leak into dependency graphs or SBOMs.
 
 ### System-tool dev dependencies (SBOM)
 
-Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a project interacts with at development time (`python3`, `git`, `gnatprove`, `make`, and more) as `Scope_System` SBOM components. It scans the project's dev-facing files (Makefile variants, build manifests, `.sh` / `.gpr` / `.yml` / `.toml`) for a curated toolchain list and registers every referenced tool that is actually installed on `$PATH` under a `pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or referenced but not installed, are skipped. A Makefile at the project root implies `make`.
+Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a project interacts with at development time (`python3`, `git`, `gnatprove`, `make`, and more) as `Scope_System` SBOM components. It scans the project's dev-facing files (Makefile variants, build manifests, `.sh` / `.gpr` / `.yml` / `.toml`) for a curated toolkit list and registers every referenced tool that is actually installed on `$PATH` under a `pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or referenced but not installed, are skipped. A Makefile at the project root implies `make`.
 
 `Skip_Scan_Dir` owns the directory decision: VCS metadata, test suites, tool configuration, and generated build trees are never descended into. A build tree is recognised by its conventional name (`build`, `builddir`, `target`, `dist`, `out`, `coverage`) or by the build-system state it holds (`build.ninja`, `meson-info`, `CMakeCache.txt`, `compile_commands.json`). `Source_Tree_Hash` uses the same predicate, so the tool-set cache key covers exactly the files the scan reads.
 
