@@ -1,5 +1,7 @@
 # STE100 Technical Names: tooling and workflow terms
 
+<!-- no-covex-docs-loc: technical-name dictionary, the line cap does not apply -->
+
 The **tooling and workflow** terms of the [STE100 Technical Names]
 (index.md) dictionary. These terms name the commands,
 flags, artefacts, and quality gates of the adacovex tool.
@@ -22,6 +24,25 @@ flags, artefacts, and quality gates of the adacovex tool.
 - **Do Not Use:** Image, Clone (when the differential snapshot is meant)
 - **Correct Example:** *The tool takes a **snapshot** of the base revision.*
 - **Incorrect Example:** *The tool takes a clone of the base revision.*
+
+## Technical Name: Fixture
+- **Part of Speech:** Noun
+- **Definition:** A committed project or data tree that a test reads. A
+  fixture project carries its own manifest, project file, and sources.
+- **Approved Form:** Fixture (singular), Fixtures (plural)
+- **Do Not Use:** Test data (after the first use), Sample project
+- **Correct Example:** *The **fixture** is a real crate under the test root.*
+- **Incorrect Example:** *The test data is a real crate under the test root.*
+
+## Technical Name: Test Root
+- **Part of Speech:** Noun
+- **Definition:** The one directory that holds the native suite, the
+  end-to-end suites, and the fixture projects. For adacovex it is
+  `src/tests`.
+- **Approved Form:** Test Root (singular), Test Roots (plural)
+- **Do Not Use:** Test folder, Test directory
+- **Correct Example:** *Every test lives under the **test root**.*
+- **Incorrect Example:** *Every test lives under the test folder.*
 
 ## Technical Name: Toolchain
 - **Part of Speech:** Noun

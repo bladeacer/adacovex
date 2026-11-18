@@ -31,7 +31,7 @@ Prerequisites:
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 just build        # compiles bin/adacovex + bin/test_runner (covex alias)
-just test         # builds + runs the native test suite (2394 tests)
+just test         # builds + runs the native test suite (2413 tests)
 just run-self     # assess adacovex itself: 100% docs, Gold, DAL-C
 just prove        # SPARK proof (full-proof gate) + regenerates docs/badges/
 just check        # the whole quality gate CI runs before a release
@@ -119,7 +119,9 @@ generated artifacts](developer-guide-layout.md).
 
 ## Testing
 
-The test suite is native and zero-dependency. `src/tests/` holds one file per category (scanner, config, types, renderers, SBOM, VCS, and more). Each file exposes a `Run (R : in out Runner'Class)` procedure wired into `src/tests/test_runner.adb`. A test is a `R. Check (Condition, "Description")` call.
+The test suite is native and zero-dependency. `src/tests/` is the one test root. It holds one file per native category (scanner, config, types, renderers, SBOM, VCS, and more), and each file exposes a `Run (R : in out Runner'Class)` procedure wired into `src/tests/test_runner.adb`. A test is a `R. Check (Condition, "Description")` call.
+
+The Python end-to-end suites live under `src/tests/e2e/` in a category directory: `cli/`, `prove/`, `dashboard/`, `action/`, and the shared `lib/`. A fixture is a real project under `src/tests/projects/`, never an Ada heredoc in a workflow. `just test-layout-check` gates that shape.
 
 The runner counts them, prints a per-category table, and writes `docs/test_result.md`.
 
@@ -137,11 +139,11 @@ just test-count    # sync every anchored count across the repo (AGENTS.md,
                    # README, Makefile, CI workflows, manifests, agents-tree.map)
 ```
 
-The count-sync is enforced by `just check`. A test change that skips the sync fails the gate. Tests write to `/tmp` scratch dirs and clean up after themselves. The default on-disk result cache (`<cache>`) is shared.
+The count-sync is enforced by `just check`. A test change that skips the sync fails the gate. Tests create scratch directories under the host temp directory through `Adacovex.Test_Support.Temp_Dir` and remove them with `Remove_Tree`. The default on-disk result cache (`<cache>`) is shared.
 
 Tests that exercise caching use content-hashed keys. They never depend on each other's state.
 
-The CLI end-to-end suite (`just cli-e2e`, `tests/e2e/cli_flags.py`) runs the
+The CLI end-to-end suite (`just cli-e2e`, `src/tests/e2e/cli/cli_flags.py`) runs the
 real binary and checks the shorthands, the long aliases, the `--standard`
 tier tokens, the reject paths, the `complexity` subcommand (its pass and
 fail gates, `--excludes`, and `--skip-path`), the VCS differential modes
@@ -159,14 +161,39 @@ the Playwright dashboard layout tests on top and SKIPs when `pnpm` is absent
 or the Chromium download fails, so a clean clone and a locked-down CI runner
 still finish with a verdict about the tree.
 
-The prove diagnostics suite (`just prove-e2e`, `tests/e2e/prove_diagnostics.py`)
-generates one small SPARK project per contract-writing mistake, each with a
-broken variant and a fixed counterpart: `index`, `overflow`, `division`,
-`precondition`, `invariant`, `flow`, `typo_attribute`, and `typo_identifier`.
+The prove diagnostics suite (`just prove-e2e`,
+`src/tests/e2e/prove/prove_diagnostics.py`) proves one committed SPARK project
+per contract-writing mistake, each with a broken variant and a fixed
+counterpart under `src/tests/projects/contract-errors/`: `index`, `overflow`,
+`division`, `precondition`, `invariant`, `invariant_entry`, `flow`,
+`typo_attribute`, and `typo_identifier`.
 It runs the real `prove` command over each pair and checks the quiet replay,
 the diagnostics block, the compile-error shape for a typo, and the `--verbose`
 mode. Add `--case=NAME` to run one case and `--debug` to print every prover
 output. The suite skips itself when no gnatprove is resolvable.
+
+### Platform matrix and skips
+
+A pull request runs the native suite on Linux, macOS, and Windows. A push to
+main adds the CLI and prove-diagnostics suites, and the Playwright dashboard
+suite stays on Linux because it needs a browser.
+
+The skip rule is one rule everywhere: a test that needs a host, a tool, or a
+sibling checkout reports `SKIP` with the reason and never counts as a pass.
+`Adacovex.Test_Support` owns that policy through `Skip`, `Skip_On`, and
+`Skip_Without`, so a prerequisite is checked once instead of in every test.
+The two conditional helpers return True when they record a skip, so the test
+body returns at once. The run summary prints a `Skips` column and an
+`Skipped:` total, and a suite with skips still passes only when nothing
+failed.
+
+Use `Temp_Dir` and `Remove_Tree` for scratch space, `Join` and `To_Native`
+for path construction, `Run_Command` for an argument vector, and
+`Executable_On_Path` for a tool probe. A Windows path may carry a drive
+letter or a UNC prefix, and both `/` and `\` separate its components, so
+`Adacovex.Paths` makes every such decision. `just portability-check` fails on
+a `/tmp` path, a hard-coded shell, a `chmod`, or a `uname` that reaches the
+test sources without a documented allow-list entry.
 
 ## Documentation and dashboard tooling
 
@@ -190,6 +217,12 @@ tooling Python-only by convention:
   also kept under 250 lines; a page that is a reference dictionary or a
   historical record may opt out of the line cap (never the paragraph rule)
   with a `no-covex-docs-loc` HTML comment near the top of the file.
+- `tools/check-test-layout.py` (`just test-layout-check`) fails when a test
+  sits outside `src/tests`, a fixture lacks its manifest, project file, or
+  README, or a workflow writes a project inline with a heredoc.
+- `tools/check-test-portability.py` (`just portability-check`) fails when a
+  test source carries a POSIX path, shell invocation, or permission bit that
+  the allow-list does not explain.
 - `tools/gen-dashboard.py` bundles the dashboard resources into
   `src/adacovex-dashboard_template.ads` and minifies the authored CSS and
   JavaScript (comments stripped, whitespace collapsed) before inlining.

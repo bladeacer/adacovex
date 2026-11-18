@@ -61,6 +61,7 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex_Scanner_Tests](adacovex_scanner_tests.md)
 - [Adacovex_Server_Tests](adacovex_server_tests.md)
 - [Adacovex_Spark_Coverage_Tests](adacovex_spark_coverage_tests.md)
+- [Adacovex_Test_Support_Tests](adacovex_test_support_tests.md)
 - [Adacovex_TestParser_Tests](adacovex_testparser_tests.md)
 - [Adacovex_Tldr_Tests](adacovex_tldr_tests.md)
 - [Adacovex_Types_Tests](adacovex_types_tests.md)

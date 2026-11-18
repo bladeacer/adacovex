@@ -230,7 +230,8 @@ qualify, and it applies to lockfile-resolved names as well:
 owner `package.json`, `Cargo.lock` crate names, and `alire.lock` crates
 that the manifest sets leave transitive. The e2e fixture's
 `@playwright/test` is the canonical example: it stays a `devDependencies`
-entry of `tests/e2e/package.json` (and a `pnpm-lock.yaml` entry) and is
+entry of `src/tests/e2e/dashboard/package.json` (and a `pnpm-lock.yaml`
+entry) and is
 classified `test` by name.
 
 ## Comparison and dogfood
