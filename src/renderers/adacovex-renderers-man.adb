@@ -236,6 +236,14 @@ package body Adacovex.Renderers.Man is
                return "Relocate the result cache directory.";
             elsif Flag = "cache-max" then
                return "Cap the result cache entry count (default: 4096).";
+            elsif Flag = "cache-expiry" then
+               return
+                 "Cache entry lifetime in days (default: 7; 0 = never "
+                 & "expire).";
+            elsif Flag = "cache-clear" then
+               return
+                 "Remove every cache entry, print the path and count, and "
+                 & "exit.";
             elsif Flag = "compare-base" then
                return
                  "Differential mode: compare against a base "
