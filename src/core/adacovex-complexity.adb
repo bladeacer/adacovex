@@ -420,86 +420,15 @@ package body Adacovex.Complexity is
       return Buf (1 .. Len);
    end Lower_Ext;
 
-   --  True when Ext (lowercased, no dot) is one of the scanned extensions:
-   --  Ada, C/C++, C#, Go, Java, JS/TS, Python, Ruby, PHP, Rust, Shell,
-   --  Kotlin, YAML/JSON/TOML/XML, Markdown, or reStructuredText.
-   function Scanned_Ext (Ext : String) return Boolean is
-      List : constant array (1 .. 32) of String (1 .. 4) :=
-        ("ads ",
-         "adb ",
-         "ada ",
-         "gpr ",
-         "c   ",
-         "h   ",
-         "cpp ",
-         "hpp ",
-         "cxx ",
-         "cc  ",
-         "cs  ",
-         "go  ",
-         "java",
-         "js  ",
-         "mjs ",
-         "cjs ",
-         "ts  ",
-         "jsx ",
-         "tsx ",
-         "py  ",
-         "rb  ",
-         "php ",
-         "rs  ",
-         "sh  ",
-         "kt  ",
-         "yaml",
-         "yml ",
-         "json",
-         "toml",
-         "xml ",
-         "md  ",
-         "rst ");
-      Lens : constant array (1 .. 32) of Natural :=
-        (3,
-         3,
-         3,
-         3,
-         1,
-         1,
-         3,
-         3,
-         3,
-         2,
-         2,
-         2,
-         4,
-         2,
-         3,
-         3,
-         2,
-         3,
-         3,
-         2,
-         2,
-         3,
-         2,
-         2,
-         2,
-         4,
-         3,
-         4,
-         4,
-         3,
-         2,
-         3);
-   begin
-      for I in List'Range loop
-         if Ext'Length = Lens (I) and then Ext = List (I) (1 .. Lens (I)) then
-            return True;
-         end if;
-      end loop;
-      return False;
-   end Scanned_Ext;
-
-   --  Display language name for a scanned extension (tokei-style).
+   --  Display language name for a lowercased extension without the dot.
+   --  The table holds every extension the SBOM parser names
+   --  (Adacovex.Parsers.Manifest.Extension_Language), so a language the SBOM
+   --  catalogues is one the LOC gate can measure. It adds the data and prose
+   --  formats complexity measures (YAML, JSON, TOML, XML, Markdown, and
+   --  reStructuredText) and JavaScript's `.jsx`. It returns "" when the
+   --  extension is not scanned, so a new SBOM language is added here too.
+   --  @param Ext  Lowercased extension without the dot.
+   --  @return Display language name, or "" when the extension is unsupported.
    function Lang_Name (Ext : String) return String is
    begin
       if Ext = "ads"
@@ -514,6 +443,8 @@ package body Adacovex.Complexity is
         or else Ext = "cxx"
         or else Ext = "cc"
         or else Ext = "hpp"
+        or else Ext = "hh"
+        or else Ext = "hxx"
       then
          return "C++";
       elsif Ext = "cs" then
@@ -538,10 +469,56 @@ package body Adacovex.Complexity is
          return "PHP";
       elsif Ext = "rs" then
          return "Rust";
-      elsif Ext = "sh" then
+      elsif Ext = "sh" or else Ext = "bash" then
          return "Shell";
-      elsif Ext = "kt" then
+      elsif Ext = "ps1" then
+         return "PowerShell";
+      elsif Ext = "kt" or else Ext = "kts" then
          return "Kotlin";
+      elsif Ext = "swift" then
+         return "Swift";
+      elsif Ext = "scala" then
+         return "Scala";
+      elsif Ext = "ml" or else Ext = "mli" then
+         return "OCaml";
+      elsif Ext = "lua" then
+         return "Lua";
+      elsif Ext = "pl" then
+         return "Perl";
+      elsif Ext = "hs" then
+         return "Haskell";
+      elsif Ext = "ex" or else Ext = "exs" then
+         return "Elixir";
+      elsif Ext = "erl" or else Ext = "hrl" then
+         return "Erlang";
+      elsif Ext = "clj" or else Ext = "cljs" then
+         return "Clojure";
+      elsif Ext = "dart" then
+         return "Dart";
+      elsif Ext = "sql" then
+         return "SQL";
+      elsif Ext = "f"
+        or else Ext = "f90"
+        or else Ext = "f95"
+        or else Ext = "f03"
+      then
+         return "Fortran";
+      elsif Ext = "s" or else Ext = "asm" then
+         return "Assembly";
+      elsif Ext = "r" then
+         return "R";
+      elsif Ext = "jl" then
+         return "Julia";
+      elsif Ext = "zig" then
+         return "Zig";
+      elsif Ext = "vhd" or else Ext = "vhdl" then
+         return "VHDL";
+      elsif Ext = "tcl" then
+         return "Tcl";
+      elsif Ext = "css" then
+         return "CSS";
+      elsif Ext = "html" or else Ext = "htm" then
+         return "HTML";
       elsif Ext = "yaml" or else Ext = "yml" then
          return "YAML";
       elsif Ext = "json" then
@@ -554,10 +531,14 @@ package body Adacovex.Complexity is
          return "Markdown";
       elsif Ext = "rst" then
          return "reStructuredText";
-      else
-         return "Unknown";
       end if;
+      return "";
    end Lang_Name;
+
+   function Language_Of (File_Name : String) return String is
+   begin
+      return Lang_Name (Lower_Ext (File_Name));
+   end Language_Of;
 
    --  True when Ext (lowercased, no dot) is listed in the comma-separated
    --  Excludes list (no leading dots; matched case-insensitively).
@@ -744,7 +725,7 @@ package body Adacovex.Complexity is
                      Full : constant String := Full_Name (Ent);
                   begin
                      if Ext'Length > 0
-                       and then Scanned_Ext (Ext)
+                       and then Lang'Length > 0
                        and then not Is_Excluded (Ext, Excludes)
                        and then not Is_Path_Skipped (Full, Skip_Paths)
                        and then not Complexity_Opt_Out (Full)
@@ -839,8 +820,7 @@ package body Adacovex.Complexity is
 
       --  Language is derived from the file extension (tokei-style).
       declare
-         Ext  : constant String := Lower_Ext (Path);
-         Lang : constant String := Lang_Name (Ext);
+         Lang : constant String := Language_Of (Path);
       begin
          if Lang'Length > 0 then
             Result.Language_Len := Lang'Length;

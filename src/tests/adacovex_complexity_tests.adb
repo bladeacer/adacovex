@@ -43,6 +43,19 @@ package body Adacovex_Complexity_Tests is
       Close (F);
    end Make_Fixture;
 
+   --  Write one short line into a fixture file. The content only has to be
+   --  readable and non-empty: these fixtures exist to be detected, not
+   --  measured.
+   --  @param Path  File to create.
+   --  @param Text  One source line.
+   procedure Write_Min (Path : String; Text : String) is
+      F : File_Type;
+   begin
+      Create (F, Out_File, Path);
+      Put_Line (F, Text);
+      Close (F);
+   end Write_Min;
+
    --  Count the files in Result whose language is Lang.
    --  @param Result  Complexity result to scan.
    --  @param Lang  Display language name to count.
@@ -196,6 +209,100 @@ package body Adacovex_Complexity_Tests is
          R.Check
            (Adacovex.Complexity.Check_Gates (Res, 100, 99, 20, 20).Length > 0,
             "a file over its codebase-percentage cap fails");
+      end;
+
+      --  Language parity: every language the SBOM parser recognises maps to
+      --  a display language the LOC gate scans, so a foreign-language file
+      --  is never invisible to the complexity gate. The pairs are the SBOM
+      --  extension table plus the data and prose formats complexity owns.
+      declare
+         All_Ok : Boolean := True;
+
+         procedure Expect (Ext : String; Lang : String) is
+         begin
+            All_Ok :=
+              All_Ok
+              and then Adacovex.Complexity.Language_Of ("probe." & Ext) = Lang;
+         end Expect;
+      begin
+         Expect ("ads", "Ada");
+         Expect ("gpr", "Ada");
+         Expect ("c", "C");
+         Expect ("hxx", "C++");
+         Expect ("cs", "C#");
+         Expect ("go", "Go");
+         Expect ("java", "Java");
+         Expect ("jsx", "JavaScript");
+         Expect ("ts", "TypeScript");
+         Expect ("css", "CSS");
+         Expect ("html", "HTML");
+         Expect ("py", "Python");
+         Expect ("rs", "Rust");
+         Expect ("rb", "Ruby");
+         Expect ("php", "PHP");
+         Expect ("swift", "Swift");
+         Expect ("kts", "Kotlin");
+         Expect ("scala", "Scala");
+         Expect ("mli", "OCaml");
+         Expect ("lua", "Lua");
+         Expect ("pl", "Perl");
+         Expect ("hs", "Haskell");
+         Expect ("exs", "Elixir");
+         Expect ("hrl", "Erlang");
+         Expect ("cljs", "Clojure");
+         Expect ("dart", "Dart");
+         Expect ("bash", "Shell");
+         Expect ("ps1", "PowerShell");
+         Expect ("sql", "SQL");
+         Expect ("f95", "Fortran");
+         Expect ("asm", "Assembly");
+         Expect ("r", "R");
+         Expect ("jl", "Julia");
+         Expect ("zig", "Zig");
+         Expect ("vhdl", "VHDL");
+         Expect ("tcl", "Tcl");
+         Expect ("yaml", "YAML");
+         Expect ("json", "JSON");
+         Expect ("toml", "TOML");
+         Expect ("xml", "XML");
+         Expect ("md", "Markdown");
+         Expect ("rst", "reStructuredText");
+         --  The match is case-insensitive, exactly like the SBOM parser's.
+         Expect ("SWIFT", "Swift");
+         R.Check (All_Ok, "every SBOM extension maps to a scanned language");
+         R.Check
+           (Adacovex.Complexity.Language_Of ("probe.vue") = "",
+            "an unknown extension maps to no language");
+      end;
+
+      --  A language the table gained is actually walked and reported. The
+      --  .vue file proves the walk still skips an unknown extension.
+      declare
+         Lang_Dir : constant String := Fixture_Dir & "_lang";
+         Res      : Adacovex.Complexity.Complexity_Result;
+      begin
+         if Ada.Directories.Exists (Lang_Dir) then
+            Ada.Directories.Delete_Tree (Lang_Dir);
+         end if;
+         Ada.Directories.Create_Directory (Lang_Dir);
+         Write_Min (Lang_Dir & "/probe.swift", "let x = 1");
+         Write_Min (Lang_Dir & "/probe.scala", "object A");
+         Write_Min (Lang_Dir & "/probe.lua", "local x = 1");
+         Write_Min (Lang_Dir & "/probe.vhdl", "entity e is end;");
+         Write_Min (Lang_Dir & "/probe.jsx", "const A = () => null;");
+         Write_Min (Lang_Dir & "/probe.vue", "<template></template>");
+         Res := Adacovex.Complexity.Analyze_Project (Lang_Dir);
+         R.Check
+           (Natural (Res.Files.Length) = 5,
+            "a newly covered language is scanned and an unknown one is not");
+         R.Check (Count_Lang (Res, "Swift") = 1, "Swift is reported");
+         R.Check (Count_Lang (Res, "Scala") = 1, "Scala is reported");
+         R.Check (Count_Lang (Res, "Lua") = 1, "Lua is reported");
+         R.Check (Count_Lang (Res, "VHDL") = 1, "VHDL is reported");
+         R.Check
+           (Count_Lang (Res, "JavaScript") = 1,
+            ".jsx is reported as JavaScript");
+         Ada.Directories.Delete_Tree (Lang_Dir);
       end;
 
       --  The fixture is cleaned up after the run.

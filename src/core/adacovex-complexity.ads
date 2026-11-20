@@ -1,8 +1,10 @@
---  Cyclomatic complexity checker for Ada source files.
---  It scans a target directory for .ads/.adb files. It computes per-file
---  and per-subprogram cyclomatic complexity. It enforces configurable
---  LOC and complexity gates. The implementation is native Ada with no
---  external dependencies.
+--  Cyclomatic complexity checker for source, data, and prose files.
+--  It scans a target directory for every language the SBOM parser
+--  recognises, plus the formats the LOC gate measures (YAML, JSON, TOML,
+--  XML, Markdown, and reStructuredText). It computes per-file cyclomatic
+--  complexity for every language and per-subprogram complexity for Ada.
+--  It enforces configurable LOC and complexity gates. The implementation
+--  is native Ada with no external dependencies.
 --  HLR-COMPLEXITY: Cyclomatic complexity analysis
 --
 with Ada.Containers.Vectors;
@@ -66,11 +68,20 @@ package Adacovex.Complexity is
       Violations : Violation_Vectors.Vector;
    end record;
 
+   --  Display language name for a file, derived from its extension. The
+   --  table is the SBOM parser's extension table, plus the data and prose
+   --  formats complexity measures. The match is case-insensitive.
+   --  @brief Map a file name's extension to its display language.
+   --  @param File_Name  File name or path, with its extension.
+   --  @return Language name ("Ada", "Swift", ...), or "" when unsupported.
+   function Language_Of (File_Name : String) return String;
+
    --  Scan Target_Dir for source files across supported languages. Return
    --  per-file and per-subprogram cyclomatic complexity metrics. Excludes is
    --  a comma-separated list of file extensions to skip (no leading dots),
    --  for example "md,rst". Per-subprogram analysis is Ada-specific; the
-   --  other languages contribute file-level LOC and decision counts.
+   --  other languages contribute file-level LOC and decision counts. Every
+   --  language Language_Of names is scanned.
    --  Skip_Paths is a comma-separated list of path fragments; any file
    --  whose full path contains one of them is skipped. A file whose
    --  leading comment block carries the no-covex-complexity-scan marker
