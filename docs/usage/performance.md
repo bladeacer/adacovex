@@ -16,6 +16,10 @@ results and links to the evidence.
 | Prove cold | `adacovex prove --no-cache` with `obj/gnatprove/` wiped | The solver dominates: roughly 80 s at the open phase's 1054 VCs (the tree now proves 1058) |
 | Build no-op | `just build` on a built tree | About 0.3 s; the generators rewrite only changed specs |
 
+An entry older than its TTL (7 days by default) is a miss, so a cache
+restored long after a project changed cannot serve a stale record. The age
+comes from the entry header, not the file mtime, which a CI restore rewrites.
+
 The result cache is content-addressed per file, so an edit costs only the file
 it touches. The gnatprove session store (`<target>/obj/gnatprove/`) absorbs the
 solver cost on a warm tree. `--no-cache` bypasses the adacovex side; wiping the

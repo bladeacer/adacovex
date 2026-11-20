@@ -54,6 +54,13 @@ project, so a cache wipe does not cost a re-probe of every tool.
 stat-stamp stores stay in the platform directories, because they are answers
 about the machine and not about one project.
 
+Every entry carries its own write time in a fixed header, and the TTL reads
+that time, never the file mtime. A CI cache restore or a file copy rewrites
+mtime, so an mtime rule would make an old entry look new. The default
+lifetime is 7 days; `--cache-expiry=DAYS` or `[cache] expiry-days` changes it,
+and `0` means entries never expire. `adacovex --cache-clear` removes every
+entry under the resolved cache root and prints the count.
+
 ## Configuration files
 
 Two files supply defaults, and each one is optional. The **project file** is
@@ -149,6 +156,16 @@ The file values are applied only where the matching flag is absent, so
 These mirror `--excludes` and `--skip-path`, and an explicit flag wins. They
 take effect only in `adacovex complexity`.
 
+### `[cache] keys`
+
+|Key|Default|Effect|
+|----|--------|-------|
+|`expiry-days`|`7`|Entry lifetime in days; `0` means entries never expire|
+
+The key mirrors `--cache-expiry=DAYS`, and an explicit flag wins. The age
+comes from the entry's own header, so a restored cache keeps the lifetimes it
+had when it was written.
+
 ### `[init] scaffold`
 
 The global file only. This key turns the `init` subcommand off for every
@@ -199,8 +216,9 @@ adacovex init -t path/to/project --force
 Delete a directory to reset the state it holds, or point the tool at another
 location.
 
-- Delete `<cache>/` to drop every cached result. Pass `--cache-dir=PATH` to
-  relocate the result cache instead.
+- Run `adacovex --cache-clear` to drop every cached result; it prints the
+  resolved root and the count. Pass `--cache-dir=PATH` to clear a relocated
+  cache instead.
 - Delete `<data>/toolkit/` to force the next `prove` run to deploy its
   gnatprove again.
 - Delete `<cache>/stamps/index.bin` to drop the stat-stamp fast path; the

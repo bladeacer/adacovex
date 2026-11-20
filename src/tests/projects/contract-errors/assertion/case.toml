@@ -1,0 +1,3 @@
+# Expected diagnostics for this contract-error fixture.
+kind = "assertion"
+compile_error = false

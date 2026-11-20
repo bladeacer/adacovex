@@ -24,7 +24,7 @@ from pathlib import Path
 from cli_support import BIN, Results
 from checks_basic import (check_completion, check_help, check_rejections,
                           check_tier_tokens, check_version)
-from checks_config import (check_complexity, check_config_files,
+from checks_config import (check_cache, check_complexity, check_config_files,
                            check_config_prove, check_init,
                            check_spark_coverage, check_timezone)
 from checks_prove import (check_differential, check_differential_regression,
@@ -47,6 +47,7 @@ CHECKS = [
     ("target equivalence", check_target_equivalence),
     ("markdown output", check_markdown_output),
     ("complexity", check_complexity),
+    ("cache", check_cache),
     ("init", check_init),
     ("config files", check_config_files),
     ("config prove", check_config_prove),

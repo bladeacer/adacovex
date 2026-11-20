@@ -164,7 +164,8 @@ def stage_project(root: Path, case: Case, fixed: bool) -> Path:
 
 def run_prove(project: Path, verbose: bool = False,
               extra: Optional[List[str]] = None,
-              env_extra: Optional[dict] = None) -> subprocess.CompletedProcess:
+              env_extra: Optional[dict] = None,
+              cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
     """Run `prove` over one fixture project and capture everything.
 
     @param project  Project directory to prove.
@@ -172,6 +173,7 @@ def run_prove(project: Path, verbose: bool = False,
     @param extra  Additional CLI arguments appended after the base ones.
     @param env_extra  Extra environment variables (for example a simulated
     GitHub Actions run).
+    @param cwd  Working directory to run from (the project when omitted).
     @return The completed process, with stdout and stderr combined.
     """
     argv: List[str] = [
@@ -184,7 +186,8 @@ def run_prove(project: Path, verbose: bool = False,
     #  The checks assert on plain text, so opt out of ANSI colour. The
     #  binary honours NO_COLOR exactly as it does for a redirected log.
     return subprocess.run(
-        argv, cwd=str(project), capture_output=True, text=True,
+        argv, cwd=str(cwd if cwd is not None else project),
+        capture_output=True, text=True,
         timeout=900, errors="replace",
         env=base_env(env_extra, no_color=True))
 
@@ -406,6 +409,14 @@ def check_case(r: Results, root: Path, case: Case, debug: bool) -> None:
             f"{case.name}: --no-coverage hides the coverage summary")
     r.check(quiet.returncode == 0 and diagnostics_block(quiet_text) == "",
             f"{case.name}: --no-coverage leaves the proof unchanged")
+
+    if case is CASES[0]:
+        #  The proof key resolves the target and the root .gpr, so the same
+        #  project proved from another working directory is a warm hit.
+        elsewhere = run_prove(fixed, cwd=root)
+        warm_text: str = elsewhere.stdout + elsewhere.stderr
+        r.check("0 miss(es)" in warm_text,
+                f"{case.name}: a run from another cwd is a warm cache hit")
 
 
 def main(argv: Optional[List[str]] = None) -> int:

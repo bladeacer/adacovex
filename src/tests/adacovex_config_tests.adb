@@ -70,6 +70,9 @@ package body Adacovex_Config_Tests is
         and then A.Strict_Mode = B.Strict_Mode
         and then A.Cache_Enabled = B.Cache_Enabled
         and then A.Cache_Max_Entries = B.Cache_Max_Entries
+        and then A.Cache_Expiry_Days = B.Cache_Expiry_Days
+        and then A.Cache_Expiry_Set = B.Cache_Expiry_Set
+        and then A.Cache_Clear = B.Cache_Clear
         and then A.Skip_Dir_Ct = B.Skip_Dir_Ct
         and then A.Prove_Mode = B.Prove_Mode
         and then A.Prove_Level = B.Prove_Level
@@ -1308,6 +1311,70 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.Cache_Enabled, "-c keeps the cache on");
       end;
 
+      --  --cache-expiry takes DAYS in both spellings and rejects a
+      --  negative or missing value; --cache-clear sets its flag.
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--cache-expiry=3");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.Cache_Expiry_Days = 3 and then Cfg.Cache_Expiry_Set,
+            "--cache-expiry=N sets the entry lifetime");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--cache-expiry");
+         Add (A, "0");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (Cfg.Cache_Expiry_Days = 0 and then Cfg.Cache_Expiry_Set,
+            "--cache-expiry 0 means never expire");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--cache-expiry=-1");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--cache-expiry rejects a negative value");
+         R.Check
+           (not Cfg.Cache_Expiry_Set,
+            "--cache-expiry keeps the default when it is invalid");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--cache-expiry=abc");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--cache-expiry rejects a non-numeric value");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--cache-expiry");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.CLI_Error, "--cache-expiry requires an argument");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "--cache-clear");
+         Cfg := Testing.Parse_All (A);
+         R.Check (Cfg.Cache_Clear, "--cache-clear sets the clear flag");
+      end;
+
       declare
          Cfg : CLI_Config;
          A   : Testing.Arg_Vectors.Vector;
@@ -2128,6 +2195,10 @@ package body Adacovex_Config_Tests is
               & LF
               & "skip-path = ""docs/api-docs"""
               & LF
+              & "[cache]"
+              & LF
+              & "expiry-days = 3"
+              & LF
               & "[unknown]"
               & LF
               & "ignored = true"
@@ -2152,6 +2223,7 @@ package body Adacovex_Config_Tests is
            (P.Skip_Paths_Len = 13
             and then P.Skip_Paths (1 .. 13) = "docs/api-docs",
             "a skip-path value is read");
+         R.Check (P.Expiry_Days = 3, "a [cache] expiry-days value is read");
 
          Apply_Settings (C, Merge_Settings (G, P));
          R.Check
@@ -2160,6 +2232,11 @@ package body Adacovex_Config_Tests is
            (not C.Prove_Show_Coverage,
             "the global coverage key fills the default");
          R.Check (C.Excludes_Len = 6, "complexity excludes apply from a file");
+         R.Check
+           (C.Cache_Expiry_Days = 3, "the cache expiry applies from a file");
+         R.Check
+           (not C.Cache_Expiry_Set,
+            "a file-supplied expiry does not claim the CLI set it");
 
          declare
             A  : Testing.Arg_Vectors.Vector;
@@ -2174,6 +2251,18 @@ package body Adacovex_Config_Tests is
             R.Check
               (C2.Prove_Show_Coverage,
                "an explicit --coverage wins over both files");
+         end;
+
+         declare
+            A  : Testing.Arg_Vectors.Vector;
+            C3 : CLI_Config;
+         begin
+            Add (A, "--cache-expiry=1");
+            Testing.Parse_Args (A, C3);
+            Apply_Settings (C3, Merge_Settings (G, P));
+            R.Check
+              (C3.Cache_Expiry_Days = 1,
+               "an explicit --cache-expiry wins over both files");
          end;
       end;
 

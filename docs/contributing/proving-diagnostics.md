@@ -175,30 +175,37 @@ analysis, and `none` means the run stopped before any check was analysed.
 | `index` | array index check | index | yes | Supported | `index` |
 | `overflow` | overflow check | overflow | yes | Supported | `overflow` |
 | `division` | divide by zero | divide, division | yes | Supported | `division` |
-| `range` | range check | range | yes | Hinted | - |
-| `discriminant` | discriminant check | discriminant | yes | Hinted | - |
+| `range` | range check | range | yes | Supported | `range` |
+| `discriminant` | discriminant check | discriminant | yes | Supported | `discriminant` |
 | `precondition` | precondition | precondition | yes | Supported | `precondition` |
-| `postcondition` | postcondition | postcondition, contract | yes | Hinted | - |
-| `assertion` | assertion | assert | yes | Hinted | - |
+| `postcondition` | postcondition | postcondition, contract | yes | Supported | `postcondition` |
+| `assertion` | assertion | assert | yes | Supported | `assertion` |
 | `invariant` | loop invariant | invariant | yes | Supported | `invariant` |
 | `invariant_entry` | loop invariant | invariant | yes | Supported | `invariant_entry` |
 | `termination` | termination | termination | budget | Hinted | - |
 | `flow` | initialization (flow) | initializ | n/a | Supported | `flow` |
 | `typo_attribute` | compile error | none | none | Supported (compile-error shape) | `typo_attribute` |
 | `typo_identifier` | compile error | none | none | Supported (compile-error shape) | `typo_identifier` |
-| `access` | access check | fallback | yes | Fallback | - |
-| `subtype_conversion` | subtype conversion check | fallback | yes | Fallback | - |
-| `predicate` | predicate check | fallback | yes | Fallback | - |
-| `ghost_lemma` | ghost or lemma check | fallback | yes | Fallback | - |
-| `modular` | modular arithmetic check | fallback | yes | Fallback | - |
-| `floating_point` | floating-point check | fallback | yes | Fallback | - |
-| `aliasing` | aliasing or ownership check | fallback | yes | Fallback | - |
+| `access` | pointer dereference check | access, pointer | yes | Supported | `access` |
+| `subtype_conversion` | subtype conversion check | subtype | yes | Hinted | - |
+| `predicate` | predicate check | predicate | yes | Hinted | - |
+| `ghost_lemma` | ghost or lemma check | ghost, lemma | yes | Hinted | - |
+| `modular` | modular arithmetic check | modular | yes | Hinted | - |
+| `floating_point` | floating-point check | floating | yes | Hinted | - |
+| `aliasing` | aliasing or ownership check | aliasing, ownership | yes | Hinted | - |
 <!-- diagnostic-matrix:end -->
 
 A **Fallback** row is not a promise. It is the current boundary: the message
 still reaches you with its location and source excerpt, but the block cannot
 name the check or a fix for it. Treat a fallback finding as a gap to record,
 not as a diagnosis you can act on without reading `--verbose`.
+
+No row is Fallback today. Every classified kind has a specific hint, and the
+five fixture pairs added in 1.74.0 (postcondition, assertion, range,
+discriminant, and pointer dereference) prove the block for those kinds. The
+subtype conversion, predicate, ghost or lemma, modular, floating-point, and
+aliasing or ownership kinds are **Hinted**: they carry a hint, but no fixture
+pair exists yet.
 
 ### Adding or changing a classification
 

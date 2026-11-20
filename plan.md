@@ -111,7 +111,7 @@ Record: [`adacovex-1.73.0.md`](docs/changelogs/adacovex-1.73.0.md).
 
 ## v1.74.0 - Cache identity and diagnostics coverage
 
-- [ ] Item 18 - Cache by resolved location, per unit, with expiry and clear
+- [x] Item 18 - Cache by resolved location, per unit, with expiry and clear
 
 **Goal:** The same project hits the same cache entry whether `prove` runs from
 `/path/a`, `/path/b/c`, or the project itself, because the key uses the
@@ -181,9 +181,26 @@ reports at most one miss, and names no eviction.
 **Verify:** `just test`, `just cli-e2e`, two `prove` runs from different cwds,
 `just bench` if the warm figures move.
 
+**Findings (2026-11-20):** The target resolves once through
+`Adacovex.Paths.Resolve`, which replaced the main unit's private
+`Normalize_Path`; the cache key, the proof-input walk, and the root `.gpr`
+now share that spelling. The entry header, the lifetime, `[cache]
+expiry-days`, `--cache-expiry`, `--cache-clear`, and schema `s12` landed as
+planned: expiry runs before the count cap, eviction reads header time with an
+mtime fallback, and clear refuses a file-system root or the home directory.
+The CLI e2e pins the relative/absolute equivalence, a 32-package project
+where one edit keeps 31 hits and misses 1, and a clear. Prove-e2e pins a warm
+hit from another working directory.
+
+**Gap:** the proof cache stays one whole-run entry per resolved input. A
+per-unit split needs per-unit gnatprove runs and artefact merging; reporting a
+per-unit hit without those runs would claim a saving the run did not make.
+The per-file scan cache already provides the 31/1 split, and the resolved
+proof key makes the working-directory equivalence real.
+
 ---
 
-- [ ] Item 17a - Contract-error coverage matrix and fixtures
+- [x] Item 17a - Contract-error coverage matrix and fixtures
 
 **Goal:** The diagnostics documentation states which contract and runtime
 checks adacovex classifies, which it reports only as raw fallback, and which
@@ -216,6 +233,18 @@ documented fallback shape for the others.
 
 **Verify:** `just prove-e2e`, `just diagnostics-coverage-check`,
 `just docs-check`.
+
+**Findings (2026-11-20):** Five fixture pairs were added and verified under
+gnatprove 16.1.0: `postcondition`, `assertion`, `range`, `discriminant`, and
+`access`. The access kind gnatprove reports is **pointer dereference check**,
+so the matrix row uses that name while the fix hint matches both `access` and
+`pointer`. `Fix_Hint` gained branches for pointer/access, subtype conversion,
+predicate, ghost or lemma, modular, floating, and aliasing or ownership, so
+no in-matrix kind falls through to the generic hint. The matrix now marks 14
+rows Supported and 7 Hinted; no row is Fallback. The six remaining Hinted
+classes (termination, subtype conversion, predicate, ghost or lemma, modular,
+floating point, aliasing or ownership) each need a fixture that proves the
+block and the hint before they become Supported.
 
 ---
 

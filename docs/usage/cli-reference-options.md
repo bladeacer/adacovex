@@ -171,7 +171,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2424 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2463 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level
@@ -187,10 +187,18 @@ results of the prover you pin. The global pin and the other environment
 variables are documented on
 [Global configuration and state](configuration.md).
 
-### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max`)
+### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max` / `--cache-expiry` / `--cache-clear`)
 
 Shorthands: `-c` and the bare word `cache`. adacovex persists parsed
-analysis results on disk, so unchanged inputs are not re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged manifest/lockfile/.gpr set serves the cached dependency graph. Unchanged `compliance/HLR.md` and `compliance/LLR.md` serve the cached requirement parses. `--no-cache` bypasses it entirely. `--cache-dir` relocates it. `--cache-max` (default `4096`) caps entries before oldest-first eviction.
+analysis results on disk, so unchanged inputs are not re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged manifest/lockfile/.gpr set serves the cached dependency graph, and unchanged `compliance/HLR.md` and `compliance/LLR.md` files serve the cached requirement parses.
+
+`--no-cache` bypasses the cache entirely. `--cache-dir` relocates it. `--cache-max` (default `4096`) caps entries before oldest-first eviction.
+
+Every entry carries a fixed 24-byte header: a format tag and the entry's own write time in OS seconds. `Load` strips the header, so a caller still sees exactly the bytes it stored. The header time, not the file mtime, decides the entry's age, because a CI cache restore or a file copy rewrites mtime.
+
+`--cache-expiry=DAYS` sets the entry lifetime (default `7`). A load older than the lifetime is a miss, and that entry is removed. Zero means entries never expire. The key `[cache] expiry-days` sets the same value, and an explicit flag wins.
+
+`--cache-clear` removes every entry under the resolved cache root, prints the path and the entry count, and exits 0. It refuses a file-system root, the user's home directory, and an empty path, so a bad `--cache-dir` can never empty an unrelated tree.
 
 The ANSI report shows a `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design (schema namespace, eviction, overflow safety, `--target` normalization) is in [Architecture -- Result caching](../contributing/architecture.md#result-caching).
 

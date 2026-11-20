@@ -1,3 +1,4 @@
+with Ada.Directories;
 with GNAT.OS_Lib;
 with Adacovex.Paths;
 
@@ -183,6 +184,59 @@ package body Adacovex_Paths_Tests is
             R.Check
               (Display ("C:\a\b") = "C:\a\b",
                "display keeps backslashes on POSIX");
+         end if;
+      end;
+
+      --  Resolve: one absolute, normalised spelling. The checks pin the
+      --  rules the cache key and the proof-input walk rely on -- '.' and
+      --  '..' folding, repeated separators, the root clamp, '~' expansion,
+      --  and relative resolution against the working directory. A relative
+      --  and an absolute spelling of the same project must resolve equal,
+      --  or two working directories would open two cache entries.
+      declare
+         Cwd : constant String := Ada.Directories.Current_Directory;
+      begin
+         R.Check
+           (Adacovex.Paths.Resolve ("") = "",
+            "resolve: the empty path stays empty");
+         R.Check
+           (Adacovex.Paths.Resolve ("/a/./b//") = "/a/b",
+            "resolve: '.' and repeated separators fold away");
+         R.Check
+           (Adacovex.Paths.Resolve ("/x/../y") = "/y",
+            "resolve: '..' pops a segment");
+         R.Check
+           (Adacovex.Paths.Resolve ("/..") = "/",
+            "resolve: '..' at the root stays at the root");
+         R.Check
+           (Adacovex.Paths.Resolve ("/a/b/../../..") = "/",
+            "resolve: '..' never climbs above the root");
+         R.Check
+           (Adacovex.Paths.Resolve ("./") = Adacovex.Paths.Resolve (Cwd),
+            "resolve: '.' is the working directory");
+         R.Check
+           (Adacovex.Paths.Resolve ("a//b/../c")
+            = Adacovex.Paths.Resolve (Cwd & "/a/c"),
+            "resolve: a relative path resolves against the cwd");
+         R.Check
+           (Adacovex.Paths.Resolve (Cwd & "/a/c")
+            = Adacovex.Paths.Resolve ("a/c"),
+            "resolve: relative and absolute spellings agree");
+         R.Check
+           (Adacovex.Paths.Resolve ("~") = Adacovex.Paths.Resolve (Home),
+            "resolve: '~' is the home directory");
+         R.Check
+           (Adacovex.Paths.Resolve ("~/x")
+            = Adacovex.Paths.Resolve (Home & "/x"),
+            "resolve: '~/x' is under the home directory");
+         if GNAT.OS_Lib.Directory_Separator = '\' then
+            R.Check
+              (Adacovex.Paths.Resolve ("C:\\x\\..\\y") = "c:/y",
+               "resolve: a drive root is kept, separators and case fold");
+         else
+            R.Check
+              (Adacovex.Paths.Resolve ("C:\\x\\..\\y") = "C:/y",
+               "resolve: a drive root is kept and separators fold");
          end if;
       end;
    end Run;

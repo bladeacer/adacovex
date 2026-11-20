@@ -1,3 +1,5 @@
+with Ada.Calendar;
+with Ada.Calendar.Conversions;
 with Ada.Directories;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
@@ -77,6 +79,85 @@ package body Adacovex_Cache_Tests is
       Ada.Streams.Stream_IO.Write (F, B);
       Ada.Streams.Stream_IO.Close (F);
    end Append_File;
+
+   --  On-disk path of the entry stored under Key: <root>/<shard>/<key>,
+   --  where the shard is the key's first two characters.
+   function Entry_Path (Key : String) return String is
+   begin
+      return
+        Test_Cache_Dir & "/" & Key (Key'First .. Key'First + 1) & "/" & Key;
+   end Entry_Path;
+
+   --  Current time in the entry-header's own unit: OS seconds.
+   function Now_Seconds return Long_Long_Integer is
+   begin
+      return
+        Long_Long_Integer
+          (Ada.Calendar.Conversions.To_Unix_Time (Ada.Calendar.Clock));
+   end Now_Seconds;
+
+   --  Rewrite an entry's header time, keeping its payload. The rewrite also
+   --  moves the file's mtime to now, so a test that ages the header this way
+   --  has a fresh mtime over an old header -- the exact disagreement the TTL
+   --  rule resolves in the header's favour.
+   procedure Set_Header_Time (Path : String; T : Long_Long_Integer) is
+      F    : Ada.Streams.Stream_IO.File_Type;
+      Size : Natural;
+      Hex  : constant String := "0123456789abcdef";
+      V    : Long_Long_Integer := T;
+      Hdr  : String (1 .. 24) := (others => ' ');
+      HBuf : Ada.Streams.Stream_Element_Array (0 .. 23);
+   begin
+      Size := Natural (Ada.Directories.Size (Path));
+      Hdr (1 .. 8) := "ADACXE1 ";
+      for I in reverse 9 .. 24 loop
+         Hdr (I) := Hex (Natural (V mod 16) + 1);
+         V := V / 16;
+      end loop;
+      Ada.Streams.Stream_IO.Open (F, Ada.Streams.Stream_IO.In_File, Path);
+      declare
+         Pay  :
+           Ada.Streams.Stream_Element_Array
+             (0 .. Ada.Streams.Stream_Element_Offset (Size - 1));
+         Last : Ada.Streams.Stream_Element_Offset;
+      begin
+         Ada.Streams.Stream_IO.Read (F, Pay, Last);
+         Ada.Streams.Stream_IO.Close (F);
+         for I in Hdr'Range loop
+            HBuf (Ada.Streams.Stream_Element_Offset (I - 1)) :=
+              Ada.Streams.Stream_Element (Character'Pos (Hdr (I)));
+         end loop;
+         Ada.Streams.Stream_IO.Create
+           (F, Ada.Streams.Stream_IO.Out_File, Path);
+         Ada.Streams.Stream_IO.Write (F, HBuf);
+         --  The old header is replaced, not kept: write only the payload
+         --  that follows it.
+         if Integer (Last) >= 24 then
+            Ada.Streams.Stream_IO.Write
+              (F, Pay (Ada.Streams.Stream_Element_Offset (24) .. Last));
+         end if;
+         Ada.Streams.Stream_IO.Close (F);
+      end;
+   end Set_Header_Time;
+
+   --  First N bytes of a file, as a String.
+   function First_Bytes (Path : String; N : Positive) return String is
+      F    : Ada.Streams.Stream_IO.File_Type;
+      B    :
+        Ada.Streams.Stream_Element_Array
+          (0 .. Ada.Streams.Stream_Element_Offset (N - 1));
+      Last : Ada.Streams.Stream_Element_Offset;
+      R    : String (1 .. N);
+   begin
+      Ada.Streams.Stream_IO.Open (F, Ada.Streams.Stream_IO.In_File, Path);
+      Ada.Streams.Stream_IO.Read (F, B, Last);
+      Ada.Streams.Stream_IO.Close (F);
+      for I in R'Range loop
+         R (I) :=
+           Character'Val (B (Ada.Streams.Stream_Element_Offset (I - 1)));
+      end loop;
+      return R;
+   end First_Bytes;
 
    procedure Run (R : in out Adacovex.Test_Support.Runner'Class) is
       Original_Dir : String (1 .. 1024) := (others => ' ');
@@ -450,6 +531,135 @@ package body Adacovex_Cache_Tests is
                        & "/"
                        & Cache.Cache_Schema,
             "Test 16: the default cache root is <cache>/<version>/<schema>");
+      end;
+
+      --  Test 17: every entry carries the fixed header (format tag plus the
+      --  write time) and Load strips it, so the entry is header plus the
+      --  payload and callers see exactly the bytes they stored.
+      declare
+         K : constant String := Cache.Hash_String ("header-entry");
+         P : constant String := Entry_Path (K);
+         B : String (1 .. 64);
+         L : Natural;
+         F : Boolean;
+      begin
+         Cache.Store (K, "header-payload", F);
+         R.Check (F, "Test 17: store wrote an entry");
+         R.Check
+           (Ada.Directories.Size (P) = 24 + 14,
+            "Test 17: the entry is a 24-byte header plus the payload");
+         R.Check
+           (First_Bytes (P, 8) = "ADACXE1 ",
+            "Test 17: the entry starts with the format tag");
+         Cache.Load (K, B, L, F);
+         R.Check
+           (F and then L = 14 and then B (1 .. L) = "header-payload",
+            "Test 17: load returns the payload without the header");
+      end;
+
+      --  Test 18: the TTL boundary is measured from the header time, not
+      --  the mtime. The aging rewrite refreshes mtime, so a fresh mtime
+      --  over an old header must still miss.
+      declare
+         K : constant String := Cache.Hash_String ("ttl-entry");
+         P : constant String := Entry_Path (K);
+         B : String (1 .. 64);
+         L : Natural;
+         F : Boolean;
+      begin
+         Cache.Store (K, "ttl-payload", F);
+         Cache.Set_Cache_Expiry (1);
+         Set_Header_Time (P, Now_Seconds - 86_399);
+         Cache.Load (K, B, L, F);
+         R.Check
+           (F and then L = 11 and then B (1 .. L) = "ttl-payload",
+            "Test 18: an entry inside the TTL is served");
+         Set_Header_Time (P, Now_Seconds - 86_401);
+         R.Check
+           (Cache.Exists (K) = False,
+            "Test 18: exists reports an expired entry as absent");
+         Cache.Store (K, "ttl-payload", F);
+         Set_Header_Time (P, Now_Seconds - 86_401);
+         Cache.Load (K, B, L, F);
+         R.Check (not F, "Test 18: an entry past the TTL is a miss");
+         R.Check
+           (not Ada.Directories.Exists (P),
+            "Test 18: the expired entry is removed on load");
+         Cache.Set_Cache_Expiry (Cache.Default_Expiry_Days);
+      end;
+
+      --  Test 19: expiry 0 means never expire, and a header time in the
+      --  future (clock skew) is served rather than treated as stale.
+      declare
+         K : constant String := Cache.Hash_String ("zero-expiry-entry");
+         P : constant String := Entry_Path (K);
+         B : String (1 .. 64);
+         L : Natural;
+         F : Boolean;
+      begin
+         Cache.Store (K, "zero-payload", F);
+         Cache.Set_Cache_Expiry (0);
+         Set_Header_Time (P, 0);
+         Cache.Load (K, B, L, F);
+         R.Check
+           (F and then B (1 .. L) = "zero-payload",
+            "Test 19: expiry 0 never expires an entry");
+         Cache.Set_Cache_Expiry (1);
+         Set_Header_Time (P, Now_Seconds + 3_600);
+         Cache.Load (K, B, L, F);
+         R.Check
+           (F and then B (1 .. L) = "zero-payload",
+            "Test 19: a future header time (clock skew) is fresh");
+         Cache.Store (K, "zero-payload", F);
+         Cache.Set_Cache_Expiry (1);
+         Set_Header_Time (P, 0);
+         Cache.Load (K, B, L, F);
+         R.Check (not F, "Test 19: the TTL applies once expiry is non-zero");
+         Cache.Set_Cache_Expiry (Cache.Default_Expiry_Days);
+      end;
+
+      --  Test 20: Clear removes every entry, reports the count, removes the
+      --  root itself, and is idempotent on an absent root.
+      declare
+         K  : constant String := Cache.Hash_String ("clear-entry");
+         B  : String (1 .. 64);
+         L  : Natural;
+         F  : Boolean;
+         N  : Natural;
+         OK : Boolean;
+      begin
+         Cache.Store (K, "clear-payload", F);
+         Cache.Clear (N, OK);
+         R.Check
+           (OK and then N >= 1,
+            "Test 20: clear removed the entries and reported the count");
+         R.Check
+           (not Ada.Directories.Exists (Test_Cache_Dir),
+            "Test 20: clear removed the cache root");
+         Cache.Load (K, B, L, F);
+         R.Check (not F, "Test 20: a cleared entry no longer loads");
+         Cache.Clear (N, OK);
+         R.Check
+           (OK and then N = 0,
+            "Test 20: clearing an absent root succeeds with no entries");
+      end;
+
+      --  Test 21: clear refuses a file-system root, so a bad --cache-dir can
+      --  never empty an unrelated tree.
+      declare
+         N  : Natural;
+         OK : Boolean;
+      begin
+         Cache.Set_Cache_Dir ("/");
+         Cache.Clear (N, OK);
+         R.Check
+           (not OK and then N = 0,
+            "Test 21: clear refuses the file-system root");
+         R.Check
+           (Ada.Directories.Exists ("/"),
+            "Test 21: the file-system root survives");
+         Cache.Set_Cache_Dir (Test_Cache_Dir);
+         Create_Path (Test_Cache_Dir);
       end;
 
       --  Restore whatever cache directory the caller had configured.

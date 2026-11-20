@@ -3,6 +3,76 @@
 from cli_support import *  # noqa: F401,F403
 
 
+def check_cache(r: Results, tmp: Path) -> None:
+    """The cache flags: resolved keys, lifetime, and clear.
+
+    Two runs of the same project use one cache from different working
+    directories. The relative and the absolute spelling must resolve to one
+    key, so the second run reports no miss. --cache-expiry configures the
+    lifetime, and --cache-clear removes every entry and exits 0.
+    """
+    proj = tmp / "cache-proj"
+    write_project(proj, 2)
+    cache = tmp / "cache-store"
+    common = ["--no-svg", "--no-md", "--no-sbom", "--cache-dir", str(cache)]
+
+    first = run(["-t", "cache-proj"] + common, cwd=tmp)
+    second = run(["-t", str(proj)] + common, cwd=tmp)
+    r.check("result cache:" in first.stdout, "cache: the first run completes")
+    r.check(
+        "result cache:" in second.stdout and "0 miss(es)" in second.stdout,
+        "cache: a relative and an absolute target share one entry set",
+    )
+    r.check(
+        "0 evicted" in second.stdout,
+        "cache: the warm run evicts nothing",
+    )
+
+    verbose = run(
+        ["-t", str(proj)] + common + ["--cache-expiry=0", "--verbose"])
+    r.check(
+        "expiry=0 day(s)" in verbose.stderr,
+        "cache: --cache-expiry=0 configures the lifetime",
+    )
+
+    #  A per-file key: editing one unit in a 32-package project keeps the
+    #  other records and misses only the changed file.
+    big = tmp / "cache-big"
+    write_documented_project(big, 32)
+    run(["-t", str(big)] + common)
+    run(["-t", str(big)] + common)
+    unit = big / "src" / "p01.ads"
+    unit.write_text(
+        unit.read_text(encoding="utf-8") + "--  edited\n", encoding="utf-8")
+    edited = run(["-t", str(big)] + common)
+    match = re.search(
+        r"result cache:\s+(\d+) hit\(s\), (\d+) miss\(es\)", edited.stdout)
+    r.check(match is not None, "cache: the edited run reports its outcomes")
+    if match is not None:
+        hits, misses = int(match.group(1)), int(match.group(2))
+        r.check(
+            hits >= 31 and misses <= 1,
+            f"cache: one edited unit misses alone (hits={hits},"
+            f" misses={misses})",
+        )
+
+    refused = run(["--cache-clear", "--cache-dir", "/"])
+    r.check(
+        refused.returncode == 1 and "refused to clear" in refused.stderr,
+        "cache: --cache-clear refuses a file-system root",
+    )
+
+    cleared = run(["--cache-clear", "--cache-dir", str(cache)])
+    r.check(
+        cleared.returncode == 0 and "cache cleared:" in cleared.stdout,
+        "cache: --cache-clear prints the count and exits 0",
+    )
+    r.check(
+        not cache.exists()
+        or not any(p.is_file() for p in cache.rglob("*")),
+        "cache: --cache-clear removed every entry",
+    )
+
 def check_complexity(r: Results, tmp: Path) -> None:
     # A single-package project fails the gate (each file dominates the
     # codebase); a 20-package project passes (each file is ~5%).

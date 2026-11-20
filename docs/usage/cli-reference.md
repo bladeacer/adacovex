@@ -76,6 +76,8 @@ Compliance selection stays on `--standard` and its level companions
 | `--no-cache` | off | both | Disable result caching (always re-scan/re-parse/re-prove) |
 | `--cache-dir=PATH` | `the result cache <ver>/<schema>` | both | Cache directory for analysis results |
 | `--cache-max=N` | `4096` | both | Max cache entries before oldest-first eviction |
+| `--cache-expiry=DAYS` | `7` | both | Entry lifetime in days; `0` means entries never expire |
+| `--cache-clear` | off | both | Remove every cache entry, print the path and count, and exit |
 | `--no-sbom` | off | both | Skip the automatic SBOM written at the end of every assessment |
 | `--sbom-format=FMT` | `cyclonedx-json` | both | Format of the automatic SBOM: `cyclonedx-json`\|`spdx-json`\|`md` |
 | `--require-spark=LVL`, `--spark=LVL` | off | both | Fail loudly (exit 1) if SPARK level < LVL (Stone..Platinum). Platinum requires a complete formal specification and full proof coverage: every functional contract proved, and every subprogram the `spark-coverage` report assesses proved. A project with no functional contracts to prove, or with subprograms outside the proof, is Gold, not Platinum. |

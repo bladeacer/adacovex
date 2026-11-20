@@ -88,6 +88,7 @@ steps:
 | `no-cache` | `false` | Disable adacovex on-disk result caching |
 | `cache-dir` | `''` | Override adacovex result cache directory |
 | `cache-max` | `''` | Max adacovex result-cache entries before eviction |
+| `cache-expiry` | `''` | Result-cache entry lifetime in days (`0` = never expire) |
 | `prove-jobs` | `''` | GNATprove parallelism for the `prove` subcommand |
 | `prove-level` | `''` | GNATprove proof effort 0-4 |
 | `prove-timeout` | `''` | GNATprove per-check prover timeout in seconds |

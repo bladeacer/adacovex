@@ -154,16 +154,34 @@ source scans for the current tree.
   `*.opam` / `*.cabal`), so an edit to a test-labelled section, a lockfile,
   or a declared dependency invalidates the cached graph and the graph is
   rebuilt from the new content.
-- **Eviction**: `Put_Cached` evicts oldest-first by modification time when more
-  than `--cache-max` entries (default `4096`) accumulate. `Eviction_Count`
-  tracks removals and is reported in the ANSI cache line.
+- **Entry header**: every entry starts with a 24-byte header, a format tag plus
+  the write time in OS seconds. `Load` strips it before returning the payload,
+  so callers see the bytes they stored. The header time, never the file mtime,
+  is the entry's age: a CI cache restore or a file copy rewrites mtime, so an
+  mtime rule would make an old entry look new. An entry without a header is
+  never read, so `Cache_Schema` `s12` abandons the s11 era.
+- **TTL**: a load older than `--cache-expiry` days (default `7`) is a miss and
+  removes that entry; `0` means never expire. `[cache] expiry-days` sets the
+  same value. Expiry runs before the count cap, so a stale entry is never
+  counted as live.
+- **Eviction**: `Put_Cached` evicts oldest-first by header time when more
+  than `--cache-max` entries (default `4096`) accumulate. A file without a
+  readable header falls back to its mtime. `Eviction_Count` tracks removals and
+  is reported in the ANSI cache line.
+- **Clear**: `adacovex --cache-clear` removes the resolved cache root and
+  exits, printing the path and the entry count. It refuses a file-system root,
+  the home directory, or an empty path, so a bad `--cache-dir` can never empty
+  an unrelated tree.
 - **Overflow safety**: `Serialize` returns an empty blob when a package is
    larger than `Max_Cache_Blob`, and `Deserialize` rejects empty/oversized
    input, so truncated data can never be served as a hit.
-- **`--target` normalization**: `--target` is normalised (`.`/`..` collapsed to
-  a canonical absolute path) before scanning, keeping the `File_Path` values in
-  cached `Package_Info` consistent across invocations that spell the same
-  directory differently.
+- **`--target` resolution**: `--target` resolves through
+  `Adacovex.Paths.Resolve` (a relative path against the working directory,
+  `~` expanded, `.`/`..` folded, separators unified) before scanning, keeping
+  the `File_Path` values in cached `Package_Info` consistent across
+  invocations that spell the same directory differently. The proof-cache key
+  resolves the target and the root `.gpr` the same way, so two working
+  directories share one proof entry.
 - **CI**: the GitHub action persists `<cache>` between workflow runs
   (`result-cache` input, default true).
 

@@ -49,6 +49,8 @@ HELP_TOPICS: Tuple[Tuple[str, str], ...] = (
     ("docstrs", "--require-"),
     ("tests", "--require-"),
     ("strict", "--skip-dir"),
+    ("cache-expiry", "--cache-expiry=DAYS"),
+    ("cache-clear", "--cache-clear"),
 )
 
 ALIAS_NAMES: Tuple[str, ...] = (
