@@ -9,14 +9,14 @@
   | SVG renderer                             |  161 |  0 | PASS     |
   | HTML/Markdown renderers                  |  58 |  0 | PASS     |
   | SBOM generator                           |  580 |  0 | PASS     |
-  | Result cache                             |  36 |  0 | PASS     |
+  | Result cache                             |  39 |  0 | PASS     |
   | IR synthesis                             |  42 |  0 | PASS     |
   | Man page renderer                        |  30 |  0 | PASS     |
   | VCS support                              |  37 |  0 | PASS     |
   | Server routing                           |  183 |  0 | PASS     |
   | Proof patches                            |  35 |  0 | PASS     |
   | Timezone + ANSI                          |  73 |  0 | PASS     |
-  | Complexity check                         |  20 |  0 | PASS     |
+  | Complexity check                         |  28 |  0 | PASS     |
   | Opt-out markers                          |  20 |  0 | PASS     |
   | Dir cache                                |  29 |  0 | PASS     |
   | Diff reports                             |  36 |  0 | PASS     |
@@ -32,4 +32,4 @@
   | Test support                             |  19 |  0 | PASS     |
   |-----------------------------------------|--------|-------|----------|
 
-  Passed: 2413  Failed: 0  Skipped: 0
+  Passed: 2424  Failed: 0  Skipped: 0

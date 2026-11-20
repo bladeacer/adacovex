@@ -99,15 +99,21 @@ The source **extensions** below are recognised for three purposes:
    works from the dependency *name* and is language-independent.
 
 The recognised extensions are: Ada (`.ads` `.adb` `.ada` `.gpr`), JavaScript
-(`.js` `.mjs` `.cjs`), TypeScript (`.ts` `.tsx`), CSS (`.css`), HTML (`.html`
-`.htm`), Python (`.py`), Go (`.go`), Rust (`.rs`), C (`.c` `.h`), C++ (`.cpp`
-`.cc` `.cxx` `.hpp` `.hh` `.hxx`), C# (`.cs`), Java (`.java`), Ruby (`.rb`),
-PHP (`.php`), Swift (`.swift`), Kotlin (`.kt` `.kts`), Scala (`.scala`),
-OCaml (`.ml` `.mli`), Lua (`.lua`), Perl (`.pl`), Haskell (`.hs`), Elixir
-(`.ex` `.exs`), Erlang (`.erl` `.hrl`), Clojure (`.clj` `.cljs`), Dart
+(`.js` `.mjs` `.cjs` `.jsx`), TypeScript (`.ts` `.tsx`), CSS (`.css`), HTML
+(`.html` `.htm`), Python (`.py`), Go (`.go`), Rust (`.rs`), C (`.c` `.h`), C++
+(`.cpp` `.cc` `.cxx` `.hpp` `.hh` `.hxx`), C# (`.cs`), Java (`.java`), Ruby
+(`.rb`), PHP (`.php`), Swift (`.swift`), Kotlin (`.kt` `.kts`), Scala
+(`.scala`), OCaml (`.ml` `.mli`), Lua (`.lua`), Perl (`.pl`), Haskell (`.hs`),
+Elixir (`.ex` `.exs`), Erlang (`.erl` `.hrl`), Clojure (`.clj` `.cljs`), Dart
 (`.dart`), Shell (`.sh` `.bash`), PowerShell (`.ps1`), SQL (`.sql`), Fortran
 (`.f` `.f90` `.f95` `.f03`), Assembly (`.s` `.asm`), R (`.r`), Julia (`.jl`),
 Zig (`.zig`), VHDL (`.vhd` `.vhdl`), and Tcl (`.tcl`).
+
+The `complexity` subcommand also measures the data and prose formats a
+repository commits: YAML (`.yaml` `.yml`), JSON (`.json`), TOML (`.toml`),
+XML (`.xml`), Markdown (`.md`), and reStructuredText (`.rst`). The SBOM parser
+resolves components from their manifests, so those formats never appear as a
+component language; they still count against the LOC gate.
 
 The extension is the source of truth: a `.py` file reports Python even when a
 `Cargo.toml` sits next to it. The manifest language only breaks ties.

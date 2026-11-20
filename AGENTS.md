@@ -140,7 +140,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2413/2413 native tests passing
+- 2424/2424 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -281,9 +281,9 @@ src/
 `-- tests/
     |-- adacovex-test_support.ads/.adb        -- Native test Runner + portable temp-dir, command, path, and skip helpers
     |-- adacovex_ansi_tests.ads/.adb          -- ANSI terminal report tests (28)
-    |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (36)
+    |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (39)
     |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
-    |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (20)
+    |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (28)
     |-- adacovex_config_tests.ads/.adb        -- CLI config tests (387)
     |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (23)
@@ -310,7 +310,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2413 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2424 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -720,7 +720,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the count-sync checks. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2413-test native suite |
+| `test` | Build + run the 2424-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -840,7 +840,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2413/2413 passing |
+| Unit tests | `just test` | 2424/2424 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1058 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -909,7 +909,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2413 tests across 30 categories).
+Native zero-dependency suite (`src/tests/`, 2424 tests across 30 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests). The Python end-to-end suites
 live under `src/tests/e2e/` in category directories (`cli/`, `prove/`,

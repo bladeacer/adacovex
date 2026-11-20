@@ -76,7 +76,7 @@ guessing.
 Projects that do *not* declare gnatprove fall back to (in order): a global
 pin (`ADACOVEX_GNATPROVE_VERSION`, or `[prove] gnatprove-version` in
 the global configuration file, deployed through the same `alr -n get` path),
-a gnatprove on `$PATH`, a cached toolchain in `<data>/toolkit/`, and
+a gnatprove on `$PATH`, a cached toolkit in `<data>/toolkit/`, and
 finally the platform toolkit download. `adacovex status` reports which
 tier applies without deploying anything. The global pin, the environment
 variables, and the state directories are documented in full on

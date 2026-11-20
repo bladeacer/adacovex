@@ -263,7 +263,7 @@ The strace profile of the warm no-op build reports 136 370 syscalls,
 check across the source tree. Nothing in that profile repeats on a cold
 tree -- the cold tree pays the compile, not the check.
 
-## Host-side toolchain caches
+## Host-side toolkit caches
 
 A cold machine pays for its toolkit once, per host, outside the tree.
 Alire fetches `gnat_native` (990 MB unpacked) and `gprbuild` (278 MB) into

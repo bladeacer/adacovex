@@ -380,7 +380,7 @@ package body Adacovex.Renderers.Man is
         (Buf,
          Len,
          "prove",
-         "Resolve gnatprove (manifest pin, PATH, cached toolchain, or "
+         "Resolve gnatprove (manifest pin, PATH, cached toolkit, or "
          & "download), run it, then assess the target.");
       App_Option
         (Buf,

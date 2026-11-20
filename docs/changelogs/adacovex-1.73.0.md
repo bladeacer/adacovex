@@ -61,7 +61,7 @@ and never as a pass.
 
 ## Test Suite
 
-Native suite: 2413/2413 passing across 30 categories. The new `Test support`
+Native suite: 2424/2424 passing across 30 categories. The new `Test support`
 category adds 19 checks for the temp directory, the argument-vector command,
 the path helpers, the skip accounting, and the Windows path shapes.
 

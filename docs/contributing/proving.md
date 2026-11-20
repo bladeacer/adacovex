@@ -17,7 +17,7 @@ The `prove` subcommand (full options:
 [CLI reference -- the `prove` subcommand](../usage/cli-reference-flags.md#the-prove-subcommand)):
 
 1. **Resolves gnatprove** without requiring the target to declare it:
-   manifest pin > global pin > `$PATH` > cached toolchain > download. Full
+   manifest pin > global pin > `$PATH` > cached toolkit > download. Full
    order and per-method detail:
    [Architecture -- GNATprove toolchain resolution](architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 2. **Runs gnatprove** against the target (or against a patched tree copy

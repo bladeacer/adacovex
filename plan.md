@@ -25,12 +25,12 @@ than cherry-picking rows across versions.
 | v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
 | v1.72.0 | closed | Performance close-out and documentation currency | changelog `adacovex-1.72.0.md` |
 | v1.73.0 | closed | Test suite portability and layout | changelog `adacovex-1.73.0.md` |
-| v1.74.0 | planned | Cache identity, diagnostics, terminology, and modularity | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix), 21 (toolkit terminology), 22 (docs accuracy audit), 23 (modular Python and test scripts) |
+| v1.74.0 | planned | Cache identity, diagnostics, terminology, and modularity | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix), 21 (toolkit terminology), 22 (docs accuracy audit), 23 (modular Python and test scripts), 24 (cache-path audit), 25 (complexity language parity) |
 | v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
 
-## Status (2026-11-18)
+## Status (2026-11-20)
 
-v1.73.0 is closed; v1.74.0 is in progress. Items 21-23 are complete; items
+v1.73.0 is closed; v1.74.0 is in progress. Items 21-25 are complete; items
 18 and 17a remain. The tree holds 2413/2413 native tests
 across 30 categories, 165 CLI e2e checks (one skips without a prover), 132
 prove-e2e checks over the committed fixture projects, and 1058 VCs at Gold.
@@ -316,6 +316,66 @@ registry and the 34-gate order; the tools suite still runs every moved test,
 and the e2e shards still partition the same 23 checks.
 
 **Verify:** `just tools-check`, `just test`, `just cli-e2e`, `just check`.
+
+---
+
+- [x] Item 24 - Cache-path integrity since v1.71.0
+
+**Goal:** Every cache location a run reads or writes is the location v1.71.0
+documented, apart from the one deliberate rename (item 21). No refactor, no
+terminology pass, and no release bump can move a cache path silently.
+
+**Work:**
+- Audit the path builders against the v1.71.0 tree: the result-cache root
+  (`<cache>/<version>/<schema>`), the stat-stamp index
+  (`<cache>/stamps/index.bin`), the tool-probe store
+  (`<cache>/probes/<tool>.v2`), and the registry-metadata store
+  (`<data>/meta/<hash>`). Only the toolkit directory moved
+  (`<data>/toolchain` to `<data>/toolkit`), by decision, and it stays moved.
+- Fix the two stale test assumptions the audit exposed: the cache suite still
+  built a per-file stamp path (`<cache>/stamps/<sha>`) retired since 1.44.0,
+  and it recorded a registry-meta entry in the result cache rather than in
+  `<data>/meta/`. Neither leaked a wrong path into a product run, but both
+  stopped the suite from noticing a real move.
+- Pin the live layout in the cache suite: the default root ends in
+  `/<version>/<schema>`, the stamp index exists at
+  `<cache>/stamps/index.bin`, small files are stamped (no size gate), and a
+  meta entry lands under `<data>/meta/` and is removed afterwards.
+- Fix the strings the terminology pass missed: the prove help and man page
+  still said `cached toolchain` for the adacovex-owned cache.
+
+**Tests:** `adacovex_cache_tests.adb` pins each location above and no longer
+constructs a retired one.
+
+**Verify:** `just test`, `just test-count`, `just docs-check`.
+
+---
+
+- [x] Item 25 - Complexity language parity with the SBOM parser
+
+**Goal:** The `complexity` subcommand scans every language the SBOM parser
+recognises, with the same display names, plus the data and prose formats it
+already measured. A `.swift`, `.scala`, `.lua`, or `.vhdl` file is no longer
+invisible to the LOC and decision gates.
+
+**Work:**
+- Replace the scanner's private extension list with one extension-to-language
+  table that mirrors `Adacovex.Parsers.Manifest.Extension_Language`, and add
+the formats `complexity` owns (YAML, JSON, TOML, XML, Markdown,
+reStructuredText, and `.jsx`).
+- Expose the mapping as `Adacovex.Complexity.Language_Of`, so the table is
+  one source of truth for scanning, reporting, and the tests.
+- Keep per-subprogram analysis Ada-only; every other language still
+  contributes file-level LOC and decision counts.
+- Update `docs/usage/target-projects.md` and
+  `docs/contributing/architecture-outputs.md` with the complete set, and the
+  package docstring that feeds `docs/api-docs`.
+
+**Tests:** `adacovex_complexity_tests.adb` checks every SBOM extension maps to
+its language, an unknown extension maps to none, and a newly covered language
+is scanned and reported.
+
+**Verify:** `just test`, `just complexity-check`, `just test-count`.
 
 ---
 

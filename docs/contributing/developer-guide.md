@@ -24,14 +24,14 @@ Prerequisites:
   committed `requirements.txt`. The shipped binary itself has no Python or
   other runtime dependency.
 - **gnatprove** -- optional for *using* adacovex, required for `just prove`.
-  It is resolved at run time (manifest pin, `$PATH`, cached toolchain, or
+  It is resolved at run time (manifest pin, `$PATH`, cached toolkit, or
   download). It lives in the dev manifest, never the published one.
 
 ```bash
 git clone https://github.com/bladeacer/adacovex.git
 cd adacovex
 just build        # compiles bin/adacovex + bin/test_runner (covex alias)
-just test         # builds + runs the native test suite (2413 tests)
+just test         # builds + runs the native test suite (2424 tests)
 just run-self     # assess adacovex itself: 100% docs, Gold, DAL-C
 just prove        # SPARK proof (full-proof gate) + regenerates docs/badges/
 just check        # the whole quality gate CI runs before a release
@@ -45,7 +45,7 @@ the cheap checks, `e2e` owns the suites, `release` owns versioning, and
 `checks` owns `CHECK_GATES`. `tools/tasks.py` is only the entry point and the
 `TASKS` registry.
 
-### Host-side toolchain caches
+### Host-side toolkit caches
 
 A cold host pays for its toolkit once, outside the tree. The first
 `alr build` fetches the Alire toolchain into

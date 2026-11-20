@@ -109,7 +109,7 @@ Pull requests should follow the following conventions.
   coverage (every subprogram the SPARK coverage report assesses proved), and
   the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2413 tests across 30 categories) and run `just test`.
+  (2424 tests across 30 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -192,14 +192,14 @@ fixture in the same change.
 | SVG renderer | 161 |
 | HTML/Markdown renderers | 58 |
 | SBOM generator | 580 |
-| Result cache | 36 |
+| Result cache | 39 |
 | IR synthesis | 42 |
 | Man page renderer | 30 |
 | VCS support | 37 |
 | Server routing | 183 |
 | Proof patches | 35 |
 | Timezone + ANSI | 73 |
-| Complexity check | 20 |
+| Complexity check | 28 |
 | Opt-out markers | 20 |
 | Dir cache | 29 |
 | Diff reports | 36 |
@@ -213,4 +213,4 @@ fixture in the same change.
 | Install method | 23 |
 | tldr installer | 48 |
 | Test support | 19 |
-| **Total** | **2413** |
+| **Total** | **2424** |

@@ -43,15 +43,18 @@ adacovex supports multiple output formats:
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 2413 tests across 30 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 2424 tests across 30 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Complexity check
 
-The `complexity` subcommand walks the whole target and scores many languages
-(C, C++, C#, Go, Java, JavaScript, TypeScript, Python, Ruby, PHP, Rust,
-Shell, Kotlin, and the YAML/JSON/TOML/XML/Markdown/reStructuredText
-families) alongside Ada. Per-subprogram analysis stays Ada-specific; the
-other languages contribute file-level lines of code and decision counts.
+The `complexity` subcommand walks the whole target and scores every language
+the SBOM parser recognises: Ada, C, C++, C#, Go, Java, JavaScript,
+TypeScript, Python, Ruby, PHP, Rust, Shell, PowerShell, Kotlin, Swift,
+Scala, OCaml, Lua, Perl, Haskell, Elixir, Erlang, Clojure, Dart, SQL,
+Fortran, Assembly, R, Julia, Zig, VHDL, Tcl, CSS, and HTML. It also measures
+the YAML, JSON, TOML, XML, Markdown, and reStructuredText formats.
+Per-subprogram analysis stays Ada-specific; the other languages contribute
+file-level lines of code and decision counts.
 `--excludes=EXT,EXT` skips listed file extensions and is rejected unless the
 `complexity` subcommand is given, so it can never run on its own. `just
 complexity-check` gates the tree through the same thresholds.

@@ -13,7 +13,7 @@ The composite action installs Alire via
 [`alire-project/setup-alire`](https://github.com/alire-project/setup-alire).
 GNAT comes from `gnat-version` plus `gprbuild`. `gnatprove` is NOT an
 `alr toolchain` component. The `prove` subcommand resolves it through the
-target project's manifest, `$PATH`, cached toolchain, or download.
+target project's manifest, `$PATH`, cached toolkit, or download.
 
 The action obtains the version-matched adacovex binary. It downloads the
 release bundle by default. You can set `build: true` to build from source.

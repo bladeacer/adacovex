@@ -1,6 +1,6 @@
 # Adacovex.Complexity
 
-Cyclomatic complexity checker for Ada source files. It scans a target directory for .ads/.adb files. It computes per-file and per-subprogram cyclomatic complexity. It enforces configurable LOC and complexity gates. The implementation is native Ada with no external dependencies. HLR-COMPLEXITY: Cyclomatic complexity analysis
+Cyclomatic complexity checker for source, data, and prose files. It scans a target directory for every language the SBOM parser recognises, plus the formats the LOC gate measures (YAML, JSON, TOML, XML, Markdown, and reStructuredText). It computes per-file cyclomatic complexity for every language and per-subprogram complexity for Ada. It enforces configurable LOC and complexity gates. The implementation is native Ada with no external dependencies. HLR-COMPLEXITY: Cyclomatic complexity analysis
 
 > **Note:** All items in this package are public.
 
@@ -69,7 +69,7 @@ end record;
 
 ### function Analyze_Project (Target_Dir : Standard.String; Excludes : Standard.String; Skip_Paths : Standard.String) return Adacovex.Complexity.Complexity_Result
 
-> Scan Target_Dir for source files across supported languages. Return per-file and per-subprogram cyclomatic complexity metrics. Excludes is a comma-separated list of file extensions to skip (no leading dots), for example "md,rst". Per-subprogram analysis is Ada-specific; the other languages contribute file-level LOC and decision counts. Skip_Paths is a comma-separated list of path fragments; any file whose full path contains one of them is skipped. A file whose leading comment block carries the no-covex-complexity-scan marker (or no-covex-analysis) is skipped too -- see Adacovex.Opt_Outs.
+> Scan Target_Dir for source files across supported languages. Return per-file and per-subprogram cyclomatic complexity metrics. Excludes is a comma-separated list of file extensions to skip (no leading dots), for example "md,rst". Per-subprogram analysis is Ada-specific; the other languages contribute file-level LOC and decision counts. Every language Language_Of names is scanned. Skip_Paths is a comma-separated list of path fragments; any file whose full path contains one of them is skipped. A file whose leading comment block carries the no-covex-complexity-scan marker (or no-covex-analysis) is skipped too -- see Adacovex.Opt_Outs.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -92,6 +92,16 @@ end record;
 | `Result` | Aggregate metrics to evaluate. |
 
 **Returns:** One violation per unmet threshold.
+
+### function Language_Of (File_Name : Standard.String) return Standard.String
+
+> Display language name for a file, derived from its extension. The table is the SBOM parser's extension table, plus the data and prose formats complexity measures. The match is case-insensitive.
+
+| Parameter | Description |
+|-----------|-------------|
+| `File_Name` | File name or path, with its extension. |
+
+**Returns:** Language name ("Ada", "Swift", ...), or "" when unsupported.
 
 ## Procedures
 

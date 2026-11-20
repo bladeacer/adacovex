@@ -105,7 +105,7 @@ operator is stripped.
 The environment variable `ADACOVEX_GNATPROVE_VERSION` overrides this key. The
 full resolution order is: project manifest pin, then the global pin
 (environment variable, then this file), then a gnatprove on `$PATH`, then the
-cached toolchain under `<data>/toolkit/`, and finally the last-resort
+cached toolkit under `<data>/toolkit/`, and finally the last-resort
 platform download.
 
 ### `[prove] coverage`
