@@ -205,6 +205,20 @@ package Adacovex.Paths is
    function Expand_User (Path : String) return String
    with Global => null;
 
+   --  Resolve Path to one absolute, normalised spelling. The helper expands a
+   --  leading '~', makes a relative path absolute against the current
+   --  directory, folds every separator to '/', collapses '.' and '..'
+   --  segments, and folds case on Windows (whose file system does so itself).
+   --  Two spellings of one directory ("src", "./src", "/abs/src", and
+   --  "~/proj/../proj/src") therefore resolve to the same string, so a cache
+   --  key built from a resolved path hits from any working directory. The
+   --  result keeps a root (a leading '/', a Windows drive prefix, or a UNC
+   --  prefix) and never ends in a separator. An empty path resolves to "".
+   --  @param Path  Path to resolve (relative, absolute, or starting with '~').
+   --  @return The resolved absolute path, or "" for an empty path.
+   function Resolve (Path : String) return String
+   with Global => null;
+
    --  Join Dir and Name with exactly one separator between them. Dir's
    --  trailing separators are trimmed first, so "/a/" and "/a" both join to
    --  "/a/Name". Returns Name when Dir is empty and Dir when Name is empty.

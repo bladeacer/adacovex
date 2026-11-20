@@ -193,6 +193,16 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 
 **Returns:** The joined path.
 
+### function Resolve (Path : Standard.String) return Standard.String `[Global]`
+
+> Resolve Path to one absolute, normalised spelling. The helper expands a leading '~', makes a relative path absolute against the current directory, folds every separator to '/', collapses '.' and '..' segments, and folds case on Windows (whose file system does so itself). Two spellings of one directory ("src", "./src", "/abs/src", and "~/proj/../proj/src") therefore resolve to the same string, so a cache key built from a resolved path hits from any working directory. The result keeps a root (a leading '/', a Windows drive prefix, or a UNC prefix) and never ends in a separator. An empty path resolves to "".
+
+| Parameter | Description |
+|-----------|-------------|
+| `Path` | Path to resolve (relative, absolute, or starting with '~'). |
+
+**Returns:** The resolved absolute path, or "" for an empty path.
+
 ### function Strip_Trailing_Separators (Path : Standard.String) return Standard.String `[Post]` `[Global]`
 
 > Strip every trailing path separator from Path. A lone root ("/" or "\") is kept intact, and an empty Path is returned unchanged.

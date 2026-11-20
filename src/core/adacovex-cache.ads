@@ -46,11 +46,23 @@ package Adacovex.Cache is
    --  SPARK-proof opt-out is enforced by the prove runner's -u unit walk,
    --  never through the scan records) -- cached scan blobs from earlier
    --  builds carry a field the current layout no longer has.
-   Cache_Schema : constant String := "s11";
+   --  s12: every entry carries a fixed header (entry-format tag + write
+   --  time). Load strips it before returning the payload, and the TTL and
+   --  oldest-first eviction read its time instead of the file mtime, which a
+   --  CI cache restore or a copy rewrites. An entry without a header is
+   --  never read, so s11-era blobs are abandoned.
+   Cache_Schema : constant String := "s12";
 
    --  Soft cap on the number of cache entries kept on disk. Once exceeded,
    --  the oldest entries are evicted first.
    Default_Max_Entries : constant := 4096;
+
+   --  Default lifetime of a cache entry, in days. An entry older than this
+   --  is a miss on load and is removed. The age comes from the entry
+   --  header's write time, never the file mtime: a CI cache restore or a
+   --  file copy rewrites mtime and would make an old entry look new. A zero
+   --  expiry means entries never expire.
+   Default_Expiry_Days : constant := 7;
 
    --  Compute the default cache directory. The directory is the platform
    --  cache directory from Adacovex.Paths (XDG_CACHE_HOME on Linux,
@@ -120,6 +132,28 @@ package Adacovex.Cache is
    --  @param Success  True when the entry was found and removed (or was
    --    already absent).
    procedure Delete (Key : String; Success : out Boolean);
+
+   --  Set the entry lifetime in days. Default_Expiry_Days applies until
+   --  this is called; zero means entries never expire. A load older than
+   --  the lifetime is a miss and removes the entry.
+   --  @param Days  Entry lifetime in days (0 = never expire).
+   procedure Set_Cache_Expiry (Days : Natural);
+
+   --  The entry lifetime in days currently in force.
+   --  @return The configured lifetime (0 = never expire).
+   function Cache_Expiry return Natural;
+
+   --  Remove every entry under the configured cache root. The count is
+   --  taken before removal. The procedure refuses an empty root, a
+   --  file-system root ("/" or a drive root), and the user's home
+   --  directory, so a bad --cache-dir can never empty an unrelated tree.
+   --  Only the entries inside the configured root are removed; the root
+   --  itself stays.
+   --  @param Entries  Number of files removed (0 when the clear was
+   --    refused or the root held nothing).
+   --  @param Success  True when the root was cleared (an empty or absent
+   --    root counts as success).
+   procedure Clear (Entries : out Natural; Success : out Boolean);
 
    --  Configure the eviction cap used by Put_Cached. Defaults to 4096.
    --  @param Max_Entries  Soft cap on retained cache entries.

@@ -1964,8 +1964,9 @@ package body Adacovex.Prove is
                (Ident (1 .. ILen)
                 & ASCII.NUL
                 & Compute_Prove_Input_Hash
-                    (Strip_Trailing_Slash (Target_Dir),
-                     GPR (1 .. GLen),
+                    (Adacovex.Paths.Resolve
+                       (Strip_Trailing_Slash (Target_Dir)),
+                     Adacovex.Paths.Resolve (GPR (1 .. GLen)),
                      Options (1 .. OLen)));
       end Prove_Cache_Key;
 

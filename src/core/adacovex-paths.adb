@@ -1,5 +1,7 @@
+with Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Environment_Variables;
+with Ada.Strings.Unbounded;
 with GNAT.OS_Lib;
 with Adacovex.CPUs;
 
@@ -48,6 +50,132 @@ package body Adacovex.Paths is
       return Adacovex.CPUs.Get_Temp_Directory;
    end Home_Directory;
    pragma Warnings (On, "no Global contract available");
+
+   --  Resolve Path to one absolute, normalised spelling. The body is part
+   --  of this default-off I/O unit (it reads the working directory), so the
+   --  algorithm below is plain Ada: normalise separators, keep a root
+   --  prefix, then fold '.', '..', and empty segments while rebuilding.
+   --  @param Path  Path to resolve.
+   --  @return The resolved path, or "" when Path is empty.
+   function Resolve (Path : String) return String is
+      use Ada.Strings.Unbounded;
+      Fold_Case : constant Boolean := GNAT.OS_Lib.Directory_Separator = '\';
+      Expanded  : constant String := Expand_User (Path);
+      Full      : Unbounded_String;
+      Norm      : Unbounded_String;
+      Out_Buf   : Unbounded_String;
+      Root      : Unbounded_String;
+      Start     : Natural;
+      Fin       : Natural;
+
+      --  Working directory of this process, or "" when it cannot be read.
+      function Working_Dir return String is
+      begin
+         return Ada.Directories.Current_Directory;
+      exception
+         when others =>
+            return "";
+      end Working_Dir;
+
+      --  Drop the last segment from Out_Buf (the '..' case). A bare root is
+      --  left intact: '/..' stays '/', because a path cannot climb above
+      --  the file-system root.
+      procedure Pop_Segment is
+         L : Natural := Length (Out_Buf);
+      begin
+         while L > 0 and then Element (Out_Buf, L) /= '/' loop
+            L := L - 1;
+         end loop;
+         if L = 0 then
+            Out_Buf := Null_Unbounded_String;
+         else
+            Out_Buf := To_Unbounded_String (Slice (Out_Buf, 1, L - 1));
+         end if;
+      end Pop_Segment;
+   begin
+      if Path'Length = 0 then
+         return "";
+      end if;
+
+      if Is_Absolute (Expanded) then
+         Full := To_Unbounded_String (Expanded);
+      else
+         declare
+            Cw : constant String := Working_Dir;
+         begin
+            if Cw'Length = 0 then
+               Full := To_Unbounded_String (Expanded);
+            elsif Is_Separator (Cw (Cw'Last)) then
+               Full := To_Unbounded_String (Cw & Expanded);
+            else
+               Full := To_Unbounded_String (Cw & "/" & Expanded);
+            end if;
+         end;
+      end if;
+
+      --  One separator spelling, and the Windows case fold. The file system
+      --  is case-insensitive there, so folding the key never changes which
+      --  directory the resolved path names.
+      for I in 1 .. Length (Full) loop
+         declare
+            C : Character := Element (Full, I);
+         begin
+            if Is_Separator (C) then
+               C := '/';
+            elsif Fold_Case then
+               C := Ada.Characters.Handling.To_Lower (C);
+            end if;
+            Append (Norm, (1 => C));
+         end;
+      end loop;
+
+      --  Keep the root: a Windows drive prefix ("c:"), or a leading '/'.
+      Start := 1;
+      if Length (Norm) >= 2 and then Element (Norm, 2) = ':' then
+         Append (Root, (1 => Element (Norm, 1)));
+         Append (Root, ":");
+         Start := 3;
+      end if;
+      if Start <= Length (Norm) and then Element (Norm, Start) = '/' then
+         Append (Root, "/");
+         Start := Start + 1;
+      end if;
+
+      while Start <= Length (Norm) loop
+         while Start <= Length (Norm) and then Element (Norm, Start) = '/' loop
+            Start := Start + 1;
+         end loop;
+         exit when Start > Length (Norm);
+         Fin := Start;
+         while Fin <= Length (Norm) and then Element (Norm, Fin) /= '/' loop
+            Fin := Fin + 1;
+         end loop;
+         declare
+            Seg : constant String := Slice (Norm, Start, Fin - 1);
+         begin
+            if Seg = ".." then
+               Pop_Segment;
+            elsif Seg /= "." and then Seg'Length > 0 then
+               if Length (Out_Buf) > 0 then
+                  Append (Out_Buf, "/");
+               end if;
+               Append (Out_Buf, Seg);
+            end if;
+         end;
+         Start := Fin;
+      end loop;
+
+      if Length (Root) = 0 then
+         return To_String (Out_Buf);
+      end if;
+      if Length (Out_Buf) = 0 then
+         return To_String (Root);
+      end if;
+      if Element (Root, Length (Root)) = '/' then
+         return To_String (Root & Out_Buf);
+      end if;
+      return To_String (Root & "/" & Out_Buf);
+   end Resolve;
 
    function Expand_User (Path : String) return String is
       Home : constant String := Home_Directory;

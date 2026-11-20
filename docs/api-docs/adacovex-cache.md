@@ -31,6 +31,12 @@ HLR-CACHE: Result caching
 
 ## Functions
 
+### function Cache_Expiry return Standard.Natural
+
+> The entry lifetime in days currently in force.
+
+**Returns:** The configured lifetime (0 = never expire).
+
 ### function Exists (Key : Standard.String) return Standard.Boolean
 
 > True when an entry exists for Key (without loading its payload).
@@ -81,6 +87,15 @@ HLR-CACHE: Result caching
 |-----------|-------------|
 | `Dir` | Output buffer for the directory path. |
 | `Len` | Length of the written path. |
+
+### procedure Clear (Entries : Standard.Natural; Success : Standard.Boolean)
+
+> Remove every entry under the configured cache root. The count is taken before removal. The procedure refuses an empty root, a file-system root ("/" or a drive root), and the user's home directory, so a bad --cache-dir can never empty an unrelated tree. Only the entries inside the configured root are removed; the root itself stays.
+
+| Parameter | Description |
+|-----------|-------------|
+| `Entries` | Number of files removed (0 when the clear was refused or the root held nothing). |
+| `Success` | True when the root was cleared (an empty or absent root counts as success). |
 
 ### procedure Default_Cache_Dir (Dir : Standard.String; Len : Standard.Natural)
 
@@ -203,6 +218,14 @@ HLR-CACHE: Result caching
 | Parameter | Description |
 |-----------|-------------|
 | `Dir` | New cache root directory (need not end in a separator). |
+
+### procedure Set_Cache_Expiry (Days : Standard.Natural)
+
+> Set the entry lifetime in days. Default_Expiry_Days applies until this is called; zero means entries never expire. A load older than the lifetime is a miss and removes the entry.
+
+| Parameter | Description |
+|-----------|-------------|
+| `Days` | Entry lifetime in days (0 = never expire). |
 
 ### procedure Set_Cache_Policy (Max_Entries : Standard.Positive)
 

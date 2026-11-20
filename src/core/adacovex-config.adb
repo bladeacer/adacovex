@@ -577,7 +577,7 @@ package body Adacovex.Config is
    Known_Flags : constant String :=
      "target manifest dal asil class standard serve theme port "
      & "emit-svg no-svg emit-markdown emit-metrics verbose relaxed cache no-cache "
-     & "cache-dir cache-max skip-dir compare-base coverage-delta sbom "
+     & "cache-dir cache-max cache-expiry cache-clear skip-dir compare-base coverage-delta sbom "
      & "prove status completion man tldr check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
      & "no-inlining args suppress-warnings quiet require-spark require-docstrings "
@@ -1727,6 +1727,41 @@ package body Adacovex.Config is
                               & A (A'First + 12 .. A'Last)
                               & ")");
                      end;
+                  elsif A = "--cache-expiry" then
+                     I := I + 1;
+                     if I <= Count then
+                        begin
+                           Cfg.Cache_Expiry_Days := Natural'Value (Args (I));
+                           Cfg.Cache_Expiry_Set := True;
+                        exception
+                           when Constraint_Error =>
+                              Set_Error
+                                (Cfg,
+                                 "--cache-expiry must be a non-negative"
+                                 & " integer (got: "
+                                 & Args (I)
+                                 & ")");
+                        end;
+                     else
+                        Set_Error
+                          (Cfg, "--cache-expiry requires an integer argument");
+                     end if;
+                  elsif Has_Prefix (A, "--cache-expiry=") then
+                     begin
+                        Cfg.Cache_Expiry_Days :=
+                          Natural'Value (A (A'First + 15 .. A'Last));
+                        Cfg.Cache_Expiry_Set := True;
+                     exception
+                        when Constraint_Error =>
+                           Set_Error
+                             (Cfg,
+                              "--cache-expiry must be a non-negative"
+                              & " integer (got: "
+                              & A (A'First + 15 .. A'Last)
+                              & ")");
+                     end;
+                  elsif A = "--cache-clear" then
+                     Cfg.Cache_Clear := True;
                   elsif A = "--skip-dir" then
                      I := I + 1;
                      if I <= Count then
@@ -2780,6 +2815,7 @@ package body Adacovex.Config is
 
       In_Prove      : Boolean;
       In_Complexity : Boolean;
+      In_Cache      : Boolean;
       In_Init       : Boolean;
    begin
       if not Ada.Directories.Exists (Path) then
@@ -2830,6 +2866,8 @@ package body Adacovex.Config is
                         In_Complexity :=
                           Sec_Len = 10
                           and then Section (1 .. 10) = "complexity";
+                        In_Cache :=
+                          Sec_Len = 5 and then Section (1 .. 5) = "cache";
                         In_Init :=
                           Sec_Len = 4 and then Section (1 .. 4) = "init";
                         if In_Prove and then Key = "coverage" then
@@ -2854,6 +2892,13 @@ package body Adacovex.Config is
                         elsif In_Complexity and then Key = "skip-path" then
                            Set_Field
                              (Result.Skip_Paths, Result.Skip_Paths_Len, Val);
+                        elsif In_Cache and then Key = "expiry-days" then
+                           Set_Int (Result.Expiry_Days, Val);
+                           --  A negative lifetime is meaningless; keep the
+                           --  key unset so the default applies instead.
+                           if Result.Expiry_Days < 0 then
+                              Result.Expiry_Days := -1;
+                           end if;
                         elsif In_Init and then Key = "scaffold" then
                            Result.Scaffold :=
                              Val = "true"
@@ -2907,6 +2952,9 @@ package body Adacovex.Config is
          Result.Skip_Paths (1 .. Override.Skip_Paths_Len) :=
            Override.Skip_Paths (1 .. Override.Skip_Paths_Len);
       end if;
+      if Override.Expiry_Days >= 0 then
+         Result.Expiry_Days := Override.Expiry_Days;
+      end if;
       if Override.Scaffold_Set then
          Result.Scaffold := Override.Scaffold;
          Result.Scaffold_Set := True;
@@ -2944,6 +2992,9 @@ package body Adacovex.Config is
          Cfg.Complexity_Skip_Paths (1 .. Settings.Skip_Paths_Len) :=
            Settings.Skip_Paths (1 .. Settings.Skip_Paths_Len);
          Cfg.Skip_Paths_Len := Settings.Skip_Paths_Len;
+      end if;
+      if Settings.Expiry_Days >= 0 and then not Cfg.Cache_Expiry_Set then
+         Cfg.Cache_Expiry_Days := Settings.Expiry_Days;
       end if;
    end Apply_Settings;
 
@@ -3002,6 +3053,10 @@ package body Adacovex.Config is
          Put_Line (F, "");
          Put_Line (F, "# Path fragments the complexity/LOC gate skips.");
          Put_Line (F, "# skip-path = ""docs/api-docs""");
+         Put_Line (F, "");
+         Put_Line (F, "[cache]");
+         Put_Line (F, "# Cache entry lifetime in days. 0 = never expire.");
+         Put_Line (F, "# expiry-days = 7");
          Close (F);
       exception
          when others =>
@@ -3143,6 +3198,11 @@ package body Adacovex.Config is
         ("  --cache-dir=PATH      Cache directory (default: the platform cache dir)");
       Opt
         ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
+      Opt
+        ("  --cache-expiry=DAYS   Entry lifetime in days (default: 7; 0 = never");
+      Opt ("                        expire)");
+      Opt
+        ("  --cache-clear         Remove every cache entry, print the count, exit");
       Opt
         ("  --compare-base=REF    Differential mode (aliases --diff, --base, -b):");
       Opt
@@ -4025,14 +4085,22 @@ package body Adacovex.Config is
         or else T = "no-cache"
         or else T = "cache-dir"
         or else T = "cache-max"
+        or else T = "cache-expiry"
+        or else T = "cache-clear"
       then
          Print_Section
-           ("--cache / --no-cache / --cache-dir / --cache-max",
+           ("--cache / --no-cache / --cache-dir / --cache-max /"
+            & ASCII.LF
+            & "--cache-expiry / --cache-clear",
             "Result caching: unchanged inputs are served from an on-disk"
             & ASCII.LF
             & "content-addressed cache (default on).  --cache-dir relocates"
             & ASCII.LF
-            & "it; --cache-max caps entries before oldest-first eviction.");
+            & "it; --cache-max caps entries before oldest-first eviction."
+            & ASCII.LF
+            & "--cache-expiry=DAYS sets the entry lifetime (default 7; 0 ="
+            & ASCII.LF
+            & "never).  --cache-clear removes every entry and exits.");
       elsif T = "require-spark"
         or else T = "require-docstrings"
         or else T = "require-tests"

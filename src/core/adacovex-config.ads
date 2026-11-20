@@ -99,6 +99,16 @@ package Adacovex.Config is
       Cache_Dir_Len     : Natural := 0;
       Cache_Max_Entries : Natural := 4096;
 
+      --  Entry lifetime in days (--cache-expiry=DAYS; [cache] expiry-days
+      --  in a configuration file). A load older than the lifetime is a miss
+      --  and removes the entry. Zero means entries never expire.
+      Cache_Expiry_Days : Natural := 7;
+      Cache_Expiry_Set  : Boolean := False;
+
+      --  True when --cache-clear is given: remove every entry under the
+      --  resolved cache root, print the path and the entry count, and exit.
+      Cache_Clear : Boolean := False;
+
       CLI_Error : Boolean := False;
 
       --  True when an unknown flag or argument is rejected and no similar
@@ -331,7 +341,8 @@ package Adacovex.Config is
    --  never overwrites a built-in default or another file. `[prove] jobs`,
    --  `level`, `timeout`, `steps`, and `memlimit` take an integer;
    --  `[prove] coverage` takes true or false; `[complexity] excludes` and
-   --  `skip-path` take a comma-separated string. `[init] scaffold` takes true
+   --  `skip-path` take a comma-separated string; `[cache] expiry-days` takes
+   --  a non-negative integer (0 means never expire). `[init] scaffold` takes true
    --  or false; only the global file reads it, and it turns the `init`
    --  subcommand off for every project on the machine.
    type Config_Settings is record
@@ -348,6 +359,9 @@ package Adacovex.Config is
       Excludes_Len   : Natural := 0;
       Skip_Paths     : String (1 .. Types.Max_Path);
       Skip_Paths_Len : Natural := 0;
+      --  Cache entry lifetime in days (`[cache] expiry-days`). -1 means the
+      --  file does not set it; 0 is a valid value (never expire).
+      Expiry_Days    : Integer := -1;
    end record;
 
    --  Read one `adacovex.toml`. A missing or unreadable file returns the

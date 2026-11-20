@@ -1,4 +1,5 @@
 with Ada.Calendar;
+with Ada.Calendar.Conversions;
 with Ada.Directories;
 with Ada.Streams;
 with Ada.Streams.Stream_IO;
@@ -20,6 +21,66 @@ package body Adacovex.Cache is
    --  elaboration; overridden by Set_Cache_Dir (--cache-dir).
    Cache_Root     : String (1 .. 4096) := (others => ' ');
    Cache_Root_Len : Natural := 0;
+
+   --  Entry format tag and header width: 8 bytes of tag and 16 hex digits of
+   --  the write time in OS seconds. Store writes it ahead of every payload
+   --  and Load strips it, so callers see the same bytes as before. The time
+   --  is the entry's own write time, not the file mtime: a CI cache restore
+   --  or a copy rewrites mtime, which would make an old entry look new.
+   Entry_Magic    : constant String := "ADACXE1 ";
+   Entry_Time_Len : constant := 16;
+   Entry_Hdr_Len  : constant := Entry_Magic'Length + Entry_Time_Len;
+
+   --  Entry lifetime in days; 0 means never expire.
+   Cache_Expiry_Days : Natural := Default_Expiry_Days;
+
+   --  Write time of this process, in OS seconds.
+   function Now_Seconds return Long_Long_Integer is
+   begin
+      return
+        Long_Long_Integer (System.OS_Lib.To_C (System.OS_Lib.Current_Time));
+   end Now_Seconds;
+
+   --  Lowercase hex image of a write time, exactly Entry_Time_Len digits.
+   function Encode_Time (T : Long_Long_Integer) return String is
+      Hex : constant String := "0123456789abcdef";
+      V   : Long_Long_Integer := T;
+      R   : String (1 .. Entry_Time_Len) := (others => '0');
+   begin
+      for I in reverse R'Range loop
+         R (I) := Hex (Natural (V mod 16) + 1);
+         V := V / 16;
+         exit when V = 0;
+      end loop;
+      return R;
+   end Encode_Time;
+
+   --  Parse a header time image. OK is False for a wrong width or a
+   --  non-hex character, which makes the entry unreadable.
+   function Decode_Time (S : String; OK : out Boolean) return Long_Long_Integer
+   is
+      V : Long_Long_Integer := 0;
+      D : Natural;
+   begin
+      OK := False;
+      if S'Length /= Entry_Time_Len then
+         return 0;
+      end if;
+      for I in S'Range loop
+         if S (I) in '0' .. '9' then
+            D := Character'Pos (S (I)) - Character'Pos ('0');
+         elsif S (I) in 'a' .. 'f' then
+            D := Character'Pos (S (I)) - Character'Pos ('a') + 10;
+         elsif S (I) in 'A' .. 'F' then
+            D := Character'Pos (S (I)) - Character'Pos ('A') + 10;
+         else
+            return 0;
+         end if;
+         V := V * 16 + Long_Long_Integer (D);
+      end loop;
+      OK := True;
+      return V;
+   end Decode_Time;
 
    --  The on-disk form of a cache key. A namespaced key spells its
    --  namespace with ':' ("scan:<sha256>", "tests:<sha256>",
@@ -872,6 +933,21 @@ package body Adacovex.Cache is
       begin
          Create_Path (Parent);
          Create (F, Out_File, DDir);
+         --  The fixed header first: the format tag and this entry's write
+         --  time. Load strips it, and the TTL and eviction read its time.
+         declare
+            Hdr     : constant String :=
+              Entry_Magic & Encode_Time (Now_Seconds);
+            Hdr_SEA :
+              Stream_Element_Array
+                (0 .. Stream_Element_Offset (Hdr'Length - 1));
+         begin
+            for I in Hdr'Range loop
+               Hdr_SEA (Stream_Element_Offset (I - Hdr'First)) :=
+                 Stream_Element (Character'Pos (Hdr (I)));
+            end loop;
+            Write (F, Hdr_SEA);
+         end;
          --  Single Write call over a type-punned view of the payload: on
          --  every GNAT x86/x86_64/AArch64 target Stream_Element is a byte
          --  with the same size as Character, so the arrays alias exactly.
@@ -919,32 +995,96 @@ package body Adacovex.Cache is
          when others =>
             return;
       end;
-      if Size > Data'Length or else Size = 0 then
+      --  An entry is a fixed header plus a payload. A file that only holds
+      --  a header, or a payload that does not fit the caller's buffer, is
+      --  treated as absent rather than served truncated.
+      if Size <= Entry_Hdr_Len or else Size - Entry_Hdr_Len > Data'Length then
          return;
       end if;
 
       begin
          Open (F, In_File, DDir);
          declare
-            SEA  :
-              Stream_Element_Array (0 .. Stream_Element_Offset (Size - 1));
-            Last : Stream_Element_Offset;
+            Hdr     :
+              Stream_Element_Array
+                (0 .. Stream_Element_Offset (Entry_Hdr_Len - 1));
+            Last    : Stream_Element_Offset;
+            Hstr    : String (1 .. Entry_Hdr_Len) := (others => ' ');
+            T       : Long_Long_Integer;
+            Tok     : Boolean;
+            Expired : Boolean := False;
          begin
-            Read (F, SEA, Last);
-            --  Single block copy instead of the per-character conversion
-            --  loop (same aliasing argument as Store): the whole payload
-            --  lands in Data with one memcpy-shaped move.
+            --  Validate the header before the payload is trusted: an entry
+            --  without the tag predates Cache_Schema s12 and is abandoned.
+            Read (F, Hdr, Last);
+            if Last < Hdr'Last then
+               Close (F);
+               return;
+            end if;
+            for I in Hstr'Range loop
+               Hstr (I) := Character'Val (Hdr (Stream_Element_Offset (I - 1)));
+            end loop;
+            if Hstr (1 .. Entry_Magic'Length) /= Entry_Magic then
+               Close (F);
+               return;
+            end if;
+            T :=
+              Decode_Time
+                (Hstr (Entry_Magic'Length + 1 .. Entry_Hdr_Len), Tok);
+            if not Tok then
+               Close (F);
+               return;
+            end if;
+            if Cache_Expiry_Days > 0 then
+               declare
+                  Age : constant Long_Long_Integer := Now_Seconds - T;
+               begin
+                  --  A negative age (clock skew) is served: the entry was
+                  --  written in a later second, so it cannot be stale.
+                  Expired :=
+                    Age > Long_Long_Integer (Cache_Expiry_Days) * 86_400;
+               end;
+            end if;
+            if Expired then
+               Close (F);
+               begin
+                  Ada.Directories.Delete_File (DDir);
+               exception
+                  when others =>
+                     null;
+               end;
+               return;
+            end if;
+
             declare
-               subtype Byte_Array is
-                 Stream_Element_Array (0 .. Stream_Element_Offset (Size - 1));
-               Out_SEA : Byte_Array;
-               for Out_SEA'Address use Data (Data'First)'Address;
-               pragma Import (Ada, Out_SEA);
+               Pay_Len : constant Natural := Size - Entry_Hdr_Len;
+               SEA     :
+                 Stream_Element_Array
+                   (0 .. Stream_Element_Offset (Pay_Len - 1));
             begin
-               Out_SEA := SEA;
+               Read (F, SEA, Last);
+               --  Single block copy instead of the per-character conversion
+               --  loop (same aliasing argument as Store): the whole payload
+               --  lands in Data with one memcpy-shaped move.
+               declare
+                  subtype Byte_Array is
+                    Stream_Element_Array
+                      (0 .. Stream_Element_Offset (Pay_Len - 1));
+                  Out_SEA : Byte_Array;
+                  for Out_SEA'Address use Data (Data'First)'Address;
+                  pragma Import (Ada, Out_SEA);
+               begin
+                  Out_SEA := SEA;
+               end;
+               --  A short read means the entry changed under us; report a
+               --  miss with no length rather than a partial payload.
+               if Natural (Last) + 1 = Pay_Len then
+                  Len := Pay_Len;
+                  Found := True;
+               else
+                  Len := 0;
+               end if;
             end;
-            Len := Natural (Last) + 1;
-            Found := True;
          end;
          Close (F);
       exception
@@ -955,13 +1095,136 @@ package body Adacovex.Cache is
       end;
    end Load;
 
+   --  Read and validate the header of an open entry. Valid is False for a
+   --  short file or a wrong tag, which the caller treats as an absent
+   --  entry. The header time is returned in T.
+   procedure Read_Entry_Header
+     (F : File_Type; T : out Long_Long_Integer; Valid : out Boolean)
+   is
+      Hdr  :
+        Stream_Element_Array (0 .. Stream_Element_Offset (Entry_Hdr_Len - 1));
+      Last : Stream_Element_Offset;
+      Hstr : String (1 .. Entry_Hdr_Len) := (others => ' ');
+      Tok  : Boolean;
+   begin
+      T := 0;
+      Valid := False;
+      Read (F, Hdr, Last);
+      if Last < Hdr'Last then
+         return;
+      end if;
+      for I in Hstr'Range loop
+         Hstr (I) := Character'Val (Hdr (Stream_Element_Offset (I - 1)));
+      end loop;
+      if Hstr (1 .. Entry_Magic'Length) /= Entry_Magic then
+         return;
+      end if;
+      T := Decode_Time (Hstr (Entry_Magic'Length + 1 .. Entry_Hdr_Len), Tok);
+      Valid := Tok;
+   end Read_Entry_Header;
+
+   --  True when a header time T is within the configured lifetime. A
+   --  negative age (clock skew) is fresh.
+   function Header_Fresh (T : Long_Long_Integer) return Boolean is
+   begin
+      if Cache_Expiry_Days = 0 then
+         return True;
+      end if;
+      return Now_Seconds - T <= Long_Long_Integer (Cache_Expiry_Days) * 86_400;
+   end Header_Fresh;
+
+   --  Write time stored in an entry's header. OK is False when the file has
+   --  no readable header (a foreign file, or an entry from before s12).
+   function Entry_Header_Time
+     (Path : String; OK : out Boolean) return Long_Long_Integer
+   is
+      F    : File_Type;
+      Size : Natural;
+   begin
+      OK := False;
+      begin
+         Size := Natural (Ada.Directories.Size (Path));
+      exception
+         when others =>
+            return 0;
+      end;
+      if Size <= Entry_Hdr_Len then
+         return 0;
+      end if;
+      begin
+         Open (F, In_File, Path);
+      exception
+         when others =>
+            return 0;
+      end;
+      declare
+         T     : Long_Long_Integer;
+         Valid : Boolean;
+      begin
+         Read_Entry_Header (F, T, Valid);
+         Close (F);
+         OK := Valid;
+         return T;
+      end;
+   exception
+      when others =>
+         if Is_Open (F) then
+            Close (F);
+         end if;
+         return 0;
+   end Entry_Header_Time;
+
    function Exists (Key : String) return Boolean is
       DDir : constant String := Entry_Path (Key);
+      F    : File_Type;
+      Size : Natural;
    begin
       if Key'Length < 3 or else DDir = "" then
          return False;
       end if;
-      return Ada.Directories.Exists (DDir);
+      begin
+         Size := Natural (Ada.Directories.Size (DDir));
+      exception
+         when others =>
+            return False;
+      end;
+      if Size <= Entry_Hdr_Len then
+         return False;
+      end if;
+      begin
+         Open (F, In_File, DDir);
+      exception
+         when others =>
+            return False;
+      end;
+      declare
+         T     : Long_Long_Integer;
+         Valid : Boolean;
+      begin
+         Read_Entry_Header (F, T, Valid);
+         Close (F);
+         if not Valid then
+            return False;
+         end if;
+         if not Header_Fresh (T) then
+            --  An expired entry is a miss, and is removed so a later
+            --  eviction pass never counts it.
+            begin
+               Ada.Directories.Delete_File (DDir);
+            exception
+               when others =>
+                  null;
+            end;
+            return False;
+         end if;
+         return True;
+      end;
+   exception
+      when others =>
+         if Is_Open (F) then
+            Close (F);
+         end if;
+         return False;
    end Exists;
 
    --  Current eviction cap (entries retained). Set via Set_Cache_Policy.
@@ -1341,20 +1604,29 @@ package body Adacovex.Cache is
       Ent    : Directory_Entry_Type;
       Best   : String (1 .. 4096) := (others => ' ');
       BLen   : Natural := 0;
-      Best_T : Ada.Calendar.Time := Ada.Calendar.Clock;
+      Best_T : Long_Long_Integer := 0;
       First  : Boolean := True;
 
-      --  Remember Path when it is older than the current best.
+      --  Remember Path when its header time is older than the current best.
+      --  A file without a readable header falls back to its mtime, so a
+      --  foreign file (or an entry from before s12) can still be evicted.
       procedure Latest (Path : String) is
-         T : Ada.Calendar.Time;
+         Tok : Boolean;
+         T   : Long_Long_Integer;
       begin
-         begin
-            T := Ada.Directories.Modification_Time (Path);
-         exception
-            when others =>
-               return;
-         end;
-         if First or else (T - Best_T) < 0.0 then
+         T := Entry_Header_Time (Path, Tok);
+         if not Tok then
+            begin
+               T :=
+                 Long_Long_Integer
+                   (Ada.Calendar.Conversions.To_Unix_Time
+                      (Ada.Directories.Modification_Time (Path)));
+            exception
+               when others =>
+                  return;
+            end;
+         end if;
+         if First or else T < Best_T then
             if Path'Length <= Best'Length then
                Best_T := T;
                BLen := Path'Length;
@@ -1494,26 +1766,184 @@ package body Adacovex.Cache is
       return Total;
    end Count_Files;
 
-   procedure Evict_If_Needed (Max_Entries : Positive) is
-      Count : Natural := Count_Files (Cache_Root (1 .. Cache_Root_Len));
+   procedure Set_Cache_Expiry (Days : Natural) is
    begin
-      while Count > Max_Entries loop
+      Cache_Expiry_Days := Days;
+   end Set_Cache_Expiry;
+
+   function Cache_Expiry return Natural is
+   begin
+      return Cache_Expiry_Days;
+   end Cache_Expiry;
+
+   procedure Evict_If_Needed (Max_Entries : Positive) is
+   begin
+      --  Expiry runs before the count cap: an entry past its TTL must never
+      --  be counted as live, and removing it can bring the tree under the
+      --  cap without evicting a fresher entry. Expiry here mirrors the
+      --  lazy check in Load and Exists; both use the entry header time.
+      if Cache_Expiry_Days > 0 then
          declare
-            Old : constant String :=
-              Oldest_File (Cache_Root (1 .. Cache_Root_Len));
+            Root  : constant String := Cache_Root (1 .. Cache_Root_Len);
+            Limit : constant Long_Long_Integer :=
+              Now_Seconds - Long_Long_Integer (Cache_Expiry_Days) * 86_400;
          begin
-            exit when Old'Length = 0;
-            begin
-               Delete_File (Old);
-            exception
-               when others =>
-                  exit;
-            end;
-            Count := Count - 1;
-            Eviction_Count := Eviction_Count + 1;
+            if Kind (Root) = Directory then
+               declare
+                  Search : Search_Type;
+                  Ent    : Directory_Entry_Type;
+               begin
+                  Start_Search (Search, Root, "");
+                  while More_Entries (Search) loop
+                     Get_Next_Entry (Search, Ent);
+                     declare
+                        N  : constant String := Full_Name (Ent);
+                        Sn : constant String := Simple_Name (Ent);
+                        K  : File_Kind := Ordinary_File;
+                     begin
+                        begin
+                           K := Kind (N);
+                        exception
+                           when others =>
+                              K := Ordinary_File;
+                        end;
+                        if Sn /= "." and then Sn /= ".." then
+                           if K = Ordinary_File then
+                              --  A top-level file (a marker) is checked too.
+                              declare
+                                 Tok : Boolean;
+                                 T   : constant Long_Long_Integer :=
+                                   Entry_Header_Time (N, Tok);
+                              begin
+                                 if Tok and then T < Limit then
+                                    begin
+                                       Delete_File (N);
+                                    exception
+                                       when others =>
+                                          null;
+                                    end;
+                                 end if;
+                              end;
+                           elsif K = Directory then
+                              declare
+                                 S2 : Search_Type;
+                                 E2 : Directory_Entry_Type;
+                              begin
+                                 Start_Search (S2, N, "");
+                                 while More_Entries (S2) loop
+                                    Get_Next_Entry (S2, E2);
+                                    declare
+                                       N2 : constant String := Full_Name (E2);
+                                       K2 : File_Kind := Ordinary_File;
+                                    begin
+                                       begin
+                                          K2 := Kind (N2);
+                                       exception
+                                          when others =>
+                                             K2 := Ordinary_File;
+                                       end;
+                                       if K2 = Ordinary_File then
+                                          declare
+                                             Tok : Boolean;
+                                             T   :
+                                               constant Long_Long_Integer :=
+                                                 Entry_Header_Time (N2, Tok);
+                                          begin
+                                             if Tok and then T < Limit then
+                                                begin
+                                                   Delete_File (N2);
+                                                exception
+                                                   when others =>
+                                                      null;
+                                                end;
+                                             end if;
+                                          end;
+                                       end if;
+                                    end;
+                                 end loop;
+                                 End_Search (S2);
+                              end;
+                           end if;
+                        end if;
+                     end;
+                  end loop;
+                  End_Search (Search);
+               end;
+            end if;
          end;
-      end loop;
+      end if;
+
+      declare
+         Count : Natural := Count_Files (Cache_Root (1 .. Cache_Root_Len));
+      begin
+         while Count > Max_Entries loop
+            declare
+               Old : constant String :=
+                 Oldest_File (Cache_Root (1 .. Cache_Root_Len));
+            begin
+               exit when Old'Length = 0;
+               begin
+                  Delete_File (Old);
+               exception
+                  when others =>
+                     exit;
+               end;
+               Count := Count - 1;
+               Eviction_Count := Eviction_Count + 1;
+            end;
+         end loop;
+      end;
    end Evict_If_Needed;
+
+   procedure Clear (Entries : out Natural; Success : out Boolean) is
+      Root : constant String := Cache_Root (1 .. Cache_Root_Len);
+   begin
+      Entries := 0;
+      Success := False;
+      if Cache_Root_Len = 0 then
+         return;
+      end if;
+      declare
+         R : constant String := Adacovex.Paths.Resolve (Root);
+      begin
+         --  Refuse a path that names a file-system root or the user's home.
+         --  A clear deletes entries, never an unrelated tree, so those two
+         --  shapes are rejected outright even when --cache-dir names them.
+         if R'Length = 0
+           or else R = "/"
+           or else (R'Length = 2 and then R (2) = ':')
+           or else (R'Length = 3 and then R (2) = ':' and then R (3) = '/')
+           or else R = Adacovex.Paths.Resolve (Adacovex.Paths.Home_Directory)
+         then
+            return;
+         end if;
+      end;
+
+      --  A missing root has no entries; clearing it is trivially done.
+      begin
+         if Kind (Root) /= Directory then
+            Success := True;
+            return;
+         end if;
+      exception
+         when others =>
+            Success := True;
+            return;
+      end;
+
+      Entries := Count_Files (Root);
+      begin
+         --  Remove the whole cache tree in one call: the root is the only
+         --  path the configured directory names, and every entry lives
+         --  below it. A later Store recreates the root through Create_Path.
+         Delete_Tree (Root);
+      exception
+         when others =>
+            Success := False;
+            return;
+      end;
+      Success := True;
+   end Clear;
 
    --  In-memory stream backing onto a fixed String buffer, used to turn any
    --  streamable value into a blob String (and back) without touching disk.
