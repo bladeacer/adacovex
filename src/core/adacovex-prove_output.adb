@@ -96,6 +96,32 @@ package body Adacovex.Prove_Output is
          return
            "initialise the object before its first read, and declare its"
            & " Global aspect";
+      elsif Index (Kind, "access") > 0 or else Index (Kind, "pointer") > 0 then
+         return
+           "state that the access value is not null as a precondition, or"
+           & " guard the dereference";
+      elsif Index (Kind, "subtype") > 0 then
+         return
+           "state the source value's range as a precondition, so the"
+           & " conversion cannot fail";
+      elsif Index (Kind, "predicate") > 0 then
+         return
+           "establish the subtype predicate at the call site, or weaken it";
+      elsif Index (Kind, "ghost") > 0 or else Index (Kind, "lemma") > 0 then
+         return
+           "prove the lemma's precondition at every call site; a lemma with"
+           & " no postcondition proves nothing";
+      elsif Index (Kind, "modular") > 0 then
+         return
+           "state the intended range as a precondition; a modular operation"
+           & " wraps by definition";
+      elsif Index (Kind, "floating") > 0 then
+         return
+           "state the value bounds as a precondition, because a"
+           & " floating-point proof needs a range";
+      elsif Index (Kind, "aliasing") > 0 or else Index (Kind, "ownership") > 0
+      then
+         return "give the object one owner, or state the ownership invariant";
       else
          return
            "add the precondition, loop invariant, or postcondition that"
@@ -133,6 +159,14 @@ package body Adacovex.Prove_Output is
          return "Termination";
       elsif Index (Kind, "initializ") > 0 then
          return "Initialization";
+      elsif Index (Kind, "ghost") > 0 or else Index (Kind, "lemma") > 0 then
+         return "Assertions";
+      elsif Index (Kind, "modular") > 0
+        or else Index (Kind, "floating") > 0
+        or else Index (Kind, "aliasing") > 0
+        or else Index (Kind, "ownership") > 0
+      then
+         return "Functional Contracts";
       end if;
       return "";
    end Category_Of;
