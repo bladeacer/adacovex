@@ -91,96 +91,6 @@ procedure Adacovex_Main is
       end if;
    end Put_Bundled_Page;
 
-   --  Collapse "." and ".." segments out of an absolute path so File_Path
-   --  values stored in the result cache do not depend on how --target was
-   --  spelled (e.g. "./.." vs "."). Both '/' and '\' are treated as
-   --  separators, a Windows drive prefix ("C:") and a UNC prefix ("\\")
-   --  are preserved as a root, and the canonical form always uses '/',
-   --  which Windows accepts. ".." is clamped at the root.
-   function Normalize_Path (S : String) return String is
-      Out_Buf : String (1 .. Max_Path) := (others => ' ');
-      Out_Len : Natural := 0;
-      Seg_Buf : String (1 .. 512) := (others => ' ');
-      Seg_Len : Natural := 0;
-      I       : Natural := S'First;
-
-      function Is_Sep (C : Character) return Boolean
-      is (C = '/' or else C = '\');
-
-      procedure Flush_Seg is
-      begin
-         if Seg_Len = 0 then
-            return;
-         end if;
-         if Seg_Len = 1 and then Seg_Buf (1) = '.' then
-            null;
-         elsif Seg_Len = 2
-           and then Seg_Buf (1) = '.'
-           and then Seg_Buf (2) = '.'
-         then
-            while Out_Len > 0 and then not Is_Sep (Out_Buf (Out_Len)) loop
-               Out_Len := Out_Len - 1;
-            end loop;
-            if Out_Len > 1 then
-               Out_Len := Out_Len - 1;
-            end if;
-         else
-            if Out_Len > 0 and then not Is_Sep (Out_Buf (Out_Len)) then
-               Out_Len := Out_Len + 1;
-               Out_Buf (Out_Len) := '/';
-            end if;
-            if Out_Len + Seg_Len <= Out_Buf'Last then
-               Out_Buf (Out_Len + 1 .. Out_Len + Seg_Len) :=
-                 Seg_Buf (1 .. Seg_Len);
-               Out_Len := Out_Len + Seg_Len;
-            end if;
-         end if;
-         Seg_Len := 0;
-      end Flush_Seg;
-
-   begin
-      --  Prefix: a drive letter ("C:"), a UNC root ("\\"), or a bare root.
-      if S'Length >= 2
-        and then S (S'First) in 'A' .. 'Z' | 'a' .. 'z'
-        and then S (S'First + 1) = ':'
-      then
-         Out_Len := 2;
-         Out_Buf (1) := S (S'First);
-         Out_Buf (2) := ':';
-         I := S'First + 2;
-      elsif S'Length >= 2
-        and then Is_Sep (S (S'First))
-        and then Is_Sep (S (S'First + 1))
-      then
-         Out_Len := 1;
-         Out_Buf (1) := '/';
-         --  Consume one of the two UNC separators; the other is flushed
-         --  as an empty segment by the loop below.
-         I := S'First + 1;
-      elsif S'Length >= 1 and then Is_Sep (S (S'First)) then
-         Out_Len := 1;
-         Out_Buf (1) := '/';
-         I := S'First + 1;
-      end if;
-      while I <= S'Last loop
-         if Is_Sep (S (I)) then
-            Flush_Seg;
-         else
-            if Seg_Len < Seg_Buf'Last then
-               Seg_Len := Seg_Len + 1;
-               Seg_Buf (Seg_Len) := S (I);
-            end if;
-         end if;
-         I := I + 1;
-      end loop;
-      Flush_Seg;
-      if Out_Len = 0 then
-         Out_Len := 1;
-         Out_Buf (1) := '/';
-      end if;
-      return Out_Buf (1 .. Out_Len);
-   end Normalize_Path;
-
    Success : Boolean;
    Exit_St : Ada.Command_Line.Exit_Status := 0;
 
@@ -572,25 +482,68 @@ begin
    for I in 1 .. TLen loop
       Target (I) := Cfg.Target_Path (I);
    end loop;
+   --  Resolve the target once: the result cache key, the proof-input walk,
+   --  badge paths, and every printed path use this one spelling, so the
+   --  same project hits the same entry from any working directory.
    declare
-      Norm : constant String := Normalize_Path (Target (1 .. TLen));
+      Norm : constant String := Adacovex.Paths.Resolve (Target (1 .. TLen));
    begin
-      TLen := Norm'Length;
-      Target (1 .. TLen) := Norm;
+      if Norm'Length > 0 and then Norm'Length <= Target'Length then
+         TLen := Norm'Length;
+         Target (1 .. TLen) := Norm;
+      end if;
    end;
 
    Verbose ("target: " & Target (1 .. TLen));
 
-   --  Configure the on-disk result cache.
+   --  Configure the on-disk result cache. The directory and the entry
+   --  lifetime apply whether or not caching is enabled for this run, so
+   --  --cache-clear reaches the root the user named and --cache-expiry is
+   --  honoured by every later run that shares the tree.
+   if Cfg.Cache_Dir_Len > 0 then
+      Adacovex.Cache.Set_Cache_Dir (Cfg.Cache_Dir (1 .. Cfg.Cache_Dir_Len));
+   end if;
+   Adacovex.Cache.Set_Cache_Expiry (Cfg.Cache_Expiry_Days);
    if Cfg.Cache_Enabled then
-      if Cfg.Cache_Dir_Len > 0 then
-         Adacovex.Cache.Set_Cache_Dir (Cfg.Cache_Dir (1 .. Cfg.Cache_Dir_Len));
-      end if;
       Adacovex.Cache.Set_Cache_Policy (Cfg.Cache_Max_Entries);
       Verbose
-        ("result cache: enabled (cap=" & Img (Cfg.Cache_Max_Entries) & ")");
+        ("result cache: enabled (cap="
+         & Img (Cfg.Cache_Max_Entries)
+         & ", expiry="
+         & Img (Cfg.Cache_Expiry_Days)
+         & " day(s))");
    else
       Verbose ("result cache: disabled");
+   end if;
+
+   --  --cache-clear: remove every entry under the resolved cache root,
+   --  print the path and the count, and exit without assessing anything.
+   if Cfg.Cache_Clear then
+      declare
+         Entries : Natural := 0;
+         Cleared : Boolean := False;
+         Dir     : String (1 .. Max_Path);
+         DLen    : Natural := 0;
+      begin
+         Adacovex.Cache.Clear (Entries, Cleared);
+         Adacovex.Cache.Cache_Dir (Dir, DLen);
+         if Cleared then
+            Ada.Text_IO.Put_Line
+              ("cache cleared: "
+               & Img (Entries)
+               & " entries removed from "
+               & (if DLen > 0 then Dir (1 .. DLen) else "the cache root"));
+            Ada.Command_Line.Set_Exit_Status (0);
+         else
+            Ada.Text_IO.Put_Line
+              (Ada.Text_IO.Standard_Error,
+               "Error: refused to clear "
+               & (if DLen > 0 then Dir (1 .. DLen) else "the cache root")
+               & " (it names a file-system root or a home directory)");
+            Ada.Command_Line.Set_Exit_Status (1);
+         end if;
+         return;
+      end;
    end if;
 
    Verbose ("strict mode: " & (if Cfg.Strict_Mode then "on" else "off"));
