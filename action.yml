@@ -180,6 +180,10 @@ inputs:
     description: 'Max adacovex result-cache entries before oldest-first eviction.'
     required: false
     default: ''
+  cache-expiry:
+    description: 'Result-cache entry lifetime in days (0 = never expire).'
+    required: false
+    default: ''
   prove-jobs:
     description: 'GNATprove parallelism for the prove subcommand (-j, default auto-detect).'
     required: false
@@ -658,6 +662,9 @@ runs:
         fi
         if [ -n "${{ inputs.cache-max }}" ]; then
           ARGS+=(--cache-max=${{ inputs.cache-max }})
+        fi
+        if [ -n "${{ inputs.cache-expiry }}" ]; then
+          ARGS+=(--cache-expiry=${{ inputs.cache-expiry }})
         fi
         if [ -n "${{ inputs.compare-base }}" ]; then
           ARGS+=(--compare-base="${{ inputs.compare-base }}")

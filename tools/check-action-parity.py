@@ -73,6 +73,7 @@ CLI_ONLY: Dict[str, str] = {
     "skip-path": "complexity --skip-path per-path exclusion (local quality gate)",
     "emit-svg": "SVG badge output path (CI uses the default <target>/docs/badges)",
     "cache": "result-cache enable is default-on; the action exposes only the negative --no-cache",
+    "cache-clear": "clearing the cache inside a CI job would defeat the persisted result cache",
     "sbom": "sbom subcommand; the action drives SBOM via generate-sbom + sbom-format inputs",
     "status": "status subcommand (local diagnostics)",
     "export": "status --export JSON output selector (local diagnostics)",
