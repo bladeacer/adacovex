@@ -3770,7 +3770,7 @@ package body Adacovex.Config is
       then
          Print_Section
            ("adacovex prove",
-            "Resolve gnatprove (manifest pin, PATH, cached toolchain, or"
+            "Resolve gnatprove (manifest pin, PATH, cached toolkit, or"
             & ASCII.LF
             & "download), run it on the target, then assess the result."
             & ASCII.LF

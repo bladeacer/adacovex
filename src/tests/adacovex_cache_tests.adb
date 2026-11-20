@@ -31,16 +31,17 @@ package body Adacovex_Cache_Tests is
       return Test_Root & "/cache";
    end Test_Cache_Dir;
 
-   --  Persistent-stamp layout: <platform cache>/stamps/<sha-256-of-path>.
-   --  Adacovex.Cache owns the real builder privately; the tests rebuild it
-   --  from the documented layout (same pattern as the probe store test
-   --  above). Adacovex.Paths answers the platform cache directory, so the
-   --  check is the same on every host.
-   function Home_Stamp_Path (For_Path : String) return String is
+   --  Persistent-stamp layout: one packed index file at
+   --  <platform cache>/stamps/index.bin. Adacovex.Cache owns the real
+   --  builder privately; the tests rebuild it from the documented layout
+   --  (same pattern as the probe store test). Adacovex.Paths answers the
+   --  platform cache directory, so the check is the same on every host.
+   --  The retired 1.44.0 per-file tree (<cache>/stamps/<sha-256-of-path>)
+   --  must not come back.
+   function Stamp_Index_Path return String is
    begin
-      return
-        Adacovex.Paths.Cache_Root & "/stamps/" & Cache.Hash_String (For_Path);
-   end Home_Stamp_Path;
+      return Adacovex.Paths.Cache_Root & "/stamps/index.bin";
+   end Stamp_Index_Path;
 
    --  Write Content into a fresh file at Path. Binary Stream_IO, so the
    --  bytes on disk are exactly Content (the native Text_IO of this GNAT
@@ -252,8 +253,9 @@ package body Adacovex_Cache_Tests is
          end;
       end;
 
-      --  Test 12: registry-metadata store round trip (lives under the
-      --  result cache, so it is isolated inside the test cache dir).
+      --  Test 12: registry-metadata store round trip. The store is
+      --  machine-local at <data>/meta/<hash>, outside the result cache, so
+      --  it follows Adacovex.Paths.Data_Root even in this test.
       Cache.Put_Meta
         ("t", "npm", "irrelevant-pkg", "MIT", "9.9.9", "https://example.test");
       Cache.Get_Meta
@@ -273,13 +275,27 @@ package body Adacovex_Cache_Tests is
          and then Meta_Ver (1 .. Meta_Ver_Len) = "9.9.9"
          and then Meta_Web (1 .. Meta_Web_Len) = "https://example.test",
          "Test 12: registry-metadata store round trip");
+      --  Remove the entry from the machine store so the test never leaves a
+      --  cached registry answer behind. Rebuild the documented path
+      --  (<data>/meta/<sha-256-of "target|ecosystem|name">).
+      declare
+         Meta_Key : constant String :=
+           Cache.Hash_String ("t|npm|irrelevant-pkg");
+      begin
+         Ada.Directories.Delete_File
+           (Adacovex.Paths.Data_Root & "/meta/" & Meta_Key);
+      exception
+         when others =>
+            null;
+      end;
 
-      --  Test 13: persistent stat-stamp store. A file at or above the
-      --  16 KiB size gate is stamped at first hash; a second hash of the
-      --  unchanged file (in a fresh process state -- the in-process map is
-      --  bypassed by hashing a different path first) is served from the
-      --  store, growing Persistent_Stamp_Hits. An edited file (same size,
-      --  later mtime) must force a re-hash and a changed digest.
+      --  Test 13: persistent stat-stamp store. Every file is stamped -- the
+      --  retired 16 KiB size gate is gone -- and the records live in one
+      --  index file at <platform cache>/stamps/index.bin. A second hash of
+      --  the unchanged file (in a fresh process state -- the in-process map
+      --  is dropped) is served from the store, growing
+      --  Persistent_Stamp_Hits. An edited file (size change, later mtime)
+      --  must force a re-hash and a changed digest.
       declare
          Big_Path : constant String := Test_Root & "/big-sample.bin";
          Hits_B   : constant Natural := Cache.Persistent_Stamp_Hits;
@@ -316,6 +332,12 @@ package body Adacovex_Cache_Tests is
               (Cache.Persistent_Stamp_Hits > H_Before,
                "Test 13: persistent stamp served the digest");
          end;
+         --  The store is one index file at the documented location. A
+         --  refactor that moves it would silently cost every warm run its
+         --  fast path, so the location is pinned here.
+         R.Check
+           (Ada.Directories.Exists (Stamp_Index_Path),
+            "Test 13: the stamp index lives at <cache>/stamps/index.bin");
          --  Grown file (size change): the stored pair no longer matches, so
          --  the digest must change. The in-process stamp map serves same-
          --  size files by design, so the edit must move the size to be
@@ -328,25 +350,26 @@ package body Adacovex_Cache_Tests is
          R.Check
            (D_Big_2 /= D_Big_1,
             "Test 13: size change forced a re-hash (digest changed)");
-         --  Small files never enter the store: a 10-byte file must not
-         --  create a stamp entry. Rebuild the documented path layout to
-         --  check.
+         --  Small files are stamped too: the retired size gate is gone, so
+         --  a 4-byte file earns a record and a fresh process state is
+         --  served from the index.
          declare
             Small_Path : constant String := Test_Root & "/small.txt";
+            H_Before   : constant Natural := Cache.Persistent_Stamp_Hits;
          begin
             Write_File (Small_Path, "tiny");
+            --  The racy-clean rule skips a record written in the same
+            --  second as the file, so let it settle first.
+            delay 1.1;
             D_Big_2 := Cache.Hash_File (Small_Path);
             R.Check
-              (not Ada.Directories.Exists (Home_Stamp_Path (Small_Path)),
-               "Test 13: sub-gate file is not stamped");
-         end;
-         --  Clean the big file's stamp out of the machine store so the
-         --  test never leaks entries into a real project's stamp set.
-         begin
-            Ada.Directories.Delete_File (Home_Stamp_Path (Big_Path));
-         exception
-            when others =>
-               null;
+              (Ada.Directories.Exists (Stamp_Index_Path),
+               "Test 13: a small file is stamped (no size gate)");
+            Cache.Reset_Process_Stamps;
+            D_Big_2 := Cache.Hash_File (Small_Path);
+            R.Check
+              (Cache.Persistent_Stamp_Hits > H_Before,
+               "Test 13: a small file's record survives a fresh state");
          end;
       end;
 
@@ -407,6 +430,26 @@ package body Adacovex_Cache_Tests is
          R.Check
            (Ada.Directories.Exists (Test_Cache_Dir & "/pr/prove-" & Ns_Hash),
             "Test 15: the entry name maps ':' to '-' on disk");
+      end;
+
+      --  Test 16: the default result-cache root is the platform cache
+      --  directory namespaced by the adacovex version and the cache schema.
+      --  Pin the documented shape so a path refactor cannot move it
+      --  silently and every release still starts from a clean store.
+      declare
+         Dir : String (1 .. 4096);
+         Len : Natural := 0;
+      begin
+         Cache.Default_Cache_Dir (Dir, Len);
+         R.Check
+           (Len > 0
+            and then Dir (1 .. Len)
+                     = Adacovex.Paths.Cache_Root
+                       & "/"
+                       & Adacovex.Version
+                       & "/"
+                       & Cache.Cache_Schema,
+            "Test 16: the default cache root is <cache>/<version>/<schema>");
       end;
 
       --  Restore whatever cache directory the caller had configured.
