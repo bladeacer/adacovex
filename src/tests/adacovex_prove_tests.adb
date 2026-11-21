@@ -1,7 +1,10 @@
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;    use Ada.Text_IO;
 with Adacovex.Types; use Adacovex.Types;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.CPUs;
+with Adacovex.Paths;
+with Adacovex.Prove_Units;
 
 package body Adacovex_Prove_Tests is
 
@@ -821,6 +824,87 @@ package body Adacovex_Prove_Tests is
          R.Check
            (Summary.Total_VCs = 0,
             "Parse_Prove_Out (overflow): no partial VC counts");
+      end;
+
+      --  Per-unit proof cache identity: every unit gets its own key, the
+      --  key uses the resolved path (so two spellings agree), an edit
+      --  invalidates the edited unit and the units its `with` closure
+      --  names, and a different prover identity invalidates every key.
+      declare
+         use Adacovex.Prove_Units;
+         Root   : constant String :=
+           Adacovex.Test_Support.Temp_Dir ("prove-units");
+         A_Path : constant String :=
+           Adacovex.Paths.Resolve (Adacovex.Test_Support.Join (Root, "a.ads"));
+         B_Path : constant String :=
+           Adacovex.Paths.Resolve (Adacovex.Test_Support.Join (Root, "b.ads"));
+
+         --  Write one fixture source file.
+         --  @param Path  Destination path.
+         --  @param Text  File content.
+         procedure Write_File (Path : String; Text : String) is
+            F : Ada.Text_IO.File_Type;
+         begin
+            Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Path);
+            Ada.Text_IO.Put (F, Text);
+            Ada.Text_IO.Close (F);
+         end Write_File;
+
+         --  The key of the unit whose path equals Want, or "".
+         --  @param Us  Enumerated units.
+         --  @param Want  Resolved unit path to match.
+         --  @return The unit's cache key, or "".
+         function Key_Of
+           (Us : Unit_Vectors.Vector; Want : String) return String is
+         begin
+            for I in 1 .. Integer (Us.Length) loop
+               if Ada.Strings.Unbounded.To_String (Us (I).Path) = Want then
+                  return Ada.Strings.Unbounded.To_String (Us (I).Key);
+               end if;
+            end loop;
+            return "";
+         end Key_Of;
+
+         U1, U2, U3, U4 : Unit_Vectors.Vector;
+      begin
+         Write_File
+           (Adacovex.Test_Support.Join (Root, "a.ads"),
+            "package A is\n   procedure Go;\nend A;\n");
+         Write_File
+           (Adacovex.Test_Support.Join (Root, "b.ads"),
+            "with A;\npackage B is\n   procedure Run;\nend B;\n");
+
+         Enumerate (Root, "-j 1", "prover-1", U1);
+         R.Check
+           (Natural (U1.Length) = 2,
+            "Prove_Units: two unit sources are enumerated");
+         Enumerate (Root & "/./", "-j 1", "prover-1", U2);
+         R.Check
+           (Key_Of (U1, A_Path) = Key_Of (U2, A_Path)
+            and then Key_Of (U1, B_Path) = Key_Of (U2, B_Path),
+            "Prove_Units: two spellings of one target share every key");
+
+         Write_File
+           (Adacovex.Test_Support.Join (Root, "a.ads"),
+            "package A is\n   procedure Go;\nend A;\n--  edited\n");
+         Enumerate (Root, "-j 1", "prover-1", U3);
+         R.Check
+           (Key_Of (U3, A_Path) /= Key_Of (U1, A_Path),
+            "Prove_Units: an edited unit's key changes");
+         R.Check
+           (Key_Of (U3, B_Path) /= Key_Of (U1, B_Path),
+            "Prove_Units: a dependent unit's key changes");
+
+         Enumerate (Root, "-j 1", "prover-2", U4);
+         R.Check
+           (Key_Of (U4, A_Path) /= Key_Of (U3, A_Path)
+            and then Key_Of (U4, B_Path) /= Key_Of (U3, B_Path),
+            "Prove_Units: a different prover identity changes every key");
+         Adacovex.Test_Support.Remove_Tree (Root);
+      exception
+         when others =>
+            Adacovex.Test_Support.Remove_Tree (Root);
+            R.Check (False, "Prove_Units: enumeration raised an exception");
       end;
 
       --  Total_Row_Unproved: the cache-poison guard reads the Unproved

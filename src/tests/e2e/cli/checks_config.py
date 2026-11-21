@@ -56,6 +56,52 @@ def check_cache(r: Results, tmp: Path) -> None:
             f" misses={misses})",
         )
 
+    #  SBOM caching follows the same resolved target: the graph entry from
+    #  one working directory serves a run from another, and both runs emit
+    #  the same document.
+    sbom_proj = tmp / "cache-sbom"
+    write_fixture(sbom_proj, {
+        "alire.toml": 'name = "cachesbom"\nversion = "1.0.0"\n',
+        "demo.gpr": (
+            'project Demo is\n'
+            '   for Source_Dirs use ("src");\n'
+            '   for Object_Dir use "obj";\n'
+            'end Demo;\n'),
+        "src/p.ads": "package P is\n   procedure Go;\nend P;\n",
+        "src/p.adb": (
+            "package body P is\n   procedure Go is\n   begin\n"
+            "      null;\n   end Go;\nend P;\n"),
+    })
+    sbom_cache = tmp / "cache-sbom-store"
+    sbom_args = [
+        "sbom", "--format=cyclonedx-json",
+        "--out", str(tmp / "cache-sbom.json"),
+        "--cache-dir", str(sbom_cache), "--no-svg", "--no-md",
+    ]
+    parent_run = run(
+        [*sbom_args, "--target=cache-sbom"], cwd=tmp)
+    entries_before = {
+        p.relative_to(sbom_cache) for p in sbom_cache.rglob("*") if p.is_file()
+    }
+    project_run = run(
+        [*sbom_args, "--target", str(sbom_proj)], cwd=sbom_proj)
+    entries_after = {
+        p.relative_to(sbom_cache) for p in sbom_cache.rglob("*") if p.is_file()
+    }
+    r.check(
+        parent_run.returncode == 0 and project_run.returncode == 0,
+        "cache: sbom runs from the parent and the project directories",
+    )
+    r.check(
+        entries_after == entries_before,
+        "cache: an sbom from another cwd adds no cache entry",
+    )
+    r.check(
+        parent_run.stdout.split("SBOM written to", 1)[-1]
+        == project_run.stdout.split("SBOM written to", 1)[-1],
+        "cache: an sbom from another cwd reports the same result",
+    )
+
     refused = run(["--cache-clear", "--cache-dir", "/"])
     r.check(
         refused.returncode == 1 and "refused to clear" in refused.stderr,

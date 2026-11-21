@@ -1,0 +1,6 @@
+name = "prove_diag_modular_broken"
+version = "0.1.0"
+project-files = ["prove_diag_modular_broken.gpr"]
+
+[[depends-on]]
+gnatprove = "^16.1.0"

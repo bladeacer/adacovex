@@ -81,7 +81,9 @@ CASES_DIR: Path = ROOT / "src" / "tests" / "projects" / "contract-errors"
 #  prove it) and the typo cases last.
 CASE_ORDER: Tuple[str, ...] = (
     "index", "overflow", "division", "precondition", "invariant",
-    "invariant_entry", "flow", "typo_attribute", "typo_identifier",
+    "invariant_entry", "flow", "predicate", "floating_point",
+    "subtype_conversion", "modular", "ghost_lemma", "aliasing",
+    "typo_attribute", "typo_identifier",
 )
 
 

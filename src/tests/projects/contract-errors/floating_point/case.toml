@@ -1,0 +1,3 @@
+# Expected diagnostics for this contract-error fixture.
+kind = "float overflow check"
+compile_error = false
