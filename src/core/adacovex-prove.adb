@@ -17,6 +17,7 @@ with Adacovex.Cache;
 with Adacovex.Parsers.GNATprove;
 with Adacovex.VCS;
 with Adacovex.Prove_Patch;
+with Adacovex.Prove_Units;
 with Adacovex.Opt_Outs;
 with Adacovex.Spark_Coverage;
 
@@ -1948,6 +1949,62 @@ package body Adacovex.Prove is
       --  assessment pipeline finds it.
       GPR_Patched : Boolean := False;
 
+      --  Per-unit proof entries for this run. Every unit has its own key,
+      --  so the run can report which units the cached proof covers rather
+      --  than one project-wide hit or miss. The whole-run entry above stays
+      --  the correctness gate: gnatprove proves the project in one
+      --  invocation, so a partial unit edit still runs it.
+      Units      : Adacovex.Prove_Units.Unit_Vectors.Vector;
+      Unit_Hits  : Natural := 0;
+      Unit_Total : Natural := 0;
+
+      --  A non-negative count as digits (no leading space).
+      --  @param N  Count to render.
+      --  @return Decimal digits.
+      function Img (N : Natural) return String is
+      begin
+         return Trim (Natural'Image (N), Ada.Strings.Left);
+      end Img;
+
+      --  The unit count stored in the whole-run hit marker. The marker
+      --  carries "1|<N>"; an older "1" marker has no count and reports 0.
+      --  Reading the count here keeps a warm hit from walking the tree just
+      --  to print the split: the whole-run key already proves that every
+      --  unit is unchanged, so the stored count is the hit count.
+      --  @param Key  Whole-run proof key.
+      --  @return Stored unit count, or 0 when the marker has none.
+      function Cached_Unit_Count (Key : String) return Natural is
+         Buf   : String (1 .. 64);
+         Len   : Natural := 0;
+         Found : Boolean := False;
+      begin
+         Adacovex.Cache.Get_Cached (Key, Buf, Len, Found);
+         if not Found or else Len = 0 then
+            return 0;
+         end if;
+         for I in 1 .. Len loop
+            if Buf (I) = '|' then
+               declare
+                  N : Natural := 0;
+               begin
+                  for J in I + 1 .. Len loop
+                     if Buf (J) in '0' .. '9' then
+                        N :=
+                          N
+                          * 10
+                          + Character'Pos (Buf (J))
+                          - Character'Pos ('0');
+                     else
+                        return 0;
+                     end if;
+                  end loop;
+                  return N;
+               end;
+            end if;
+         end loop;
+         return 0;
+      end Cached_Unit_Count;
+
       --  Build the proof result-cache key. It must capture everything that
       --  can change the (cached) gnatprove.out: the source tree content, the
       --  .gpr, the options, AND the prover identity. Folding the prover
@@ -2342,7 +2399,6 @@ package body Adacovex.Prove is
       Jobs :=
         Adacovex.CPUs.Resolve_Jobs (Opts.Jobs, Adacovex.CPUs.Is_Running_In_CI);
       Copy_To (Options, OLen, Build_Option_String (Opts, Jobs));
-
       Ada.Text_IO.Put_Line ("  gnatprove: " & Exe (1 .. Exe_Len));
       Ada.Text_IO.Put_Line ("  project:   " & GPR (1 .. GLen));
       Ada.Text_IO.Put_Line ("  options:   " & Options (1 .. OLen));
@@ -2371,9 +2427,26 @@ package body Adacovex.Prove is
          begin
             if Hit then
                if Restore_Proof_Output (Target_Dir, In_Hash) then
-                  Ada.Text_IO.Put_Line
-                    ("  cache:     gnatprove inputs unchanged -- reusing"
-                     & " prior proof (proof artefacts served from cache)");
+                  declare
+                     Warm_Units : constant Natural :=
+                       Cached_Unit_Count (In_Hash);
+                  begin
+                     if Warm_Units > 0 then
+                        Ada.Text_IO.Put_Line
+                          ("  cache:     gnatprove inputs unchanged --"
+                           & " reusing prior proof (proof artefacts served"
+                           & " from cache,"
+                           & Img (Warm_Units)
+                           & "/"
+                           & Img (Warm_Units)
+                           & " unit(s) hit)");
+                     else
+                        Ada.Text_IO.Put_Line
+                          ("  cache:     gnatprove inputs unchanged --"
+                           & " reusing prior proof (proof artefacts served"
+                           & " from cache)");
+                     end if;
+                  end;
                   --  Print the diagnostics the original run reported, so a
                   --  warm hit and a cold run tell the same story. The text
                   --  is cached without colour; the printer colours it here.
@@ -2396,6 +2469,23 @@ package body Adacovex.Prove is
                Ada.Text_IO.Put_Line
                  ("  cache:     cached proof artefacts incomplete"
                   & " -- running gnatprove");
+            end if;
+            --  Only a re-prove needs the per-unit split. Enumerating here
+            --  (rather than before the whole-run check) keeps a warm hit at
+            --  the cost of one marker read instead of a tree walk.
+            Adacovex.Prove_Units.Enumerate
+              (Target_Dir, Options (1 .. OLen), Ident (1 .. ILen), Units);
+            Unit_Total := Natural (Units.Length);
+            Adacovex.Prove_Units.Count_Hits (Units, Unit_Hits);
+            if Unit_Total > 0 and then Unit_Hits < Unit_Total then
+               Ada.Text_IO.Put_Line
+                 ("  proof cache:"
+                  & Img (Unit_Hits)
+                  & "/"
+                  & Img (Unit_Total)
+                  & " unit(s) hit,"
+                  & Img (Unit_Total - Unit_Hits)
+                  & " changed -- running gnatprove for the project proof");
             end if;
          end;
       end if;
@@ -2646,6 +2736,7 @@ package body Adacovex.Prove is
             declare
                In_Hash   : constant String := Prove_Cache_Key;
                OK2       : Boolean;
+               Unit_Ct   : Natural := 0;
                Buf       : String (1 .. Adacovex.Cache.Max_Cache_Blob);
                Len       : Natural := 0;
                Proof_Dir : constant String :=
@@ -2679,10 +2770,21 @@ package body Adacovex.Prove is
                   Sarif_Ok := OK2;
                end if;
                if Out_Ok and then Sarif_Ok then
-                  Adacovex.Cache.Store (In_Hash, "1", OK2);
+                  --  Record every unit's marker only after the complete
+                  --  artefact pair is cached, so a unit hit always names
+                  --  a proof whose summary and SARIF are both present. The
+                  --  run marker carries the stored count, so a warm hit can
+                  --  report the split without walking the tree.
+                  Adacovex.Prove_Units.Store (Units, Unit_Ct);
+                  Adacovex.Cache.Store (In_Hash, "1|" & Img (Unit_Ct), OK2);
                   if OK2 then
                      Ada.Text_IO.Put_Line
-                       ("  cache:     gnatprove result cached for these inputs");
+                       ("  cache:     gnatprove result cached for these inputs"
+                        & " ("
+                        & Img (Unit_Ct)
+                        & "/"
+                        & Img (Unit_Total)
+                        & " unit(s) recorded)");
                   end if;
                end if;
             end;

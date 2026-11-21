@@ -115,7 +115,7 @@ package body Adacovex.Prove_Output is
          return
            "state the intended range as a precondition; a modular operation"
            & " wraps by definition";
-      elsif Index (Kind, "floating") > 0 then
+      elsif Index (Kind, "floating") > 0 or else Index (Kind, "float") > 0 then
          return
            "state the value bounds as a precondition, because a"
            & " floating-point proof needs a range";
