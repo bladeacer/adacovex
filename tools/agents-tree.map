@@ -16,8 +16,9 @@ src/core/adacovex-paths	Platform-agnostic path helpers (Is_Absolute / Join / Exp
 src/core/adacovex-install	Installation-method detection for the running binary (source checkout / Alire global / on PATH) + the SBOM scope rule for a project's adacovex reference
 src/core/adacovex-prove	GNATprove runner for the `prove` subcommand (alire-first toolkit resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 src/core/adacovex-prove_output	Proof diagnostics and output (finding model, captured-stream pass, diagnostics block, CI annotations, coloured replay printer, replay cache)
+src/core/adacovex-prove_units	Per-unit proof cache identity (resolved path + content + with closure + options + prover identity; reports the unit hit split)
 src/core/adacovex-prove_patch	Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
-src/core/adacovex-cache	On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
+src/core/adacovex-cache	On-disk result cache (content-hashed per-file, per-unit proof entries, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
 src/core/adacovex-dir_cache	Per-process directory-snapshot memo (one enumeration + stat set shared by all walkers; packed 66-byte entries, 128-byte key, 128-entry cap)
 src/core/adacovex-completion	Shell auto-completion script generator (bash/fish/zsh/pwsh)
 src/core/adacovex-cpus	Host CPU/CI detection + GNATprove parallelism resolution
@@ -56,7 +57,7 @@ src/tests/adacovex_man_tests	Man page renderer tests (30)
 src/tests/adacovex_vcs_tests	VCS support tests (37)
 src/tests/adacovex_server_tests	Server routing tests (183)
 src/tests/adacovex_prove_patch_tests	Proof patch merge tests (35)
-src/tests/adacovex_prove_tests	GNATprove parser tests (88)
+src/tests/adacovex_prove_tests	GNATprove parser tests (93)
 src/tests/adacovex_testparser_tests	Test-result parser tests (50)
 src/tests/adacovex_config_tests	CLI config tests (398)
 src/tests/adacovex_tz_ansi_tests	Timezone + ANSI tests (73)
@@ -77,7 +78,7 @@ src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (580)
-src/tests/test_runner	Test suite entry point (2463 tests)
+src/tests/test_runner	Test suite entry point (2468 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
