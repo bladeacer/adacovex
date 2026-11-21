@@ -41,11 +41,14 @@
 
 - HLR-CACHE: The tool shall cache per-file analysis results (source scans,
   GNATprove summaries, test summaries) on disk keyed by the SHA-256 hash of
-  each analysed artifact, serve unchanged files from the cache instead of
-  re-scanning / re-parsing / re-proving, evict oldest entries first when the
-  configured cap is reached, and report cache hits, misses, and evictions;
-  behaviour is controlled by `--cache` / `--no-cache` / `--cache-dir` /
-  `--cache-max`.
+  each analysed artifact, use the resolved target project location as the
+  cache identity so a target shares its entries from any working directory,
+  record one per-unit proof entry keyed on the unit path, content, `with`
+  closure, options, and prover identity, serve unchanged files from the cache
+  instead of re-scanning / re-parsing / re-proving, evict oldest entries first
+  when the configured cap is reached, and report cache hits, misses, and
+  evictions; behaviour is controlled by `--cache` / `--no-cache` /
+  `--cache-dir` / `--cache-max`.
 
 - HLR-CPU: The tool shall detect the host logical CPU count across Linux,
   macOS, FreeBSD, and Windows using only the GNAT runtime (no external tools),

@@ -154,6 +154,15 @@ source scans for the current tree.
   `*.opam` / `*.cabal`), so an edit to a test-labelled section, a lockfile,
   or a declared dependency invalidates the cached graph and the graph is
   rebuilt from the new content.
+- **Per-unit proof entries**: `Adacovex.Prove_Units` gives every proof unit
+  its own entry under the `proveunit:` namespace. A unit key covers its
+  resolved path, its content, the content of the units its `with` closure
+  names, the gnatprove options, and the prover identity. A one-unit edit
+  invalidates that unit and the units that depend on it; every other unit
+  entry stays a hit. The whole-run `prove:` entry remains the correctness
+  gate, because gnatprove proves a project in one invocation: a run whose
+  unit keys all hit restores the cached artefacts through the whole-run
+  entry, and a partial edit reports the unit split and runs the prover once.
 - **Entry header**: every entry starts with a 24-byte header, a format tag plus
   the write time in OS seconds. `Load` strips it before returning the payload,
   so callers see the bytes they stored. The header time, never the file mtime,
@@ -177,11 +186,14 @@ source scans for the current tree.
    input, so truncated data can never be served as a hit.
 - **`--target` resolution**: `--target` resolves through
   `Adacovex.Paths.Resolve` (a relative path against the working directory,
-  `~` expanded, `.`/`..` folded, separators unified) before scanning, keeping
-  the `File_Path` values in cached `Package_Info` consistent across
-  invocations that spell the same directory differently. The proof-cache key
-  resolves the target and the root `.gpr` the same way, so two working
-  directories share one proof entry.
+  `~` expanded, `.`/`..` folded, separators unified) before any cache is
+  read. Source scans, test summaries, requirement parses, the dependency
+  graph, tool probes, registry metadata, and the proof cache all use that one
+  resolved identity, so `prove`, `sbom`, and a plain assessment share their
+  entries whether the run starts in the project, its parent, or anywhere
+  else, provided the resolved project path is the same. The proof-cache key
+  also resolves the root `.gpr`, and the per-unit keys resolve each unit
+  path.
 - **CI**: the GitHub action persists `<cache>` between workflow runs
   (`result-cache` input, default true).
 

@@ -30,6 +30,7 @@
 | adacovex-prove_patch | PROVE |
 | adacovex-diff | DIFF |
 | adacovex-cpus | CPU |
+| adacovex-prove_units | PROVE |
 | adacovex-cache | CACHE |
 | adacovex-prove | PROVE |
 | adacovex-opt_outs | SCAN |

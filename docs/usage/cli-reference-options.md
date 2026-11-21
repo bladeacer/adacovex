@@ -171,7 +171,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2463 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2468 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level
@@ -200,7 +200,9 @@ Every entry carries a fixed 24-byte header: a format tag and the entry's own wri
 
 `--cache-clear` removes every entry under the resolved cache root, prints the path and the entry count, and exits 0. It refuses a file-system root, the user's home directory, and an empty path, so a bad `--cache-dir` can never empty an unrelated tree.
 
-The ANSI report shows a `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design (schema namespace, eviction, overflow safety, `--target` normalization) is in [Architecture -- Result caching](../contributing/architecture.md#result-caching).
+Every run reads the cache through one resolved project identity. A relative `--target`, an absolute `--target`, and a run started in the project directory share the same entries, from `prove`, `sbom`, and a plain assessment alike, so long as the resolved project path is the same. The proof cache also records one entry per unit under the `proveunit:` namespace; a one-unit edit keeps the other unit entries and reports the split (`N/M unit(s) hit`). The whole-run proof entry is still the gate that restores the proof artefacts.
+
+The ANSI report shows a `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design (schema namespace, per-unit proof entries, eviction, overflow safety, `--target` normalization) is in [Architecture -- Result caching](../contributing/architecture.md#result-caching).
 
 ### `--verbose`
 

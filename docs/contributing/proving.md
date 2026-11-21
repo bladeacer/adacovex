@@ -43,12 +43,14 @@ Run `prove` to generate one.
 `prove` interacts with two independent caches, and knowing which one is
 cold explains every timing you will see:
 
-- The **result cache** (`<cache>/<version>/`, or `--cache-dir`)
-  is adacovex's own store, keyed on the content hash of the proof inputs
-  (every `.ads`/`.adb` under the target plus the `.gpr` and the option
-  string). A hit serves the stored proof and skips gnatprove entirely --
-  this is the short-circuit that makes an unchanged tree prove in tens of
-  milliseconds.
+- The **result cache** (`<cache>/<version>/`, or `--cache-dir`) is
+  adacovex's own store. Its whole-run entry is keyed on the proof-input
+  content hash (every `.ads`/`.adb`, the `.gpr`, and the option string). A
+  hit serves the stored proof and skips gnatprove -- the short-circuit that
+  makes an unchanged tree prove in tens of milliseconds. A partial edit still
+  runs gnatprove once, because the project proof is assembled from one run.
+- The **per-unit entries** (`proveunit:`) key each unit by resolved path,
+  content, `with` closure, options, and identity; the run reports `N/M hit`.
 - The **gnatprove session store** (`<target>/obj/gnatprove/`) is
   gnatprove's internal per-unit session. When adacovex does spawn
   gnatprove (a result-cache miss), the session decides the cost: a

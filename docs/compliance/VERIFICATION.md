@@ -4,9 +4,9 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages Scanned |  46 |
-| Total Subprograms |  278 |
-| Documented Subprograms |  278 |
+| Packages Scanned |  47 |
+| Total Subprograms |  286 |
+| Documented Subprograms |  286 |
 | Docstring Coverage |  100% |
 
 ## SPARK Proof Analysis
@@ -21,14 +21,14 @@
 | Functional Contracts |  98 |  98 |
 | Termination |  132 |  132 |
 | **Total** |  1058 |  1058 |
-| Units Analyzed |  77 | - |
+| Units Analyzed |  78 | - |
 | Units Skipped |  0 | - |
 
 ## Test Results
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| **Total** | ** 2413** | **Passed:  2413, Failed:  0** |
+| **Total** | ** 2468** | **Passed:  2468, Failed:  0** |
 
 ## DO-178C Compliance
 

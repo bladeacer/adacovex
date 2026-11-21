@@ -1,7 +1,7 @@
 # adacovex release plan: v1.68.0 - v1.75.0
 
-Current version: `1.73.0`. Work is scoped across **eight minor releases**:
-`v1.68.0` through `v1.73.0` (closed), then `v1.74.0` and `v1.75.0`.
+Current version: `1.74.0`. Work is scoped across **eight minor releases**:
+`v1.68.0` through `v1.74.0` (closed), then `v1.75.0`.
 Closed releases are recorded in their changelogs, not repeated here.
 
 ## Proof-timing phase note
@@ -10,10 +10,11 @@ All of these land in the **open `v1.61.0 -` phase** (representative `1.63.0`)
 of `docs/contributing/perf/prove-timing.md`. The methodology is unchanged
 (gnatprove-driven prove via the `prove` subcommand, result cache keyed the
 same way, bundle specs excluded from the proof-input hash), so no phase
-boundary or methodology-shift note is required. Item 18 changes what a warm
-cache hit is keyed on, not how gnatprove runs; if the representative figures
-move, record the open-phase column from one run's complete metric set rather
-than cherry-picking rows across versions.
+boundary or methodology-shift note is required. Item 18 changed what a warm
+cache hit is keyed on, not how gnatprove runs, and items 26-28 add measurement
+and documentation, not a prover change. When item 26 records fresh figures,
+record the open-phase column from one run's complete metric set rather than
+cherry-picking rows across versions.
 
 ## How work is distributed
 
@@ -25,15 +26,15 @@ than cherry-picking rows across versions.
 | v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
 | v1.72.0 | closed | Performance close-out and documentation currency | changelog `adacovex-1.72.0.md` |
 | v1.73.0 | closed | Test suite portability and layout | changelog `adacovex-1.73.0.md` |
-| v1.74.0 | planned | Cache identity, diagnostics, terminology, and modularity | 18 (resolved-path, per-unit cache; 7-day expiry), 17a (contract-error matrix), 21 (toolkit terminology), 22 (docs accuracy audit), 23 (modular Python and test scripts), 24 (cache-path audit), 25 (complexity language parity) |
-| v1.75.0 | planned | Dogfood close-out and CLI cohesion | 17b (Ada_CRDT robustness), 19 (contextual help audit), final docs/STE pass |
+| v1.74.0 | closed | Cache identity, diagnostics, terminology, and modularity | changelog `adacovex-1.74.0.md` |
+| v1.75.0 | planned | Dogfood close-out, CLI cohesion, and measured performance | 17b (Ada_CRDT robustness), 19 (contextual help audit), 26 (deterministic perf measurement), 27 (docs/stats), 28 (docs-bundle determinism and cost), final docs/STE pass |
 
-## Status (2026-11-20)
+## Status (2026-11-21)
 
-v1.73.0 is closed; v1.74.0 is in progress. Items 21-25 are complete; items
-18 and 17a remain. The tree holds 2413/2413 native tests
-across 30 categories, 165 CLI e2e checks (one skips without a prover), 132
-prove-e2e checks over the committed fixture projects, and 1058 VCs at Gold.
+v1.74.0 is closed; v1.75.0 is in progress. The tree holds 2468/2468 native
+tests across 30 categories, 180 CLI e2e checks (one skips without a
+prover), 274 prove-e2e checks over the committed fixture projects, and
+1058 VCs at Gold.
 
 The test tree has one root: `src/tests/` holds the native suite, the e2e
 suites in `src/tests/e2e/`, and the fixture projects in
@@ -41,9 +42,10 @@ suites in `src/tests/e2e/`, and the fixture projects in
 keep that shape.
 
 The debt register has no unowned open row: D13 closed with the API docstring
-pass, and D11 and D7 stay open with v1.74.0 and v1.75.0. The v1.74.0 scope
-also carries the toolkit terminology rename, the documentation accuracy
-audit, and the Python and test script split.
+pass, and D11 and D7 stay open with v1.75.0. The v1.74.0 scope carried the
+toolkit terminology rename, the documentation accuracy audit, the Python and
+test script split, and the per-unit proof cache; v1.75.0 carries the dogfood
+close-out, the help audit, and the measured-performance and stats work.
 
 ## Every change
 
@@ -109,306 +111,21 @@ Record: [`adacovex-1.73.0.md`](docs/changelogs/adacovex-1.73.0.md).
 
 ---
 
-## v1.74.0 - Cache identity and diagnostics coverage
+## v1.74.0 - closed
 
-- [x] Item 18 - Cache by resolved location, per unit, with expiry and clear
+Cache identity, diagnostics, terminology, and modularity: items 18 (resolved
+location, per-unit proof entries, lifetime, clear), 17a (contract-error
+matrix), 21 (toolkit terminology), 22 (docs accuracy audit), 23 (modular
+Python and test scripts), 24 (cache-path audit), and 25 (complexity language
+parity). The release also closes the item 18 gap with a per-unit proof cache
+and extends the fixtures to every classified check kind.
+Record: [`adacovex-1.74.0.md`](docs/changelogs/adacovex-1.74.0.md).
 
-**Goal:** The same project hits the same cache entry whether `prove` runs from
-`/path/a`, `/path/b/c`, or the project itself, because the key uses the
-resolved filesystem location rather than the target string or the current
-directory. A small source edit misses only the changed unit and its
-dependents, so most entries stay hits; the `result cache:` line shows the
-split. Entries expire after a configurable duration (7 days by default), and
-the user can clear the cache on demand.
-
-**Work:**
-- Resolve the target once at startup through a new path helper
-  (`Adacovex.Paths.Resolve`): expand `~`, make absolute against the current
-  directory, collapse `.` and `..`, normalise separators, and fold case on
-  Windows. Use the same helper for the root project file.
-- Audit every cache key for a whole-tree input. A per-file scan, docstring,
-  test, or HLR entry must depend only on that file's content and its own
-  options; a tree hash, the target string, or the current directory must not
-  leak into an unrelated key.
-- Replace every proof-cache key input that currently hashes the caller's
-  `Target_Dir` or `GPR` string with the resolved absolute paths. The
-  proof-input walk hashes `Dir & Options` at each level today, so two cwds
-  produce two keys.
-- Split the proof cache from one whole-run entry into per-unit entries. A unit
-  key covers the unit's content, its `with` dependency closure, the resolved
-  path, the options, and the prover identity. A run manifest references the
-  unit keys, and the summary, SARIF, and replay artefacts are assembled from
-  the units that hit. A one-file edit misses only that unit and the units
-  that depend on it.
-- Make the `result cache:` line report those unit outcomes. A warm no-change
-  run keeps the documented shape (`32 hit(s), 0 miss(es), 0 evicted`); a
-  one-file edit in a 32-unit fixture must keep at least 31 hits and miss only
-  the changed closure. A broad refactor may miss many units, and the line must
-  show that rather than hide it.
-- Add a small fixed header to each cache entry: the entry format tag and the
-  write time in OS seconds. `Load` strips the header before it returns the
-  payload, so callers see the same bytes. Use the header time for the TTL,
-  not the file mtime, because a CI cache restore or a copy rewrites mtime and
-  would make an old entry look new.
-- Add `Default_Expiry_Days : constant := 7`; a load older than the TTL is a
-  miss and the entry is removed. Expiry runs before the `--cache-max` count
-  cap, and oldest-first eviction uses the same header time. A zero expiry
-  means "never expire".
-- Add `[cache] expiry-days = 7` to `adacovex.toml`, `--cache-expiry=DAYS`, and
-  `--cache-clear`. The bare `cache` word stays the `--cache` alias; do not add
-  a conflicting `cache` subcommand. `--cache-clear` deletes the resolved cache
-  root, prints the path and entry count, and exits 0.
-- Make clear refuse a path outside the cache root and use the path helper for
-  removal, so a bad `--cache-dir` can never delete an unrelated tree.
-- Bump `Cache_Schema` to `s12`; old entries are abandoned, so no entry
-  without a header is ever read.
-- Document the key rule, the TTL, and clear in
-  `docs/usage/configuration.md`, `docs/usage/cli-reference-options.md`, and
-  `docs/usage/performance.md`. Update `AGENTS.md` if the cache description
-  drifts.
-- Wire `--cache-expiry` and `--cache-clear` through `action.yml` and the
-  `docs/usage/ci-cd.md` Inputs table, or add them to the documented
-  `CLI_ONLY` allow-list. `just action-parity-check` fails on an unwired flag.
-
-**Tests:** `adacovex_cache_tests.adb` covers the TTL boundary, a rewritten
-mtime that disagrees with the stored header time, a negative age (clock
-skew), expiry 0, clear-root safety, and relative/absolute key equality. A CLI
-e2e runs `prove` from two different working directories against one project
-and asserts the second run reports a cache hit. A fixture with 32 cached file
-entries edits one unit and asserts `result cache:` keeps at least 31 hits,
-reports at most one miss, and names no eviction.
-
-**Verify:** `just test`, `just cli-e2e`, two `prove` runs from different cwds,
-`just bench` if the warm figures move.
-
-**Findings (2026-11-20):** The target resolves once through
-`Adacovex.Paths.Resolve`, which replaced the main unit's private
-`Normalize_Path`; the cache key, the proof-input walk, and the root `.gpr`
-now share that spelling. The entry header, the lifetime, `[cache]
-expiry-days`, `--cache-expiry`, `--cache-clear`, and schema `s12` landed as
-planned: expiry runs before the count cap, eviction reads header time with an
-mtime fallback, and clear refuses a file-system root or the home directory.
-The CLI e2e pins the relative/absolute equivalence, a 32-package project
-where one edit keeps 31 hits and misses 1, and a clear. Prove-e2e pins a warm
-hit from another working directory.
-
-**Gap:** the proof cache stays one whole-run entry per resolved input. A
-per-unit split needs per-unit gnatprove runs and artefact merging; reporting a
-per-unit hit without those runs would claim a saving the run did not make.
-The per-file scan cache already provides the 31/1 split, and the resolved
-proof key makes the working-directory equivalence real.
+<!-- v1.74.0 item detail retired with its changelog -->
 
 ---
 
-- [x] Item 17a - Contract-error coverage matrix and fixtures
-
-**Goal:** The diagnostics documentation states which contract and runtime
-checks adacovex classifies, which it reports only as raw fallback, and which
-it does not yet support. Every supported class has a broken/fixed fixture
-pair.
-
-**Work:**
-- Inventory `Fix_Hint` in `Adacovex.Prove_Output` and the current e2e cases:
-  index, overflow, division, precondition, invariant, invariant entry, flow,
-  typo attribute, and typo identifier. `Fix_Hint` already names hints for
-  division, range/index/overflow/discriminant, precondition, postcondition,
-  assertion, invariant, termination, and initialisation; every other kind
-  falls through to the generic hint.
-- Add fixtures for postcondition, assertion, range check, discriminant check,
-  null access, subtype conversion, predicate, ghost/lemma, termination,
-  modular arithmetic, floating point, and aliasing/ownership. Put each pair
-  under `src/tests/projects/contract-errors/<class>/{broken,fixed}/`.
-- Classify a class as **supported** only when the block names the check and
-  gives a fix a user can apply. Otherwise mark it **fallback** (raw message,
-  location only) or **not yet supported** (no fixture; listed as a gap).
-- Add the matrix to `docs/contributing/proving-diagnostics.md`: class,
-  gnatprove check or SARIF rule, status, fixture, and the fix hint.
-- Add `tools/check-diagnostic-coverage.py` (stdlib) as
-  `just diagnostics-coverage-check`: every fixture directory maps to a matrix
-  row and every supported row has a fixture. Wire it into `just check`.
-
-**Tests:** `src/tests/e2e/prove/prove_diagnostics.py` iterates the fixture projects,
-asserts the classified kind and hint for supported classes, and asserts the
-documented fallback shape for the others.
-
-**Verify:** `just prove-e2e`, `just diagnostics-coverage-check`,
-`just docs-check`.
-
-**Findings (2026-11-20):** Five fixture pairs were added and verified under
-gnatprove 16.1.0: `postcondition`, `assertion`, `range`, `discriminant`, and
-`access`. The access kind gnatprove reports is **pointer dereference check**,
-so the matrix row uses that name while the fix hint matches both `access` and
-`pointer`. `Fix_Hint` gained branches for pointer/access, subtype conversion,
-predicate, ghost or lemma, modular, floating, and aliasing or ownership, so
-no in-matrix kind falls through to the generic hint. The matrix now marks 14
-rows Supported and 7 Hinted; no row is Fallback. The six remaining Hinted
-classes (termination, subtype conversion, predicate, ghost or lemma, modular,
-floating point, aliasing or ownership) each need a fixture that proves the
-block and the hint before they become Supported.
-
----
-
-- [x] Item 21 - Use "toolkit" for adacovex, keep "toolchain" for upstream tools
-
-**Goal:** Every adacovex-owned tool set, cache, and bundle says **toolkit**.
-An external tool set keeps its own name: Alire, GNAT, gnatprove, and Go each
-publish a **toolchain**, and adacovex does not rename it.
-
-**Work:**
-- Rename the Ada identifiers (`Toolchain_*` to `Toolkit_*`), the cache
-  directory (`<data>/toolkit`), the environment variable
-  (`ADACOVEX_TOOLKIT_URL`), the published bundle
-  (`adacovex-toolkit-<os>-<arch>.tar.gz`), and every status, help, man, and
-  dashboard string.
-- Update the crate description, the README, the user docs, the contributor
-  docs, the Ada docstrings, the STE100 dictionary, and the tests that pin
-  output text.
-- Keep upstream terminology: `alr toolchain`, the GitHub Action
-  `toolchain:` input, the Alire and GNAT toolchain, the gnatprove toolchain,
-  and the Go toolchain. The STE100 dictionary now defines both terms.
-- Do not keep a silent fallback for the old cache directory or environment
-  variable: it would retain the retired name. Document the one-time proof
-  re-download instead.
-- Historical changelogs keep their factual upstream references. A changelog
-  that describes the adacovex cache now uses **toolkit**.
-
-**Tests:** `TerminologyTests` fails when adacovex names its own cache,
-product, or bundle `toolchain`; `status`, `prove`, and the man page pin the
-new strings.
-
-**Verify:** `just tools-check`, `just test`, `just cli-e2e`, `just docs-check`,
-`just docs-coverage-check`, `just surface-parity-check`.
-
----
-
-- [x] Item 22 - Documentation accuracy audit
-
-**Goal:** Every user-facing page is current, accurate, and free of filler.
-A claim that the code no longer supports is a release blocker.
-
-**Work:**
-- Audit the usage pages against the parser, the server routes, the action
-  inputs, and the current output: flag names, defaults, exit codes, paths,
-  counts, versions, and examples.
-- Audit the contributor pages against the task runner and the gates: every
-  recipe exists, every gate name matches, and every measured figure names
-  its version and profile.
-- Remove meaningless or duplicated prose, AI-slop hedging, and examples that
-  cannot run. Keep one source of truth per fact and link to it.
-- Check every page for British spelling and STE100 sentence rules, and add
-  any missing Technical Name before it appears again.
-- Record every finding and fix in the v1.74.0 changelog; no follow-up list.
-
-**Tests:** the existing link, coverage, surface-parity, and docs gates; plus
-an example command from every usage page where the page carries one.
-
-**Verify:** `just check`, `just book`, `just docs-coverage-check`,
-`just surface-parity-check`.
-
-**Findings (2026-11-18):** The blanket terminology rename had changed the
-real Alire cache path to `~/.local/share/alire/toolkits/`; it is restored to
-`toolchains/`. The `check-pipeline.md` reference run and the debt register
-still claimed 32 gates in 38.77 s; both now use the v1.74.0 run (34 gates,
-37 s). The duplicated phrase in `docs/usage/index.md` is gone, the status
-sample aligns `toolkit cache:`, and the STE100 dictionary now defines both
-Toolkit and Toolchain. Every link, docs-coverage, action-parity, and
-surface-parity gate passes.
-
----
-
-- [x] Item 23 - Modular Python and test scripts
-
-**Goal:** No Python script hides several responsibilities in one file. Each
-module has one job, a small public surface, and a test that imports it.
-
-**Work:**
-- `tools/tasks.py` is now the entry point and `TASKS` registry. The
-  implementation lives in `tools/taskkit/`: `common` (paths, process helpers,
-  preflights), `build` (build, proof, docs, products), `gates` (cheap gates and
-  sync targets), `e2e` (end-to-end suites), `release` (versioning and
-  publishing), and `checks` (`CHECK_GATES` and the runner).
-- `tools/tests.py` is now a thin runner. The domains live in
-  `tools/test_release.py`, `tools/test_docs_generation.py`,
-  `tools/test_docs_gates.py`, `tools/test_tasks.py`, and
-  `tools/test_misc.py`; `tools/testsupport.py` owns the shared imports and
-  helpers.
-- `src/tests/e2e/cli/cli_flags.py` is now the registry. `cli_support.py` owns
-  the shared helpers, and `checks_basic`, `checks_sbom`, `checks_serve`,
-  `checks_config`, and `checks_prove` own the check groups.
-- The dependency rules are unchanged: standard library only, `typing`
-  annotations, `argparse` for a CLI, and `pathlib` for paths.
-- The developer guide and layout page describe the new modules and the import
-  rule.
-
-**Tests:** `TaskkitLayoutTests` imports every taskkit module and pins the
-registry and the 34-gate order; the tools suite still runs every moved test,
-and the e2e shards still partition the same 23 checks.
-
-**Verify:** `just tools-check`, `just test`, `just cli-e2e`, `just check`.
-
----
-
-- [x] Item 24 - Cache-path integrity since v1.71.0
-
-**Goal:** Every cache location a run reads or writes is the location v1.71.0
-documented, apart from the one deliberate rename (item 21). No refactor, no
-terminology pass, and no release bump can move a cache path silently.
-
-**Work:**
-- Audit the path builders against the v1.71.0 tree: the result-cache root
-  (`<cache>/<version>/<schema>`), the stat-stamp index
-  (`<cache>/stamps/index.bin`), the tool-probe store
-  (`<cache>/probes/<tool>.v2`), and the registry-metadata store
-  (`<data>/meta/<hash>`). Only the toolkit directory moved
-  (`<data>/toolchain` to `<data>/toolkit`), by decision, and it stays moved.
-- Fix the two stale test assumptions the audit exposed: the cache suite still
-  built a per-file stamp path (`<cache>/stamps/<sha>`) retired since 1.44.0,
-  and it recorded a registry-meta entry in the result cache rather than in
-  `<data>/meta/`. Neither leaked a wrong path into a product run, but both
-  stopped the suite from noticing a real move.
-- Pin the live layout in the cache suite: the default root ends in
-  `/<version>/<schema>`, the stamp index exists at
-  `<cache>/stamps/index.bin`, small files are stamped (no size gate), and a
-  meta entry lands under `<data>/meta/` and is removed afterwards.
-- Fix the strings the terminology pass missed: the prove help and man page
-  still said `cached toolchain` for the adacovex-owned cache.
-
-**Tests:** `adacovex_cache_tests.adb` pins each location above and no longer
-constructs a retired one.
-
-**Verify:** `just test`, `just test-count`, `just docs-check`.
-
----
-
-- [x] Item 25 - Complexity language parity with the SBOM parser
-
-**Goal:** The `complexity` subcommand scans every language the SBOM parser
-recognises, with the same display names, plus the data and prose formats it
-already measured. A `.swift`, `.scala`, `.lua`, or `.vhdl` file is no longer
-invisible to the LOC and decision gates.
-
-**Work:**
-- Replace the scanner's private extension list with one extension-to-language
-  table that mirrors `Adacovex.Parsers.Manifest.Extension_Language`, and add
-the formats `complexity` owns (YAML, JSON, TOML, XML, Markdown,
-reStructuredText, and `.jsx`).
-- Expose the mapping as `Adacovex.Complexity.Language_Of`, so the table is
-  one source of truth for scanning, reporting, and the tests.
-- Keep per-subprogram analysis Ada-only; every other language still
-  contributes file-level LOC and decision counts.
-- Update `docs/usage/target-projects.md` and
-  `docs/contributing/architecture-outputs.md` with the complete set, and the
-  package docstring that feeds `docs/api-docs`.
-
-**Tests:** `adacovex_complexity_tests.adb` checks every SBOM extension maps to
-its language, an unknown extension maps to none, and a newly covered language
-is scanned and reported.
-
-**Verify:** `just test`, `just complexity-check`, `just test-count`.
-
----
-
-## v1.75.0 - Dogfood close-out and CLI cohesion
+## v1.75.0 - Dogfood close-out, CLI cohesion, and measured performance
 
 - [ ] Item 17b - Ada_CRDT dogfood: useful, robust diagnostics
 
@@ -483,6 +200,88 @@ category in the CONTRIBUTING table. Fix drift in place; no follow-ups.
 
 ---
 
+- [ ] Item 26 - Deterministic performance measurement at every release
+
+**Goal:** Every version bump publishes measured timings, not remembered ones.
+A figure names its version, its host profile, and the command that produced
+it, and a speed-up claim always carries a before/after pair from one host.
+
+**Work:**
+- Use `hyperfine` for the stable shapes (`prove` warm/cold, pipeline
+  warm/cold, docs bundle), `strace -c` for the syscall profile of the no-op
+  and warm shapes, `perf stat` where the host permits it, and the shell `time`
+  fallback when a tool is missing. `tools/bench.py` stays the single owner of
+  the measurement recipe.
+- Add a `just perf-report` task that writes the current table under
+  `docs/stats/`, and run it at every version bump. A release without a fresh
+  row is incomplete.
+- Record the host profile beside each table: CPU, kernel, filesystem, compiler,
+  gnatprove version, and the build profile.
+- Keep the raw output under `obj/` and the summary in the docs; never edit a
+  number by hand.
+- Do not claim a speed-up without a same-host, same-profile before/after pair.
+
+**Tests:** the tools suite covers the table formatter and every missing-tool
+fallback, so a host without `perf` or `hyperfine` still produces a complete
+report.
+
+**Verify:** `just perf-report`, one release dry run, `just tools-check`.
+
+---
+
+- [ ] Item 27 - A stats section for contributors and curious users
+
+**Goal:** `docs/stats/` is the single home for measured numbers: pipeline and
+prove timings, binary size, syscall profiles, cache hit rates, bundle size,
+and test counts. A reader finds the current value and the method behind it
+without reading a changelog.
+
+**Work:**
+- Create `docs/stats/` with one page per metric family, and add it to the
+  `docs/index.md` toctree.
+- Move the current figures from `docs/contributing/perf/` and
+  `docs/usage/performance.md` behind links; keep the method and optimisation
+  history pages where they are.
+- Each page states the version, host profile, command, and raw result. The
+  prose explains only what moved and why.
+- Keep `docs/contributing/perf/` for method and history; `docs/stats/` is the
+  record.
+
+**Tests:** `just docs-tree`, `just docs-coverage-check`, `just link-check`,
+and `just book-links-check`.
+
+**Verify:** `just book`, `just check`.
+
+---
+
+- [ ] Item 28 - Make the docs bundle deterministic and cheap
+
+**Goal:** The offline manual stays embedded in the Ada binary, with no new
+non-dev dependency, but a docs build is incremental, reproducible, verified,
+and cheap.
+
+**Work:**
+- Measure the current bundle cost (Sphinx build, gzip, base85, spec write) and
+  record it under `docs/stats/`.
+- Replace the remaining brittle steps with one content-addressed manifest that
+  names every input and output. A missing build directory still falls back to
+  the committed spec, never a partial bundle.
+- Keep the encoder pure standard-library `gzip` + base85 and parallel across
+  cores. Add no JSON, JavaScript, or npm tool.
+- Fail loudly when a page is missing from the bundle, a link does not resolve,
+  or the fingerprint disagrees with the committed spec.
+- Document the rebuild decision tree and the measured cost.
+
+**Tests:** `tools/test_docs_generation.py` covers the fingerprint, the
+incremental rebuild, the removed-page sweep, and the canonical search index;
+`just book-links-check` and `python3 tools/gen-docs.py --check` cover the
+committed artifact.
+
+**Verify:** `just book`, `python3 tools/gen-docs.py --check`,
+`just tools-check`.
+
+---
+
 ## Per-release checklist (apply to every version)
 
 1. Implement the version's items (code + tests).
@@ -503,6 +302,10 @@ category in the CONTRIBUTING table. Fix drift in place; no follow-ups.
    version (none of these items break the CLI contract, so no MAJOR).
 8. When the release closes, replace its item detail in this plan with a
    changelog link. A closed release leaves no checklist text behind.
+
+> **Before the v1.75.0 release:** delete `plan.md` and create
+> `docs/changelogs/adacovex-1.75.0.md`. The changelog is the durable record
+> once the plan retires.
 
 ## Decisions (resolved)
 

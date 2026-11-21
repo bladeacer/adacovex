@@ -7,6 +7,8 @@
 - LLR-ARCH-03: `adacovex.gpr` shall compile all sources with `-gnatwa` warnings [HLR-ARCH]
 - LLR-ARCH-04: `Adacovex.Paths` shall answer Is_Separator, Is_Absolute, Join, Strip_Trailing_Separators, Home_Directory, and Expand_User for both path styles, so no other unit spells a platform path assumption inline [HLR-ARCH]
 - LLR-CACHE-01: cache entry paths shall map every `:` in a key to `-`, so a namespaced key is a legal file name on Windows [HLR-CACHE]
+- LLR-CACHE-02: `Adacovex.Paths.Resolve` shall expand, absolutise, and normalise the target once, and every cache key shall use that resolved location [HLR-CACHE]
+- LLR-CACHE-03: `Adacovex.Prove_Units` shall key one proof entry per unit by resolved path, content, `with` closure, options, and prover identity, and report unit hits and changes [HLR-CACHE]
 - LLR-PROVE-01: the prove runner shall resolve the gnatprove binary under the host executable name (`gnatprove.exe` on Windows), because Ada.Directories never guesses an extension [HLR-PROVE]
 - LLR-SCAN-01: Scan_Project shall walk directories recursively, skipping .git and obj [HLR-SCAN]
 - LLR-SCAN-02: Scan_Ads_File shall extract procedure, function, and generic declarations [HLR-SCAN]

@@ -140,7 +140,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2463/2463 native tests passing
+- 2468/2468 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -164,7 +164,7 @@ src/
 |   `-- adacovex-compliance-dal.ads/.adb      -- DAL level assessment logic (DAL-A..E criteria)
 |-- core/
 |   |-- adacovex-ansi.ads/.adb                -- ANSI colour helper (terminal colour support; CI/NO_COLOR/TERM-dumb aware)
-|   |-- adacovex-cache.ads/.adb               -- On-disk result cache (content-hashed per-file, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
+|   |-- adacovex-cache.ads/.adb               -- On-disk result cache (content-hashed per-file, per-unit proof entries, oldest-first eviction, size policy) + persistent stat-stamp index + per-process directory snapshot memo
 |   |-- adacovex-completion.ads/.adb          -- Shell auto-completion script generator (bash/fish/zsh/pwsh)
 |   |-- adacovex-complexity.ads/.adb          -- Cyclomatic complexity checker (multi-language incl. Markdown; LOC/cx gates; --excludes / --skip-path / header opt-out markers; wired into just complexity-check)
 |   |-- adacovex-config.ads/.adb              -- CLI argument parser (prove --args, complexity --excludes/--skip-path, --no-sbom, --sbom-format)
@@ -178,6 +178,7 @@ src/
 |   |-- adacovex-prove.ads/.adb               -- GNATprove runner (alire-first toolkit resolution; --args passthrough; no-covex-spark-proof unit opt-outs via -u)
 |   |-- adacovex-prove_output.ads/.adb        -- Proof diagnostics and output (finding model, captured-stream pass, diagnostics block, CI annotations, coloured replay printer, replay cache)
 |   |-- adacovex-prove_patch.ads/.adb         -- Proof patches for vendored deps (SPARK aspect merge + patched proof tree)
+|   |-- adacovex-prove_units.ads/.adb         -- Per-unit proof cache identity (resolved path + content + with closure + options + prover identity; reports the unit hit split)
 |   |-- adacovex-spark_coverage.ads/.adb      -- SPARK proof-coverage report (statement / subprogram / VC coverage and the three off classes, read from gnatprove.out and gnatprove.sarif)
 |   |-- adacovex-timezones.ads/.adb           -- Timezone resolution + local-time formatting (OS default; --tz/--timezone: IANA name or UTC/GMT offset)
 |   |-- adacovex-types.ads/.adb               -- All domain types + conversion functions
@@ -297,7 +298,7 @@ src/
     |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (54)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
     |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (104)
-    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (88)
+    |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (93)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
     |-- adacovex_sbom_tests.ads/.adb          -- SBOM / manifest graph tests (580)
@@ -310,7 +311,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2463 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2468 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -720,7 +721,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the count-sync checks. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2463-test native suite |
+| `test` | Build + run the 2468-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -749,7 +750,7 @@ compatibility shim. The table names the canonical target for each task.
 | `ascii-check` | Verify all source files are pure ASCII (skips generated e2e output: playwright-report / test-results) |
 | `tools-check` | Run the stdlib-unittest suite for the tools/*.py dev scripts (tools/tests.py) |
 | `cli-e2e` | Run the CLI end-to-end checks against the real binary (registry: src/tests/e2e/cli/cli_flags.py; groups: checks_basic / checks_sbom / checks_serve / checks_config / checks_prove): shorthands, long aliases, `--standard` tier tokens, the reject paths, the `complexity` subcommand (gates, `--excludes`, `--skip-path`), the `--compare-base` / `--coverage-delta` differential modes (alias equivalence, a real coverage regression, and the not-a-repository failure), the `prove` subcommand (`-t`/`-l`/`-j` shorthands, the accepted option set, and the range/subcommand reject paths), and the serve shorthands, the `--theme` values, and the `-p` port forms. No browser; part of `just check` |
-| `prove-e2e` | Run the prove diagnostics end-to-end suite (src/tests/e2e/prove/prove_diagnostics.py): it proves one committed SPARK fixture project per contract-writing mistake -- `index`, `overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`, `typo_attribute`, `typo_identifier` under src/tests/projects/contract-errors/ -- each with a broken variant and a fixed counterpart, runs the real `prove` command over both, and checks the quiet replay (no phase banners, no unconditional filtered footer), the diagnostics block (prover identity, source location, check kind, fix hint) for a finding, the compile-error shape (replay keeps the error with its location, non-zero exit, no block) for a typo, the fixed variant proving cleanly, the coverage-summary line (`--no-coverage` removes it and leaves the proof alone), and the `--verbose` raw stream (no block). 132 checks. `--keep` writes the projects to `obj/prove-diagnostics/` and `--case`/`--debug` narrow and expand the run. Part of `just check`; SKIPped when no gnatprove is resolvable |
+| `prove-e2e` | Run the prove diagnostics end-to-end suite (src/tests/e2e/prove/prove_diagnostics.py): it proves one committed SPARK fixture project per contract-writing mistake -- `index`, `overflow`, `division`, `precondition`, `invariant`, `invariant_entry`, `flow`, `predicate`, `floating_point`, `subtype_conversion`, `modular`, `ghost_lemma`, `aliasing`, `typo_attribute`, `typo_identifier` under src/tests/projects/contract-errors/ -- each with a broken variant and a fixed counterpart, runs the real `prove` command over both, and checks the quiet replay (no phase banners, no unconditional filtered footer), the diagnostics block (prover identity, source location, check kind, fix hint) for a finding, the compile-error shape (replay keeps the error with its location, non-zero exit, no block) for a typo, the fixed variant proving cleanly, the coverage-summary line (`--no-coverage` removes it and leaves the proof alone), and the `--verbose` raw stream (no block). 274 checks. `--keep` writes the projects to `obj/prove-diagnostics/` and `--case`/`--debug` narrow and expand the run. Part of `just check`; SKIPped when no gnatprove is resolvable |
 | `e2e` | Run `cli-e2e`, then the Playwright dashboard layout tests (pnpm + chromium). SKIPs the browser half when pnpm is absent or the Chromium download fails |
 | `csslint-check` | Dashboard CSS 4px spacing gate: every margin/padding/gap must be a multiple of 4px (tools/csslint.py; also run inside `just build`) |
 | `complexity-check` | Cyclomatic-complexity + LOC gate: no god objects/functions, no file above its LOC or percentage-of-codebase caps (multi-language scan incl. Markdown; `--excludes=rst --skip-path=docs/api-docs`; files can opt out with a `no-covex-complexity-scan` header marker; gated by just complexity-check) |
@@ -841,7 +842,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2463/2463 passing |
+| Unit tests | `just test` | 2468/2468 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1058 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -910,7 +911,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2463 tests across 30 categories).
+Native zero-dependency suite (`src/tests/`, 2468 tests across 30 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests). The Python end-to-end suites
 live under `src/tests/e2e/` in category directories (`cli/`, `prove/`,

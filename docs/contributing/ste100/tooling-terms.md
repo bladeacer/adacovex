@@ -188,6 +188,17 @@ flags, artefacts, and quality gates of the adacovex tool.
 - **Correct Example:** *The **result cache** serves the proof when the inputs are unchanged.*
 - **Incorrect Example:** *The artifact store serves the proof when the inputs are unchanged.*
 
+## Technical Name: Per-Unit Proof Entry
+- **Part of Speech:** Noun
+- **Definition:** One result-cache record per proof unit. The entry key covers
+  the unit's resolved path, content, `with` closure, options, and prover
+  identity.
+- **Approved Form:** Per-Unit Proof Entry (singular), Per-Unit Proof Entries
+  (plural)
+- **Do Not Use:** Unit cache, Subprogram cache
+- **Correct Example:** *A one-unit edit keeps every other **per-unit proof entry**.*
+- **Incorrect Example:** *A one-unit edit keeps every other unit cache.*
+
 ## Technical Name: Stat-Stamp Index
 - **Part of Speech:** Noun
 - **Definition:** The persistent on-disk index of file size, modification

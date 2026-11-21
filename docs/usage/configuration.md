@@ -61,6 +61,12 @@ lifetime is 7 days; `--cache-expiry=DAYS` or `[cache] expiry-days` changes it,
 and `0` means entries never expire. `adacovex --cache-clear` removes every
 entry under the resolved cache root and prints the count.
 
+The key uses the resolved project location, not the spelling the caller used.
+A run from the project directory, its parent, or another directory hits the
+same entries for `prove`, `sbom`, and a plain assessment. The proof cache also
+stores one entry per unit (`proveunit:`), so a one-unit edit keeps the
+unchanged unit entries; the run report shows `N/M unit(s) hit`.
+
 ## Configuration files
 
 Two files supply defaults, and each one is optional. The **project file** is

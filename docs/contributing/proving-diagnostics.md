@@ -187,12 +187,12 @@ analysis, and `none` means the run stopped before any check was analysed.
 | `typo_attribute` | compile error | none | none | Supported (compile-error shape) | `typo_attribute` |
 | `typo_identifier` | compile error | none | none | Supported (compile-error shape) | `typo_identifier` |
 | `access` | pointer dereference check | access, pointer | yes | Supported | `access` |
-| `subtype_conversion` | subtype conversion check | subtype | yes | Hinted | - |
-| `predicate` | predicate check | predicate | yes | Hinted | - |
-| `ghost_lemma` | ghost or lemma check | ghost, lemma | yes | Hinted | - |
-| `modular` | modular arithmetic check | modular | yes | Hinted | - |
-| `floating_point` | floating-point check | floating | yes | Hinted | - |
-| `aliasing` | aliasing or ownership check | aliasing, ownership | yes | Hinted | - |
+| `subtype_conversion` | range check (subtype conversion) | subtype, range | yes | Supported | `subtype_conversion` |
+| `predicate` | predicate check | predicate | yes | Supported | `predicate` |
+| `ghost_lemma` | postcondition (lemma) | ghost, lemma, postcondition | yes | Supported | `ghost_lemma` |
+| `modular` | range check (modular narrowing) | modular, range | yes | Supported | `modular` |
+| `floating_point` | float overflow check | floating, float | yes | Supported | `floating_point` |
+| `aliasing` | flow error (aliasing) | aliasing, ownership | n/a | Supported (flow-error shape) | `aliasing` |
 <!-- diagnostic-matrix:end -->
 
 A **Fallback** row is not a promise. It is the current boundary: the message
@@ -200,12 +200,12 @@ still reaches you with its location and source excerpt, but the block cannot
 name the check or a fix for it. Treat a fallback finding as a gap to record,
 not as a diagnosis you can act on without reading `--verbose`.
 
-No row is Fallback today. Every classified kind has a specific hint, and the
-five fixture pairs added in 1.74.0 (postcondition, assertion, range,
-discriminant, and pointer dereference) prove the block for those kinds. The
-subtype conversion, predicate, ghost or lemma, modular, floating-point, and
-aliasing or ownership kinds are **Hinted**: they carry a hint, but no fixture
-pair exists yet.
+No row is Fallback today. Every classified kind has a specific hint and a
+fixture pair. The 1.74.0 release added the postcondition, assertion, range,
+discriminant, pointer dereference, predicate, float overflow, subtype
+conversion, modular, lemma, and aliasing pairs, so only termination stays
+Hinted: gnatprove reports it with a budget counterexample shape, and its
+fixture would need a dedicated loop-variant project.
 
 ### Adding or changing a classification
 
@@ -274,9 +274,9 @@ The block marks such a finding as `(provers gave up)`, and its fix hint raises
 
 `src/tests/e2e/prove/prove_diagnostics.py` copies one committed project per
 case on this page into a scratch root, each with a broken variant and a fixed
-counterpart under `src/tests/projects/contract-errors/`. The cases are
-`index`, `overflow`, `division`, `precondition`, `invariant`,
-`invariant_entry`, `flow`, `typo_attribute`, and `typo_identifier`.
+counterpart under `src/tests/projects/contract-errors/`. The script reads the
+case list from that directory, so every row above (except the Hinted
+termination row) has a pair.
 
 ```bash
 python3 src/tests/e2e/prove/prove_diagnostics.py --keep
