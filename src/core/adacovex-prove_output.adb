@@ -468,7 +468,14 @@ package body Adacovex.Prove_Output is
                     (Location       => Cand_Loc,
                      Kind           => To_Unbounded_String (Kind),
                      Flow           => Cand_Flow,
-                     Budget         => Cand_Budget,
+                     --  A counterexample is proof that the solver
+                     --  completed this check: the `+ provers gave up` line
+                     --  that follows it belongs to a sibling sub-block of
+                     --  the same message (typically the subprogram that
+                     --  needs the precondition), so it never turns this
+                     --  finding into a budget failure.
+                     Budget         =>
+                       Cand_Budget and then Length (Cand_CE) = 0,
                      Solver         => Null_Unbounded_String,
                      Counterexample => Cand_CE,
                      Call_Sites     => 1);
@@ -482,6 +489,9 @@ package body Adacovex.Prove_Output is
                  and then Length (Cand_CE) > 0
                then
                   Stats.Items (Idx).Counterexample := Cand_CE;
+                  --  A repeated finding that now carries a counterexample is
+                  --  a solved check, not a budget failure.
+                  Stats.Items (Idx).Budget := False;
                end if;
             end if;
          end if;
