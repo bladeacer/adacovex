@@ -988,6 +988,9 @@ begin
             Memlimit          => Cfg.Prove_Memlimit,
             Force             => Cfg.Prove_Force,
             No_Inlining       => Cfg.Prove_No_Inlining,
+            --  Counterexamples are on by default so a failed check names the
+            --  input that breaks it; --counterexamples=off forwards =off.
+            Counterexamples   => Cfg.Prove_Counterexamples,
             --  Raw gnatprove flags from --args="...", forwarded verbatim.
             Extra_Args        => Cfg.Prove_Args,
             --  Quiet is the default (local runs suppress the default set);

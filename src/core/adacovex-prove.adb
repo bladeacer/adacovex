@@ -350,12 +350,16 @@ package body Adacovex.Prove is
       if Opts.Force then
          App ("-f");
       end if;
-      --  Ask for a counterexample on every failed check. A proved check
-      --  never prints one, so this costs nothing on a clean run, and a
-      --  failed check states the input that breaks it instead of only the
-      --  kind. The switch is part of the option string, so it is part of the
-      --  proof result-cache identity too.
-      App ("--counterexamples=on");
+      --  Ask for a counterexample on every failed check unless the user
+      --  turned it off. A proved check never prints one, so this costs
+      --  nothing on a clean run, and a failed check states the input that
+      --  breaks it instead of only the kind. The switch is part of the
+      --  option string, so it is part of the proof result-cache identity too.
+      if Opts.Counterexamples then
+         App ("--counterexamples=on");
+      else
+         App ("--counterexamples=off");
+      end if;
       --  Loop unrolling is always disabled: GNATprove emits the purely
       --  informational "cannot unroll loop (too many loop iterations)"
       --  notice for loops it would like to unroll but cannot, which is

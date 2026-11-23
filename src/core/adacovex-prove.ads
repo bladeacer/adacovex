@@ -66,6 +66,15 @@ package Adacovex.Prove is
       Force       : Boolean := False;
       No_Inlining : Boolean := False;
 
+      --  True when gnatprove runs with --counterexamples=on (the default).
+      --  A failed check then states the input that breaks it, and the
+      --  diagnostics block prints that input beside its fix hint.
+      --  --counterexamples=off forwards =off instead, so a run that only
+      --  wants the verdict skips the counterexample search. The switch is
+      --  part of the option string, so it is part of the proof result-cache
+      --  identity as well.
+      Counterexamples : Boolean := True;
+
       --  Raw extra GNATprove arguments (--args="..."), space-split into
       --  individual tokens and appended to the gnatprove command line
       --  after the options Build_Option_String produces. Empty by default.
@@ -129,7 +138,9 @@ package Adacovex.Prove is
    --  are 720/720 adacovex and 589/589 Ada_CRDT VCs with 0 unproved either
    --  way. Level, timeout, steps, and memlimit are included only when
    --  configured. --force and --no-inlining map to the corresponding gnatprove
-   --  switches. Any raw --args value in Opts.Extra_Args is appended
+   --  switches. `--counterexamples=on` is included unless
+   --  Opts.Counterexamples is False, which forwards `--counterexamples=off`
+   --  instead. Any raw --args value in Opts.Extra_Args is appended
    --  verbatim (space-split) at the end.
    --  @param Opts  GNATprove options.
    --  @param Jobs  Resolved job count to forward (-j value).

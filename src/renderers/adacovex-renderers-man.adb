@@ -281,6 +281,10 @@ package body Adacovex.Renderers.Man is
                  "Disable automatic loop unrolling (always on for prove; kept for compat).";
             elsif Flag = "no-inlining" then
                return "Disable contextual analysis inlining.";
+            elsif Flag = "counterexamples" then
+               return
+                 "Ask the prover for a breaking input on every failed"
+                 & " check (on by default; off skips the search).";
             elsif Flag = "suppress-warnings" then
                return
                  "Suppress GNATprove benign info messages (--suppress-warnings[=SETS]).";

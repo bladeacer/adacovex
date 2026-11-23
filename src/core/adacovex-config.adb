@@ -580,13 +580,21 @@ package body Adacovex.Config is
      & "cache-dir cache-max cache-expiry cache-clear skip-dir compare-base coverage-delta sbom "
      & "prove status completion man tldr check dir version no-sbom sbom-format format out "
      & "jobs level timeout steps memlimit force no-loop-unrolling "
-     & "no-inlining args suppress-warnings quiet require-spark require-docstrings "
+     & "no-inlining counterexamples args suppress-warnings quiet "
+     & "require-spark require-docstrings "
      & "require-tests require-proof complexity export metrics help "
      & "serve-workers watch no-watch tz timezone excludes skip-path "
      & "workers svg-path md-path emit-md no-md strict diff base delta spark "
      & "docstrs tests spark-coverage group metric spark-format "
      & "min-coverage require-coverage gate-metric "
      & "coverage no-coverage diagnostics fail-on";
+
+   --  Every contextual help topic Print_Topic_Help dispatches on. The
+   --  unknown-topic path lists this set, so a reader sees the real topics
+   --  instead of guessing one.
+   Known_Topics : constant String :=
+     "prove serve status sbom complexity spark-coverage man tldr init "
+     & "completion cache";
 
    --  Expose the flag list for the shell-completion generator (see spec).
    function Flag_List return String is
@@ -853,6 +861,12 @@ package body Adacovex.Config is
       if Len < Buf'Last then
          Len := Len + 1;
          Buf (Len) := '?';
+      end if;
+      --  Close the parenthesis the clause opened, so the hint reads
+      --  `(did you mean --standard?)` in every caller.
+      if Len < Buf'Last then
+         Len := Len + 1;
+         Buf (Len) := ')';
       end if;
       return (Text => Buf, Len => Len);
    end Suggest_Flags;
@@ -2110,6 +2124,28 @@ package body Adacovex.Config is
                      Cfg.Prove_No_Loop_Unroll := True;
                   elsif A = "--no-inlining" then
                      Cfg.Prove_No_Inlining := True;
+                  elsif A = "--counterexamples" then
+                     --  Counterexamples are on by default; the bare word is
+                     --  the explicit opt-in form.
+                     Cfg.Prove_Counterexamples := True;
+                     Cfg.Prove_Counterexamples_Explicit := True;
+                  elsif Has_Prefix (A, "--counterexamples=") then
+                     declare
+                        Val : constant String := A (A'First + 18 .. A'Last);
+                     begin
+                        if Val = "on" then
+                           Cfg.Prove_Counterexamples := True;
+                        elsif Val = "off" then
+                           Cfg.Prove_Counterexamples := False;
+                        else
+                           Set_Error
+                             (Cfg,
+                              "--counterexamples must be on or off (got: "
+                              & Val
+                              & ")");
+                        end if;
+                        Cfg.Prove_Counterexamples_Explicit := True;
+                     end;
                   elsif A = "--args" then
                      I := I + 1;
                      if I <= Count then
@@ -2534,6 +2570,7 @@ package body Adacovex.Config is
                      or Cfg.Prove_Force
                      or Cfg.Prove_No_Loop_Unroll
                      or Cfg.Prove_No_Inlining
+                     or Cfg.Prove_Counterexamples_Explicit
                      or Cfg.Prove_Suppress_Explicit
                      or Cfg.Prove_Coverage_Explicit
                      or Cfg.Prove_Diagnostics_Explicit
@@ -2543,7 +2580,8 @@ package body Adacovex.Config is
               (Cfg,
                "prove options (--jobs, --level, --timeout, --steps, --memlimit, "
                & "--force, --no-loop-unrolling, --no-inlining, "
-               & "--args, --suppress-warnings, --quiet, --coverage, "
+               & "--counterexamples, --args, --suppress-warnings, --quiet, "
+               & "--coverage, "
                & "--no-coverage, --diagnostics) require the prove subcommand");
          end if;
 
@@ -3238,6 +3276,11 @@ package body Adacovex.Config is
         ("                        notices never appear; flag kept for compat)");
       Opt ("  --no-inlining         Disable contextual analysis inlining");
       Opt
+        ("  --counterexamples=on|off  Ask the prover for a breaking input on a");
+      Opt
+        ("                        failed check (default: on); off skips the");
+      Opt ("                        search and reports the check alone");
+      Opt
         ("  --args=FLAGS          Pass extra raw GNATprove flags verbatim (e.g.");
       Opt ("                        --args='--prover=cvc5 --timeout=5');");
       Opt
@@ -3879,6 +3922,13 @@ package body Adacovex.Config is
             & "      Disable contextual analysis inlining."
             & ASCII.LF
             & ASCII.LF
+            & "  --counterexamples=on|off"
+            & ASCII.LF
+            & "      Ask the prover for a breaking input on every failed"
+            & ASCII.LF
+            & "      check (default: on)."
+            & ASCII.LF
+            & ASCII.LF
             & "  --args=FLAGS"
             & ASCII.LF
             & "      Pass extra raw GNATprove flags verbatim (space-split)."
@@ -4119,9 +4169,21 @@ package body Adacovex.Config is
             & ASCII.LF
             & "--require-proof=PCT (shorthand -r).  Default off.");
       else
+         --  An unknown topic names itself, suggests the nearest known topic
+         --  or flag, and lists the valid topics before the full usage, so
+         --  the reader does not have to scroll past the option list to find
+         --  out what went wrong.
+         Ada.Text_IO.Put_Line ("adacovex: unknown help topic '" & Topic & "'");
+         declare
+            S : constant Flag_Suggestion := Suggest_Flags (Topic);
+         begin
+            if S.Len > 0 then
+               Ada.Text_IO.Put_Line ("  " & S.Text (1 .. S.Len));
+            end if;
+         end;
+         Ada.Text_IO.Put_Line ("  Valid topics: " & Known_Topics);
+         Ada.Text_IO.Put_Line ("");
          Print_Usage;
-         Ada.Text_IO.Put_Line
-           ("Unknown topic '" & Topic & "' -- showing full usage above.");
       end if;
       if Framed then
          Print_Help_Footer;

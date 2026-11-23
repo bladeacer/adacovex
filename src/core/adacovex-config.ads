@@ -209,6 +209,16 @@ package Adacovex.Config is
       Prove_No_Loop_Unroll : Boolean := False;
       Prove_No_Inlining    : Boolean := False;
 
+      --  True when the prove subcommand asks gnatprove for a counterexample
+      --  on every failed check (--counterexamples=on, the default).
+      --  --counterexamples=off turns the search off, so a run that only
+      --  wants the verdict spends no prover time on it.
+      Prove_Counterexamples : Boolean := True;
+
+      --  True when --counterexamples is given. Only the explicit form is a
+      --  prove-mode flag for the "requires the prove subcommand" check.
+      Prove_Counterexamples_Explicit : Boolean := False;
+
       --  Quiet-by-default prove output. Unless --verbose is given, the
       --  prove subcommand hides GNATprove's benign informational messages
       --  from stdout. The hidden set is the default suppression set
