@@ -248,7 +248,7 @@ Vendored dependencies then participate in the proof without their sources being 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--jobs=N`, `-j N` | auto | GNATprove parallelism: auto-detect (max(1, cores-2), all cores in CI), `0` = all cores, `N` = pin N processes |
-| `--level=N`, `-l N` | tool default | GNATprove proof effort, 0-4 (never a compliance tier) |
+| `--level=N`, `-l N` | `4` | GNATprove proof effort, 0-4 (never a compliance tier). The deepest effort is the default, because gnatprove without `--level` runs cvc5 alone with no per-check timeout, which is weaker than every predefined level. The level is part of the option string and therefore of the proof result-cache identity |
 | `--timeout=N` | tool default | Per-check prover timeout in seconds |
 | `--steps=N` | `10000` | Max proof steps (reproducible budget, an explicit value overrides the default) |
 | `--memlimit=N` | tool default | Prover memory limit in MB |

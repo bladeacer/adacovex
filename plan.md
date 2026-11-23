@@ -54,6 +54,15 @@ message block. The block then keeps the actionable fix hint.
 known topic or flag, and lists the valid topics before the full usage. The
 flag suggestion now closes its parenthesis.
 
+- [x] Default proof level: `prove` always sends a level -- `--level=N` when
+given, else 4. Without `--level`, gnatprove runs cvc5 alone with no
+per-check timeout, so an unflagged run proved less than its output claimed,
+and a Makefile target that omitted the flag never shared a cache entry with
+`just run-ada-crdt`. The default is in the option string, so it is part of
+the proof result-cache identity: every existing proof entry is invalidated
+once, by design. Help, the man page, and the flag-detail page state the
+default and why.
+
 - [x] Proof-cache identity (debt D11): a proof key folds in the resolved
 absolute target, so a relative and an absolute `-t` for one project share
 one entry (measured: 2/2 unit hits, 17 ms). The `just run-ada-crdt` and

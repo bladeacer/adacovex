@@ -140,7 +140,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2486/2486 native tests passing
+- 2489/2489 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -297,7 +297,7 @@ src/
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (20)
     |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (54)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
-    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (112)
+    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (115)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (93)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
@@ -311,7 +311,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2486 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2489 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -371,7 +371,11 @@ completion and the typo suggestion know them.
 `--fail-on=DIM[=VAL]` states the same thresholds as one CI policy flag
 (`spark`, `docstrings`, `proof`, `tests`, `coverage`; comma-separated or
 repeatable, a bare dimension reuses its `--require-*` value, and a bare
-dimension with no threshold is an error). A successful `prove` prints a
+dimension with no threshold is an error). The `prove` subcommand always sends
+a proof level: `--level=N` when the user gives one, otherwise 4, because
+gnatprove without `--level` runs cvc5 alone with no per-check timeout. The
+level is part of the option string and therefore of the proof result-cache
+identity, so two callers of one project share one proof. A successful `prove` prints a
 proof-coverage summary line by default -- statement, subprogram, and VC
 coverage -- which `--no-coverage` hides for one run and `[prove] coverage =
 false` in `adacovex.toml` hides for every run. The concise replay is
@@ -721,7 +725,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the docs-tree regeneration, the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the sync gates -- which **regenerate** the dynamic content (test counts and the AGENTS.md source tree, proof metrics and badges, the crate-description copies, `requirements.txt`) instead of failing a stale one. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2486-test native suite |
+| `test` | Build + run the 2489-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -849,9 +853,9 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2486/2486 passing |
+| Unit tests | `just test` | 2489/2489 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
-| SPARK proof | `just prove` | Gold (1060 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand forwards `--level` verbatim, so the overhead is gnatprove's own) |
+| SPARK proof | `just prove` | Gold (1060 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand always sends a level -- the requested one, else 4 -- so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
 
 **The true test of proof performance is the `prove` subcommand at the
@@ -918,7 +922,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2486 tests across 30 categories).
+Native zero-dependency suite (`src/tests/`, 2489 tests across 30 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests). The Python end-to-end suites
 live under `src/tests/e2e/` in category directories (`cli/`, `prove/`,

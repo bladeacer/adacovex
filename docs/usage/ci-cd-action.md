@@ -90,7 +90,7 @@ steps:
 | `cache-max` | `''` | Max adacovex result-cache entries before eviction |
 | `cache-expiry` | `''` | Result-cache entry lifetime in days (`0` = never expire) |
 | `prove-jobs` | `''` | GNATprove parallelism for the `prove` subcommand |
-| `prove-level` | `''` | GNATprove proof effort 0-4 |
+| `prove-level` | `''` | GNATprove proof effort 0-4. Empty leaves the binary's default of `4`, the deepest effort |
 | `prove-timeout` | `''` | GNATprove per-check prover timeout in seconds |
 | `prove-steps` | `''` | GNATprove max proof steps |
 | `prove-memlimit` | `''` | GNATprove prover memory limit in MB |
