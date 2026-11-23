@@ -125,9 +125,9 @@ coverage = false
 level = 1
 ```
 
-The `action-project-config` CI job runs the real composite action against a
-fixture that carries this file. It asserts `--level 1` in the proof options
-and the absence of the `coverage:` line.
+The composite action's `action-project-config` release job runs the real
+action against a fixture that carries this file. It asserts `--level 1` in the
+proof options and the absence of the `coverage:` line.
 
 ### Outputs
 

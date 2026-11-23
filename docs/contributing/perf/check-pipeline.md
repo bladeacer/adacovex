@@ -43,7 +43,9 @@ it, so a row like complexity measures the walk and nothing else.
 The gates run in three short serial phases around one parallel phase:
 
 1. **Head (serial).** `fmt` and `build` run alone. They rewrite sources and
-   build artefacts, so every later gate must see their product.
+   build artefacts, so every later gate must see their product. The docs-tree
+   regeneration follows them, so every later gate that reads AGENTS.md (the
+   surface-parity tagline check, for example) sees the current block.
 2. **Middle (serial).** The bundled-manual gates, the SPARK proof, the API
    docs, the SBOM, and the tools unit tests run alone. The first four write
    products that a later gate reads (`docs/api-docs/`, `sbom.json`, the
@@ -56,13 +58,18 @@ The gates run in three short serial phases around one parallel phase:
    order, so the log and the summary stay deterministic. The cap is 8 workers:
    the parity and tools gates are mostly I/O, and a wider fan-out made the
    CPU-bound shards slower through contention.
-4. **Tail (serial).** The count-sync gates run last, after the tests and the
-   proof have refreshed their inputs.
+4. **Tail (serial).** The sync gates run last, after the tests and the proof
+   have refreshed their inputs. They **regenerate** rather than verify: the
+   test counts and the AGENTS.md source tree, the proof metrics and badges,
+   the crate-description copies, and `requirements.txt`. A run therefore
+   refreshes the dynamic content of AGENTS.md instead of failing a change
+   that moved a page or a test. `just <gate> CHECK=1` verifies without
+   writing, and the CI quality job uses that form.
 
 A gate whose product another gate checks is never in the parallel phase. The
 phases are listed as `CHECK_SERIAL_HEAD`, `CHECK_SERIAL_MID`, and
-`CHECK_SERIAL_TAIL` in `tools/tasks.py`, and `tools/tests.py` fails when a
-gate is missing from the partition or appears in two phases.
+`CHECK_SERIAL_TAIL` in `tools/taskkit/checks.py`, and `tools/tests.py` fails
+when a gate is missing from the partition or appears in two phases.
 
 Two heavy parallel gates shard internally. The CLI end-to-end suite runs four
 `--shard INDEX/COUNT` processes, and the prove-diagnostics suite runs one

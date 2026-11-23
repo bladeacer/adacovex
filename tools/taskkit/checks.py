@@ -14,14 +14,15 @@ from .e2e import task_cli_e2e, task_prove_e2e
 from .gates import (task_action_parity_check, task_ascii_check,
                     task_book_links_check, task_book_spec_check,
                     task_changelog_check, task_complexity_check,
-                    task_csslint_check, task_description_check,
+                    task_csslint_check, task_description,
                     task_diagnostics_coverage_check, task_docs_check,
-                    task_docs_coverage_check, task_docs_tree_check,
+                    task_docs_coverage_check, task_docs_tree,
                     task_link_check, task_para_split_check,
-                    task_portability_check, task_proof_status_check,
-                    task_requirements_check, task_spark_off_check,
-                    task_surface_parity_check, task_test_count_check,
-                    task_test_layout_check, task_tldr_check, task_tools_check,
+                    task_portability_check, task_proof_status,
+                    task_requirements, task_requirements_check,
+                    task_spark_off_check, task_surface_parity_check,
+                    task_test_count, task_test_layout_check,
+                    task_tldr_check, task_tools_check,
                     task_version_consistency_check, task_version_source_check)
 
 
@@ -41,7 +42,10 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("tools unit tests", task_tools_check, None),
     ("version source", task_version_source_check, None),
     ("version consistency", task_version_consistency_check, None),
-    ("docs tree", task_docs_tree_check, None),
+    #  Regenerating, not verifying: `just check` refreshes the dynamic
+    #  content of AGENTS.md (the documentation tree) rather than failing a
+    #  change that moved a page.
+    ("docs tree", task_docs_tree, None),
     ("markdown links", task_link_check, None),
     ("user documentation", task_docs_check, None),
     ("paragraph splitter", task_para_split_check, None),
@@ -58,19 +62,27 @@ CHECK_GATES: List[Tuple[str, Callable[[], int],
     ("API docs", task_doc, skip_without_gnatdoc),
     ("offline manual", task_book, skip_without_sphinx),
     ("SBOM", task_sbom, skip_without_alr),
-    ("test counts in sync", task_test_count_check, None),
-    ("proof metrics in sync", task_proof_status_check, None),
-    ("description sync", task_description_check, None),
-    ("requirements sync", task_requirements_check, None),
+    #  The sync gates regenerate the dynamic content the run just produced:
+    #  test counts and the AGENTS.md source tree, the proof metrics and
+    #  badges, the crate description copies, and requirements.txt.  They run
+    #  last because they read what the tests, the proof, and the build wrote.
+    #  A stale generated file is refreshed here instead of failing the run;
+    #  `just <gate> CHECK=1` (and the CI workflow) verifies without writing.
+    ("test counts in sync", task_test_count, None),
+    ("proof metrics in sync", task_proof_status, None),
+    ("description sync", task_description, None),
+    ("requirements sync", task_requirements, None),
 ]
 
 
 #  The check runner keeps three short serial phases around one parallel
 #  phase.  `fmt` and `build` must be first and alone (they rewrite sources
-#  and artefacts); the manual, API-docs, SBOM, proof, and tools gates run
-#  serially next, so every read-only gate sees a stable tree; the count-sync
-#  gates run last, after the tests and proof have refreshed their inputs.
-CHECK_SERIAL_HEAD: List[str] = ["fmt", "build"]
+#  and artefacts), and the docs-tree regeneration follows them so every
+#  later gate reads the current AGENTS.md; the manual, API-docs, SBOM, proof,
+#  and tools gates run serially next, so every read-only gate sees a stable
+#  tree; the sync gates run last, after the tests and proof have refreshed
+#  their inputs, and they regenerate rather than verify.
+CHECK_SERIAL_HEAD: List[str] = ["fmt", "build", "docs tree"]
 CHECK_SERIAL_MID: List[str] = [
     "bundled offline manual links",
     "bundled offline manual spec",

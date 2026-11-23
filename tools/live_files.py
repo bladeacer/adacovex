@@ -26,16 +26,15 @@ Rules:
     anchored patterns as regex source and must never be rewritten.
 
 The release + index manifests (alire/releases/*.toml, index/**/covex-*.toml)
-carry the crate description, which embeds the test-count phrase, so they ARE
-scanned -- keeping them in sync with the canonical alire/long-description.txt in
-the same pass is exactly what prevents `just description CHECK=1` (and therefore
-bump-version / release) from re-propagating a stale count.
+carry the crate description, so they stay in the scanned set: a metric phrase
+added to the description must reach every copy, or `just description CHECK=1`
+(and therefore bump-version / release) would re-propagate a stale value.
 
-The description deliberately carries no proof metric. A VC count is a vanity
-number that moves on almost every release, and a past release's manifest
-describing the current tree's proof surface is misleading, so the manifests
-state the SPARK level only. Nothing here syncs a VC count into them, and
-`just description CHECK=1` is the gate that keeps that true.
+The description deliberately carries no metric. A test count or a VC count is
+a vanity number that moves on almost every change, and a past release's
+manifest describing the current tree's suite or proof surface is misleading,
+so the manifests state the SPARK level only. Nothing here syncs a count into
+them, and `just description CHECK=1` is the gate that keeps that true.
 """
 
 import os

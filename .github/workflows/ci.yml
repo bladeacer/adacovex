@@ -1,15 +1,90 @@
 name: CI
 
+#  The everyday gate: pull requests and pushes to main run the cheap code
+#  quality gates, the build + native suite, and the self-assessment.  The
+#  expensive surfaces live where they belong:
+#
+#    version-bump.yml  the macOS/Windows native suite, on the push that
+#                      bumps the version (once per release, not per commit)
+#    release.yml       the CLI/prove/Playwright e2e suites, the cross-
+#                      platform build matrix, and the publish pipeline, on
+#                      a release tag whose commit main carries
+#
+#  The scenario table in ci-scenario.md records which job runs when.
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  quality:
+    #  Every gate here is pure Python and needs no compiler, so the whole
+    #  set runs in one job: one runner, one checkout, and a failure names the
+    #  gate in its step log.  A gate whose host tool is missing SKIPs with its
+    #  reason (tools/taskkit/gates.py), exactly as `just check` does locally.
+    name: Code quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in \
+            ascii-check \
+            csslint-check \
+            spark-off-check \
+            changelog-check \
+            action-parity-check \
+            docs-coverage-check \
+            diagnostics-coverage-check \
+            test-layout-check \
+            portability-check \
+            surface-parity-check \
+            docs-tree-check \
+            link-check \
+            docs-check \
+            para-split-check \
+            tldr-check \
+            tools-check \
+            version-source-check \
+            version-consistency-check
+          do
+            echo "=== $gate ==="
+            python3 tools/tasks.py "$gate"
+          done
+      - name: Regenerated files in sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHECK=1 python3 tools/tasks.py description
+          CHECK=1 python3 tools/tasks.py requirements
+
+  build-test:
+    name: Build + native tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
+      - name: Build and run the native suite
+        shell: bash
+        run: python3 tools/tasks.py test
+      - name: Complexity gate (no god objects)
+        shell: bash
+        run: python3 tools/tasks.py complexity-check
+
   self-assessment:
     name: Self-assessment (all standards)
     runs-on: ubuntu-latest
@@ -96,307 +171,43 @@ jobs:
           require-coverage: 55
           gate-metric: statements
 
-  adacovex-tests:
-    name: Build + native tests
+  coverage-delta:
+    #  Pull-request regression gate: the docstring-coverage delta against the
+    #  PR base branch.  It used to live in pr-check.yml; one workflow now owns
+    #  both event types, so a PR runs nothing twice.
+    name: Docstring coverage delta (pull requests)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./
-        with:
-          target: .
-          dal: C
-          gnat-version: 16.1.0
-          build: true
-          run-tests: true
-          assess: false
-          #  Toolkit + adacovex result cache.  Content-addressed entries
-          #  make a restore either an exact hit or absent, so it can never
-          #  mask a regression.
-          cache: true
-          result-cache: true
-
-  platform-tests:
-    #  The native suite on every supported host.  A pull request runs the fast
-    #  subset (the native suite); a push to main adds the two Python e2e
-    #  suites.  The Playwright dashboard suite stays on Linux (`just e2e`),
-    #  because it needs a browser and the dashboard has no platform-specific
-    #  code.  The release workflow keeps the macOS/Windows build matrix.
-    name: Native tests (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: alire-project/setup-alire@latest
-        with:
-          version: '2.1.1'
-          toolchain: 'gnat_native=16.1.0 gprbuild'
-          cache: true
-      - name: Build and run the native suite
-        shell: bash
-        run: python3 tools/tasks.py test
-      - name: CLI end-to-end checks (main only)
-        if: github.event_name == 'push'
-        shell: bash
-        run: python3 tools/tasks.py cli-e2e
-      - name: Prove diagnostics (main only, skips without a prover)
-        if: github.event_name == 'push'
-        shell: bash
-        run: python3 tools/tasks.py prove-e2e
-
-  #  The macOS/Windows build matrix used to live here as `platform-build`.
-  #  It now runs in release.yml only: the cross-platform build check is a
-  #  release gate, so an ordinary push or pull request does not pay for the
-  #  two extra runners, and the native suite above covers the runtime.  Linux
-  #  coverage stays with the action jobs above, and docs/usage/platforms.md
-  #  points at the release workflow for the non-Linux build rows.
-  no-spark-off:
-    name: SPARK_Mode Off gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce no SPARK_Mode (Off) outside Types.Implementation
-        #  Gates run as plain Python: the runner image ships python3, and
-        #  tools/tasks.py owns the same recipe `just <task>` runs locally, so
-        #  CI needs neither make nor just.
-        run: python3 tools/tasks.py spark-off-check
-
-  complexity-gate:
-    # Cyclomatic-complexity + LOC gate: fails when a function exceeds the
-    # decision-point cap or a file dominates the codebase (god objects /
-    # god functions / extra-long files).  See adacovex complexity --help.
-    #
-    #  Runs on push to main only.  pr-check.yml already runs it on every
-    #  pull request, so running it here on PRs would duplicate the work.
-    #  The gate uses a plain Alire setup (no composite action) so it stays a
-    #  cheap standalone check on main pushes where pr-check.yml is not
-    #  triggered.
-    if: github.event_name == 'push'
-    name: Complexity gate (no god objects)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: alire-project/setup-alire@latest
-        with:
-          version: '2.1.1'
-          toolchain: 'gnat_native=16.1.0 gprbuild'
-          cache: true
-      - name: Enforce complexity + file-size caps
-        run: python3 tools/tasks.py complexity-check
-
-  action-parity:
-    # Feature gate: the composite action must mirror the base CLI option set
-    # (and the docs/usage/ci-cd.md input table) 1:1.  Fails when a CLI flag, action
-    # input, or docs row drifts out of sync.
-    name: Action/CLI/docs parity gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce action/CLI/docs parity
-        run: python3 tools/tasks.py action-parity-check
-
-  docs-coverage:
-    # Feature gate: the user documentation must cover the base CLI option set,
-    # the served route set, and every hand-written usage/contributing page
-    # (each named by a {toctree}).  Fails when a flag, route, or page is
-    # missing from the docs.
-    name: Documentation coverage gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce documentation coverage
-        run: python3 tools/tasks.py docs-coverage-check
-
-  diagnostics-coverage:
-    # Feature gate: the diagnostics matrix, the Fix_Hint branches, and the
-    # prove-diagnostics fixtures must name the same check kinds.  Fails when
-    # a classification, a fixture, or its documented row drifts.
-    name: Diagnostics coverage gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce diagnostics coverage
-        run: python3 tools/tasks.py diagnostics-coverage-check
-
-  test-layout:
-    # Feature gate: one test root, every fixture a real project, and no
-    # workflow writing a project inline with a heredoc.
-    name: Test layout gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce the test layout
-        run: python3 tools/tasks.py test-layout-check
-
-  portability:
-    # Feature gate: a test may not hard-code a POSIX path, shell invocation,
-    # or permission bit without a documented allow-list entry.
-    name: Test portability gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce test portability
-        run: python3 tools/tasks.py portability-check
-
-  surface-parity:
-    # Feature gate: the --help, man, tldr, cli-reference, and completion
-    # surfaces must advertise the same subcommands and flag shapes, and the
-    # prose surfaces must carry the README tagline.  Fails on drift or on a
-    # stale command example.
-    name: CLI surface parity gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce CLI surface parity
-        run: python3 tools/tasks.py surface-parity-check
-
-  version-consistency:
-    # Feature gate: the two manifests, the generated Ada version spec, the
-    # built binary, and the committed sbom.json must all name the same
-    # version.  The release task used to prove the tree before it built the
-    # release binary, so the proof pass and every artifact it wrote came
-    # from the previous release's binary.  This is the tree-wide backstop.
-    name: Version consistency gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Enforce one version across every source
-        run: |
-          python3 tools/gen-version.py --check
-          python3 tools/tasks.py version-consistency-check
-
-  consumer-run-tests:
-    timeout-minutes: 15
-    if: github.event_name != 'pull_request'
-    # Regression test for the action's run-tests in a CONSUMER workspace:
-    # build:true builds adacovex in a scratch checkout, so the action must
-    # build the target's native tests itself before running test-command
-    # (this is what broke Ada_CRDT's release workflow -- ./test_crdt was
-    # never built).  The workspace root is restructured into a minimal
-    # zero-dependency fixture (no adacovex.gpr) so the consumer branch of
-    # the action triggers, then `uses: ./` runs the action against it.
-    name: Action run-tests (consumer workspace)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Restructure workspace into a consumer fixture
-        shell: bash
-        run: |
-          set -euxo pipefail
-          SRC="$RUNNER_TEMP/adacovex-src"
-          mkdir -p "$SRC"
-          shopt -s dotglob
-          mv "$GITHUB_WORKSPACE"/* "$SRC/" 2>/dev/null || true
-          shopt -u dotglob
-          # The fixture is the workspace root: a tiny Alire crate whose
-          # `alr build` produces ./fixture_main (Exec_Dir ".").
-          cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
-          # Copy the committed fixture tree; no project is written inline.
-          cp -R "$SRC/src/tests/projects/consumer-action/." \
-             "$GITHUB_WORKSPACE/"
-      - uses: ./
-        with:
-          target: .
-          dal: C
-          gnat-version: 16.1.0
-          build: true
-          run-tests: true
-          test-command: ./fixture_main
-          assess: false
-          #  Toolkit + adacovex result cache (content-addressed, so a
-          #  restore is either an exact hit or absent).
-          cache: true
-          result-cache: true
-
-  action-project-config:
-    timeout-minutes: 20
-    if: github.event_name != 'pull_request'
-    # Regression test for project configuration through the composite action:
-    # the action runs the binary with --target, so a target that carries
-    # adacovex.toml must change the run exactly as the binary does (project
-    # file over global file and built-in default).  The fixture writes
-    # [prove] level = 1 and coverage = false, then the step after the action
-    # asserts both effects from the teed proof log.
-    name: Action project config (adacovex.toml)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Restructure workspace into a configured consumer fixture
-        shell: bash
-        run: |
-          set -euxo pipefail
-          SRC="$RUNNER_TEMP/adacovex-src"
-          mkdir -p "$SRC"
-          shopt -s dotglob
-          mv "$GITHUB_WORKSPACE"/* "$SRC/" 2>/dev/null || true
-          shopt -u dotglob
-          cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
-          # Copy the committed fixture tree; no project is written inline.
-          cp -R "$SRC/src/tests/projects/action-project-config/." \
-             "$GITHUB_WORKSPACE/"
-      - uses: ./
-        with:
-          target: .
-          dal: C
-          gnat-version: 16.1.0
-          build: true
-          prove: true
-          assess: false
-          cache: true
-          result-cache: false
-      - name: Assert the project file changed the run
-        shell: bash
-        run: |
-          set -euxo pipefail
-          python3 src/tests/e2e/action/assert_project_config.py \
-            "$RUNNER_TEMP/adacovex-prove.out"
-
-  coverage-gate:
-    name: Docstring coverage gate (release tags)
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          fetch-tags: true
-      - uses: alire-project/setup-alire@latest
+      - uses: ./
         with:
-          version: '2.1.1'
-          toolchain: 'gnat_native=16.1.0 gprbuild'
+          target: .
+          standard: all
+          gnat-version: 16.1.0
+          build: true
+          coverage-delta: ${{ github.event.pull_request.base.sha }}
+          #  Toolkit + adacovex result cache.  Result-cache entries are
+          #  keyed by SHA-256 content hashes, so a restore is either an
+          #  exact hit or absent and can never mask a regression.
           cache: true
-      - name: Run coverage gate
-        shell: bash
-        run: python3 tools/tasks.py coverage-gate
+          result-cache: true
 
   summary:
     name: CI summary
     if: always()
-    needs: [self-assessment, adacovex-tests, platform-tests, no-spark-off, complexity-gate, action-parity, docs-coverage, diagnostics-coverage, test-layout, portability, version-consistency, consumer-run-tests, action-project-config, coverage-gate]
+    needs: [quality, build-test, self-assessment, coverage-delta]
     runs-on: ubuntu-latest
     steps:
       - name: Write CI summary
         shell: bash
         env:
+          QUALITY: ${{ needs.quality.result }}
+          BUILD: ${{ needs.build-test.result }}
           SELF: ${{ needs.self-assessment.result }}
-          TESTS: ${{ needs.adacovex-tests.result }}
-          PLATFORM: ${{ needs.platform-tests.result }}
-          OFFOFF: ${{ needs.no-spark-off.result }}
-          COMPLEX: ${{ needs.complexity-gate.result }}
-          PARITY: ${{ needs.action-parity.result }}
-          DOCS: ${{ needs.docs-coverage.result }}
-          DIAG: ${{ needs.diagnostics-coverage.result }}
-          LAYOUT: ${{ needs.test-layout.result }}
-          PORTABLE: ${{ needs.portability.result }}
-          VERSION: ${{ needs.version-consistency.result }}
-          CONSUMER: ${{ needs.consumer-run-tests.result }}
-          ACTIONCFG: ${{ needs.action-project-config.result }}
-          GATE: ${{ needs.coverage-gate.result }}
+          DELTA: ${{ needs.coverage-delta.result }}
         run: |
           set -euo pipefail
           FAILED=0
@@ -405,23 +216,13 @@ jobs:
             echo ''
             echo '| Job | Result |'
             echo '|-----|--------|'
+            echo "| Code quality gates | $QUALITY |"
+            echo "| Build + native tests | $BUILD |"
             echo "| Self-assessment (all standards) | $SELF |"
-            echo "| Build + native tests | $TESTS |"
-            echo "| Native tests (Linux, macOS, Windows) | $PLATFORM |"
-            echo "| SPARK_Mode Off gate | $OFFOFF |"
-            echo "| Complexity gate (no god objects) | $COMPLEX |"
-            echo "| Action/CLI/docs parity gate | $PARITY |"
-            echo "| Documentation coverage gate | $DOCS |"
-            echo "| Diagnostics coverage gate | $DIAG |"
-            echo "| Test layout gate | $LAYOUT |"
-            echo "| Test portability gate | $PORTABLE |"
-            echo "| Version consistency gate | $VERSION |"
-            echo "| Action run-tests (consumer workspace) | $CONSUMER |"
-            echo "| Action project config (adacovex.toml) | $ACTIONCFG |"
-            echo "| Coverage gate (push only) | $GATE |"
+            echo "| Docstring coverage delta (pull requests) | $DELTA |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          for R in "$SELF" "$TESTS" "$PLATFORM" "$OFFOFF" "$COMPLEX" "$PARITY" "$DOCS" "$DIAG" "$LAYOUT" "$PORTABLE" "$VERSION" "$CONSUMER" "$ACTIONCFG" "$GATE"; do
+          for R in "$QUALITY" "$BUILD" "$SELF" "$DELTA"; do
             if [ "$R" = "failure" ]; then
               FAILED=1
               echo "::error::A CI job failed -- see the failing job logs and its adacovex assessment summary." >&2

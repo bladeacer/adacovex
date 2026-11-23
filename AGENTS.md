@@ -718,7 +718,7 @@ compatibility shim. The table names the canonical target for each task.
 
 | Target | Description |
 |--------|-------------|
-| `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the count-sync checks. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
+| `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the docs-tree regeneration, the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the sync gates -- which **regenerate** the dynamic content (test counts and the AGENTS.md source tree, proof metrics and badges, the crate-description copies, `requirements.txt`) instead of failing a stale one. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
 | `test` | Build + run the 2468-test native suite |
@@ -775,9 +775,14 @@ not revert them.
 
 ## Workflows
 
-GitHub Actions (composite `./action.yml` + `ci.yml` / `pr-check.yml` /
+GitHub Actions (composite `./action.yml` + `ci.yml` / `version-bump.yml` /
 `release.yml`), action inputs/outputs, result caching, and release bundling:
-[docs/usage/ci-cd.md](docs/usage/ci-cd.md).
+[docs/usage/ci-cd.md](docs/usage/ci-cd.md). `ci.yml` runs the cheap quality
+Gates, the build + native suite, and the self-assessment on a pull request and
+a `main` push; `version-bump.yml` runs the macOS/Windows native suite when the
+version in `alire-dev.toml` moves; `release.yml` runs the cross-platform build,
+the composite-action regression, and the end-to-end suites on a release tag.
+Every trigger and its jobs: [ci-scenario.md](ci-scenario.md).
 
 Installation methods, target-project requirements, and running against another
 project: [README.md](README.md#installing-adacovex).
@@ -802,7 +807,7 @@ script -- early-exit `--help`/`--version`, local dashboard `--serve` /
 When a CLI flag is added, add the matching action input **and** its
 docs/usage/ci-cd.md row in the same change -- or the gate fails.
 
-Every CI run (the composite action and the `ci.yml` / `pr-check.yml` /
+Every CI run (the composite action and the `ci.yml` / `version-bump.yml` /
 `release.yml` workflows) publishes a **Markdown summary** at the bottom of the
 job page via `$GITHUB_STEP_SUMMARY`: the action appends an assessment table
 (version, target, compliance, SPARK level, tests, coverage) plus an
@@ -830,10 +835,12 @@ The `action-parity-check` gate above is what keeps these in sync -- a CLI
 flag without its input, an input without its docs row, or a docs row without
 its input all fail CI. The only assessment that is *not* reproduced in CI is
 `just run-ada-crdt` (a local dogfood regression against `../Ada_CRDT`);
-`ci.yml` runs `--standard=all` self-assessment, the native tests, and the
-release-tag coverage gate instead, and `release.yml` runs the macOS/Windows
-`platform-build` matrix -- the cross-platform build check -- only when a
-release tag is pushed. Every gate job in the workflows runs as plain Python
+`ci.yml` runs the cheap quality gates, the native tests, and the
+`--standard=all` self-assessment instead, `version-bump.yml` runs the
+macOS/Windows native suite when the version moves, and `release.yml` runs the
+cross-platform `platform-build` matrix, the composite-action regression, and
+the end-to-end suites only when a release tag is pushed. Every gate job in
+the workflows runs as plain Python
 (`python3 tools/tasks.py <gate>`, the recipe `just <gate>` runs locally), so
 a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 `python3`.

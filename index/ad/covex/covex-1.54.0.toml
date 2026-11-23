@@ -1,7 +1,7 @@
 # Template index entry for the Alire community index.
 # Copied and version-replaced by just bump-version / just release.
 name = "covex"
-description = "Ada/SPARK coverage, proof, multi-standard compliance tool"
+description = "Ada/SPARK formal verification and compliance toolkit"
 long-description = """
 Zero-dependency Ada/SPARK CLI tool for coverage analysis, proof verification,
 test-result parsing, multi-standard safety-compliance assessment (DO-178C /
@@ -32,8 +32,6 @@ ISO 26262 / IEC 62304), and interactive dashboards.
   NOT a declared dependency -- the prove subcommand resolves it at run time
   (per-project manifest, PATH, cached toolchain, or download), so the covex
   crate installs and builds with no toolkit beyond the GNAT compiler
--  Self-assessment: 100% docstring coverage, Gold SPARK, DAL-C / ASIL B /
-  Class A Achieved, 2468/2468 native tests passing
 """
 version = "1.54.0"
 project-files = ["adacovex.gpr"]

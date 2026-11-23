@@ -1,0 +1,125 @@
+name: Version bump
+
+#  The cross-platform native suite runs when, and only when, main gains a new
+#  version.  A macOS or Windows runner costs minutes of queue time and proves
+#  nothing a Linux run has not already proved for an ordinary source change,
+#  so those hosts are reserved for the one commit per release that changes
+#  the version.  The check reads alire-dev.toml (the version source for a
+#  source checkout) between HEAD and its parent, so editing a dev-only
+#  dependency in that file does not trigger it.
+#
+#  A tag push runs the same suite in release.yml, on the commit the tag names;
+#  this workflow covers the bump commit itself, before the tag exists.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'alire-dev.toml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: version-bump-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect a version change
+    runs-on: ubuntu-latest
+    outputs:
+      bumped: ${{ steps.diff.outputs.bumped }}
+      version: ${{ steps.diff.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Compare the version with the parent commit
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/read_version.py <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          try:
+              text = Path(sys.argv[1]).read_text(encoding="utf-8")
+          except OSError:
+              print("")
+              raise SystemExit(0)
+          match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+          print(match.group(1) if match else "")
+          PY
+          NEW="$(python3 /tmp/read_version.py alire-dev.toml)"
+          : > /tmp/parent-alire-dev.toml
+          if git rev-parse --verify -q HEAD^ >/dev/null; then
+            git show HEAD^:alire-dev.toml > /tmp/parent-alire-dev.toml 2>/dev/null || true
+          fi
+          PARENT="$(python3 /tmp/read_version.py /tmp/parent-alire-dev.toml)"
+          echo "parent='${PARENT}' current='${NEW}'"
+          if [ -n "$NEW" ] && [ "$NEW" != "$PARENT" ]; then
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+            echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          else
+            echo "bumped=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::alire-dev.toml changed without a version bump; the platform suite is skipped."
+          fi
+
+  platform-tests:
+    #  The native suite on every supported host, once per release version.
+    #  The release workflow repeats it on the tag, for the tagged commit; this
+    #  run catches a version bump that breaks a non-Linux build before the tag
+    #  is cut.
+    name: Native tests (${{ matrix.os }})
+    needs: [detect]
+    if: needs.detect.outputs.bumped == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
+      - name: Build and run the native suite
+        shell: bash
+        run: python3 tools/tasks.py test
+
+  summary:
+    name: Version bump summary
+    if: always()
+    needs: [detect, platform-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write summary
+        shell: bash
+        env:
+          BUMPED: ${{ needs.detect.outputs.bumped }}
+          VERSION: ${{ needs.detect.outputs.version }}
+          PLATFORM: ${{ needs.platform-tests.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## Version bump summary'
+            echo ''
+            echo '| Item | Value |'
+            echo '|------|-------|'
+            echo "| Version bumped | $BUMPED |"
+            echo "| Version | $VERSION |"
+            echo "| Native tests (macOS, Windows) | $PLATFORM |"
+            echo ''
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$BUMPED" = "true" ] && [ "$PLATFORM" = "failure" ]; then
+            echo "::error::The version bump to $VERSION fails the native suite on a non-Linux host." >&2
+            echo '**FAILED: a version-bump build did not pass on macOS or Windows.**' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo 'Version bump workflow passed.'

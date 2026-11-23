@@ -32,9 +32,10 @@ cherry-picking rows across versions.
 ## Status (2026-11-21)
 
 v1.74.0 is closed; v1.75.0 is in progress. The tree holds 2468/2468 native
-tests across 30 categories, 180 CLI e2e checks (one skips without a
-prover), 274 prove-e2e checks over the committed fixture projects, and
-1058 VCs at Gold.
+tests across 30 categories, 188 CLI e2e checks (the prove-configuration group
+now runs whenever a prover is resolvable, instead of skipping on any host
+without one on `$PATH`), 274 prove-e2e checks over the committed fixture
+projects, and 1058 VCs at Gold.
 
 The test tree has one root: `src/tests/` holds the native suite, the e2e
 suites in `src/tests/e2e/`, and the fixture projects in
@@ -66,8 +67,9 @@ After `just test` and `just prove`, run `just test-count` and
    `just complexity-check` after a change there.
 2. `src/tests/e2e/prove/prove_diagnostics.py` sets `NO_COLOR=1` so the text
    assertions compare plain output. Keep that when adding checks.
-3. `just test-count` rewrites the test count in every historical release
-   manifest. Commit the generated manifests as-is.
+3. `just test-count` rewrites the live docs and the AGENTS.md tree. The crate
+description carries no test count, so no historical release manifest is
+rewritten; commit the generated manifests as-is.
 4. `Adacovex.Prove_Output` counts as a proof unit. `just proof-status` keeps
    the VC ledger, the badges, and the timing page in sync.
 5. `just check` runs `fmt` first. Re-run the full chain after a source edit; a

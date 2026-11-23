@@ -71,10 +71,120 @@ jobs:
             exit 1
           fi
 
+  action-tests:
+    #  Composite-action regression suite, run on a release rather than on every
+    #  push: the consumer workspace (build:true must build the target's tests
+    #  itself) and the project-file path (a target's adacovex.toml must change
+    #  the run exactly as the binary does).  Both were in ci.yml; they are
+    #  release gates now, so an ordinary commit does not pay for them.
+    name: Composite action regression
+    needs: [guard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Restructure workspace into a consumer fixture
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SRC="$RUNNER_TEMP/adacovex-src"
+          mkdir -p "$SRC"
+          shopt -s dotglob
+          mv "$GITHUB_WORKSPACE"/* "$SRC/" 2>/dev/null || true
+          shopt -u dotglob
+          cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
+          # Copy the committed fixture tree; no project is written inline.
+          cp -R "$SRC/src/tests/projects/consumer-action/." \
+             "$GITHUB_WORKSPACE/"
+      - uses: ./
+        with:
+          target: .
+          dal: C
+          gnat-version: 16.1.0
+          build: true
+          run-tests: true
+          test-command: ./fixture_main
+          assess: false
+          cache: true
+          result-cache: true
+      - name: Restructure workspace into a configured consumer fixture
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SRC="$RUNNER_TEMP/adacovex-src"
+          shopt -s dotglob
+          rm -rf "$GITHUB_WORKSPACE"/*
+          shopt -u dotglob
+          cp "$SRC/action.yml" "$GITHUB_WORKSPACE/action.yml"
+          cp -R "$SRC/src/tests/projects/action-project-config/." \
+             "$GITHUB_WORKSPACE/"
+      - uses: ./
+        with:
+          target: .
+          dal: C
+          gnat-version: 16.1.0
+          build: true
+          prove: true
+          assess: false
+          cache: true
+          result-cache: false
+      - name: Assert the project file changed the run
+        shell: bash
+        run: |
+          set -euxo pipefail
+          #  The assert script lives in the moved source tree, not in the
+          #  fixture workspace the action ran against.
+          python3 "$RUNNER_TEMP/adacovex-src/src/tests/e2e/action/assert_project_config.py" \
+            "$RUNNER_TEMP/adacovex-prove.out"
+
+  e2e:
+    #  The CLI, prove-diagnostics, and dashboard e2e suites.  They exercise the
+    #  real binary end to end and need a prover for the prove-side group, so
+    #  they run on a release: the dev manifest is swapped in (pinned
+    #  gnatprove), a small committed fixture proves once to deploy that
+    #  prover into the toolkit cache, and the suites then run against it.
+    name: End-to-end suites
+    needs: [guard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: alire-project/setup-alire@latest
+        with:
+          version: '2.1.1'
+          toolchain: 'gnat_native=16.1.0 gprbuild'
+          cache: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Swap in the development manifest (pinned gnatprove)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp -f alire-dev.toml alire.toml
+          alr build
+      - name: Provision the pinned prover into the toolkit cache
+        #  The e2e suites ask the binary where it would find a prover.  This
+        #  one small committed fixture proves at level 0 through the pinned
+        #  version, which deploys gnatprove once; every later run reuses it.
+        env:
+          ADACOVEX_GNATPROVE_VERSION: '16.1.0'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ./bin/adacovex prove --no-sbom \
+            -t src/tests/projects/contract-errors/assertion/fixed -l 0 -j 1
+      - name: CLI, prove-diagnostics, and dashboard suites
+        shell: bash
+        run: python3 tools/tasks.py e2e
+      - name: Prove diagnostics suite
+        shell: bash
+        run: python3 tools/tasks.py prove-e2e
+
   release:
     name: Build and publish release artifacts
     runs-on: ubuntu-latest
-    needs: [guard, platform-build]
+    needs: [guard, platform-build, action-tests, e2e]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -295,7 +405,7 @@ jobs:
   summary:
     name: Release summary
     if: always()
-    needs: [guard, release, platform-build]
+    needs: [guard, release, platform-build, action-tests, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Write release summary
@@ -304,6 +414,8 @@ jobs:
           GUARD: ${{ needs.guard.result }}
           RELEASE: ${{ needs.release.result }}
           PLATFORM: ${{ needs.platform-build.result }}
+          ACTIONS: ${{ needs.action-tests.result }}
+          E2E: ${{ needs.e2e.result }}
           VERSION: ${{ github.ref_name }}
         run: |
           set -euo pipefail
@@ -316,10 +428,13 @@ jobs:
             echo "| Tag on main | $GUARD |"
             echo "| Build + self-assessment + publish | $RELEASE |"
             echo "| Cross-platform build + tests (macOS, Windows) | $PLATFORM |"
+            echo "| Composite action regression | $ACTIONS |"
+            echo "| End-to-end suites | $E2E |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$GUARD" = "failure" ] || [ "$RELEASE" = "failure" ] \
-            || [ "$PLATFORM" = "failure" ]; then
+            || [ "$PLATFORM" = "failure" ] || [ "$ACTIONS" = "failure" ] \
+            || [ "$E2E" = "failure" ]; then
             echo "::error::Release pipeline failed for $VERSION." >&2
             echo '**FAILED: release pipeline did not complete.**' >> "$GITHUB_STEP_SUMMARY"
             exit 1

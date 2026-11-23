@@ -31,9 +31,9 @@ jobs:
 ```
 
 This job builds adacovex. It runs the target's native tests and the full
-assessment. It gates on Gold SPARK, 100% docstring coverage, and 2413
-passing tests. On failure, the job publishes `adacovex-assessment` artifacts
-and Markdown summaries.
+assessment. It gates on Gold SPARK, 100% docstring coverage, and the test
+count the target declares. On failure, the job publishes
+`adacovex-assessment` artifacts and Markdown summaries.
 
 ### PR coverage gate
 
@@ -138,3 +138,6 @@ The workflows themselves -- the `.github` workflow files, the Markdown
 summaries and loud failures, the debugging guide, release version bundling,
 floating tags, and the consumer-manifest prerequisites -- are covered on
 [CI/CD workflows, summaries, and release bundling](ci-cd-workflows.md).
+`ci-scenario.md` in the repository root records which job runs for each
+trigger (pull request, `main` push, version bump, release tag) and which
+caching rule applies.

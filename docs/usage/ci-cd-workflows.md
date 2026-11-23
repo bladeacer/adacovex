@@ -4,50 +4,46 @@ This page covers the GitHub Actions workflows, the Markdown summaries and loud f
 
 ## Workflows
 
-- **`.github/workflows/ci.yml`** -- the gate jobs on push to `main` and pull
-  requests, then one `summary` job that aggregates their results:
+Three workflow files share the work, and each one runs only what its trigger
+makes meaningful. `ci-scenario.md` in the repository root is the worksheet
+that records the decision for every trigger.
+
+- **`.github/workflows/ci.yml`** -- push to `main`, every pull request, and a
+  manual dispatch. Four jobs and one summary:
+  - `quality` -- the pure-Python gates in one job, one step each: ASCII, the
+    CSS 4px rule, the `SPARK_Mode (Off)` rule, the changelog format, the
+    action/CLI/docs parity, documentation coverage, diagnostics coverage, the
+    test layout, test portability, CLI surface parity, the docs tree, markdown
+    links, user documentation, the paragraph splitter, the tldr structure, the
+    tools unit tests, the version source, and version consistency. It then
+    verifies that the crate description and `requirements.txt` are in sync
+    without writing (`CHECK=1`).
+  - `build-test` -- `alr build` plus the native suite, then the complexity
+    and file-size gate.
   - `self-assessment` -- build + prove + assess at `--standard=all` (so the
     DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
     gated), with the Gold / 100% docstrings / test-count / 100% proof
-    thresholds.
-  - `adacovex-tests` -- build + native test suite (`run-tests`, `assess: false`).
-  - `coverage-gate` (push only) -- runs the coverage gate, comparing
-    docstring coverage between the latest two release tags (a maintainer
-    step; see the [developer guide](../contributing/developer-guide.md)).
-  - `no-spark-off` -- fails when a `SPARK_Mode (Off)` pragma appears outside
-    the two permitted container packages.
-  - `complexity-gate` -- fails on a god object, a god function, or a file
-    above its line or percentage cap.
-  - `action-parity` -- fails when the composite action stops mirroring the
-    base CLI option set.
-  - `docs-coverage` -- fails when a CLI flag, a served route, or a
-    hand-written usage or contributing page is missing from the user docs.
-  - `surface-parity` -- fails when the `--help` usage block, the man SYNOPSIS,
-    the cli-reference fence, or a completion script stops advertising the
-    parser's subcommand set, or when the tldr/help/man prose drops the README
-    tagline.
-  - `version-consistency` -- fails when a manifest, the generated version
-    spec, the built binary, and the committed `sbom.json` name different
-    versions. See [Delivery and versioning](../contributing/architecture-pipeline.md#delivery-and-versioning).
-  - `consumer-run-tests` -- runs the action's test step in a restructured
-    consumer workspace.
-  - `action-project-config` -- runs the real action against a fixture that
-    carries `adacovex.toml`, then asserts the project file changed the prove
-    run (`--level 1`, no coverage line). See [Project
-    configuration](ci-cd-action.md#project-configuration).
-  - `summary` -- writes the Markdown summary table and exits 1 when any gate
-    job failed.
-- **`.github/workflows/pr-check.yml`** -- runs `--coverage-delta` against
-  `pull_request.base.sha` to fail PRs that drop docstring coverage.
-- **`.github/workflows/release.yml`** -- on a `v*` tag, first checks that
-  the tagged commit is on `main`, then runs the
-  `platform-build` matrix (a plain `alr build` plus the native suite on
-  macOS and Windows; the cross-platform check runs only at release time and
-  gates the publish), then runs the `action-parity`, `docs-coverage`, and
-  `surface-parity` gates, builds the release binary, runs GNATprove,
-  validates the `--standard=all` self-assessment, and publishes the GitHub
-  Release (see [Release bundling](#release-bundling)). A tag that is not on
-  `main` stops the workflow before any build or publish job starts.
+    thresholds and the statement-coverage floor.
+  - `coverage-delta` (pull requests only) -- `--coverage-delta` against
+    `pull_request.base.sha`, so a PR that drops docstring coverage fails.
+  - `summary` -- writes the Markdown summary table and exits 1 when any job
+    failed.
+- **`.github/workflows/version-bump.yml`** -- push to `main` that changes
+  `alire-dev.toml`. It compares the `version` line with the parent commit and
+  runs the macOS and Windows native suite only when the version moved. A
+  dev-only dependency edit in that file does not start the matrix.
+- **`.github/workflows/release.yml`** -- on a `v*` tag. It first checks that
+  the tagged commit is on `main` (a tag off `main` stops every later job),
+  then runs four gates in parallel: the `platform-build` matrix (a plain
+  `alr build` plus the native suite on macOS and Windows), the composite
+  action regression (the consumer workspace's `run-tests` and the
+  `adacovex.toml` project-file assertion; see [Project
+  configuration](ci-cd-action.md#project-configuration)), and the end-to-end
+  suites (CLI, prove diagnostics, and Playwright; one small fixture proves
+  first so the pinned prover is in the toolkit cache). The publish job
+  waits for all four, re-runs the parity gates, builds the release binary,
+  runs GNATprove, validates the `--standard=all` self-assessment, and
+  publishes the GitHub Release (see [Release bundling](#release-bundling)).
 
 Every gate job runs as plain Python (`python3 tools/tasks.py <gate>`), the
 same recipe `just <gate>` runs locally. The Ubuntu runner images ship
@@ -188,9 +184,9 @@ The bundled manual is not built in CI, so it needs no cache there. Sphinx and
 the uv/pip wheel cache are local developer concerns (`just book`,
 `docs-venv`).
 
-The `complexity-gate` CI job now runs only on `push: main`; `pr-check.yml`
-already runs it on every pull request, so the gate no longer duplicates work
-across the two workflow files on PRs.
+The complexity gate runs inside `build-test` for both events. The old
+`pr-check.yml` file no longer exists: `ci.yml` handles both pull requests and
+`main` pushes, so a pull request runs each gate once instead of twice.
 
 ### Release version bundling
 
@@ -207,15 +203,13 @@ reads the version from `alire-dev.toml` instead.
 ### PR coverage gate
 
 Gate every pull request so docstring coverage does not regress against the
-base branch. This is exactly what `--coverage-delta` was built for:
+base branch. This is exactly what `--coverage-delta` was built for, and the
+`coverage-delta` job in `ci.yml` runs it on every pull request:
 
 ```yaml
-# .github/workflows/pr-check.yml
-on:
-  pull_request:
-jobs:
+# .github/workflows/ci.yml (the coverage-delta job)
   coverage-delta:
-    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -227,8 +221,7 @@ jobs:
           coverage-delta: ${{ github.event.pull_request.base.sha }}
 ```
 
-The action exits non-zero when coverage drops, failing the check. This
-workflow ships in the repo at `.github/workflows/pr-check.yml`.
+The action exits non-zero when coverage drops, failing the check.
 
 The release version bundling, the changelog listing, the floating tags, and
 the consumer-manifest prerequisites are on [Release bundling, tags, and

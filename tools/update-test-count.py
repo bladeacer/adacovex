@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Update the current test-suite counts in the repo after `just test`.
 
-The test counts in AGENTS.md, README.md, Makefile, the CI workflows,
-alire.toml, and tools/agents-tree.map were edited by hand and went stale on
-every test change.  This script parses docs/test_result.md (written by
+The test counts in AGENTS.md, README.md, Makefile, the CI workflows, and
+tools/agents-tree.map were edited by hand and went stale on every test change.
+The crate description deliberately carries no test count (see
+tools/live_files.py), so no manifest is rewritten here.  This script parses docs/test_result.md (written by
 `just test` / test_runner), extracts the per-category counts and the
 Passed/Failed totals, and rewrites the anchored test-count phrases across the
 repo.  It then updates tools/agents-tree.map and regenerates the AGENTS.md

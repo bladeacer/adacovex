@@ -1,1 +1,1 @@
-Ada/SPARK coverage, proof, multi-standard compliance tool
+Ada/SPARK formal verification and compliance toolkit
