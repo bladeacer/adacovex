@@ -216,6 +216,10 @@ inputs:
     description: 'Disable GNATprove contextual-analysis inlining.'
     required: false
     default: 'false'
+  prove-counterexamples:
+    description: 'Ask the prover for a breaking input on every failed check (on, the default). Set off to skip the counterexample search, so a failed check reports the verdict alone.'
+    required: false
+    default: 'on'
   prove-args:
     description: 'Extra raw GNATprove flags to pass through verbatim to the prove subcommand (e.g. --prover=cvc5 --timeout=5). The value is space-split into gnatprove arguments.'
     required: false
@@ -560,6 +564,9 @@ runs:
         fi
         if [ "${{ inputs.prove-no-inlining }}" == 'true' ]; then
           PROVE_ARGS+=(--no-inlining)
+        fi
+        if [ -n "${{ inputs.prove-counterexamples }}" ]; then
+          PROVE_ARGS+=(--counterexamples="${{ inputs.prove-counterexamples }}")
         fi
         #  Quiet (suppression of benign GNATprove info messages) is the
         #  default; CI passes --verbose so its output stays authoritative.
