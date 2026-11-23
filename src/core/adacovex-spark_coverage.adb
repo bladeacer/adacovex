@@ -2379,28 +2379,20 @@ package body Adacovex.Spark_Coverage is
                Put_Line (",");
             end if;
             Put ("    {");
+            --  Put_Json_Nat writes the comma before every field after the
+            --  first, so the row must not add one as well: a doubled comma
+            --  makes the document invalid JSON.
             Put_Json_Nat (True, "stmts_proved", U.Stmts_Proved);
-            Put (", ");
             Put_Json_Nat (False, "stmts_not_covered", U.Stmts_Not_Covered);
-            Put (", ");
             Put_Json_Nat (False, "stmts_total", U.Stmts_Total);
-            Put (", ");
             Put_Json_Nat (False, "subs_proved", U.Subs_Proved);
-            Put (", ");
             Put_Json_Nat (False, "subs_total", U.Subs_Total);
-            Put (", ");
             Put_Json_Nat (False, "checks_proved", U.Checks_Proved);
-            Put (", ");
             Put_Json_Nat (False, "checks_total", U.Checks_Total);
-            Put (", ");
             Put_Json_Nat (False, "warnings", U.Warnings);
-            Put (", ");
             Put_Json_Nat (False, "off_irreducible", U.Off_Irreducible);
-            Put (", ");
             Put_Json_Nat (False, "off_io_bound", U.Off_IO_Bound);
-            Put (", ");
             Put_Json_Nat (False, "off_work_queue", U.Off_Work_Queue);
-            Put (", ");
             Put_Json_Nat (False, "not_covered_subs", U.Not_Covered_Subs);
             Put ("    }");
          end;
@@ -2418,24 +2410,16 @@ package body Adacovex.Spark_Coverage is
             end if;
             Put ("    {");
             Put_Json_Nat (True, "stmts_proved", G.Stmts_Proved);
-            Put (", ");
             Put_Json_Nat
               (False,
                "stmts_off",
                G.Stmts_Total - G.Stmts_Proved - G.Stmts_Not_Covered);
-            Put (", ");
             Put_Json_Nat (False, "stmts_not_covered", G.Stmts_Not_Covered);
-            Put (", ");
             Put_Json_Nat (False, "stmts_total", G.Stmts_Total);
-            Put (", ");
             Put_Json_Nat (False, "subs_proved", G.Subs_Proved);
-            Put (", ");
             Put_Json_Nat (False, "subs_total", G.Subs_Total);
-            Put (", ");
             Put_Json_Nat (False, "checks_proved", G.Checks_Proved);
-            Put (", ");
             Put_Json_Nat (False, "checks_total", G.Checks_Total);
-            Put (", ");
             Put_Json_Nat (False, "unit_count", G.Unit_Ct);
             Put ("    }");
          end;
