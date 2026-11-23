@@ -150,3 +150,18 @@ def iter_live_files() -> Iterator[Path]:
 def live_files() -> list:
     """All live files as a sorted list (stable order for --check output)."""
     return sorted(iter_live_files(), key=lambda p: p.relative_to(ROOT).as_posix())
+
+
+def record_free_files() -> list:
+    """Live files that a metric sync may rewrite: every release record is out.
+
+    A changelog states what its release measured, so a later run must never
+    restate it.  Until the version is bumped the newest changelog still
+    matches the version in alire-dev.toml, so live_files alone would treat
+    it as the dev changelog and rewrite it.
+
+    @return The live files, with docs/changelogs/ excluded.
+    """
+    return [
+        p for p in live_files()
+        if p.relative_to(ROOT).parts[:2] != ("docs", "changelogs")]

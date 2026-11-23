@@ -10,8 +10,10 @@ Passed/Failed totals, and rewrites the anchored test-count phrases across the
 repo.  It then updates tools/agents-tree.map and regenerates the AGENTS.md
 source tree so the per-file test counts stay in sync.
 
-Historical notes (past-release changelogs, the proof ledger) are left
-untouched because they do not match the anchored patterns.  The generated
+Historical notes are left untouched. A page under `docs/changelogs/` is a
+release record: its count is what that release measured, so no later run
+rewrites it (the dev changelog is written with its final numbers at release
+time). The proof ledger does not match the anchored patterns.  The generated
 badge (docs/badges/tests.svg) is *not* edited here: `just run-self` rewrites
 it from the assessment, recomputing the width for the live count.
 
@@ -42,7 +44,7 @@ from typing import Dict, List, Optional, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
-from live_files import live_files  # noqa: E402  (same-tools import)
+from live_files import record_free_files  # noqa: E402  (same-tools import)
 
 # docs/test_result.md category name -> agents-tree.map file key.
 CATEGORY_KEY: Dict[str, str] = {
@@ -205,6 +207,22 @@ def regen_agents_tree(check: bool = False) -> bool:
     return True
 
 
+def countable_files() -> List[Path]:
+    """The files whose test counts this run may rewrite.
+
+    Every live file under the tree (see tools/live_files.py) qualifies: AGENTS.md,
+    README.md, the manifests, the canonical description, the Makefile, the CI
+    workflows, and every docs page that carries a count. A release changelog is
+    a historical record, never a live count: until the version is bumped the
+    newest changelog still matches the current version, so live_files alone
+    would treat it as editable. The dev changelog is written with its final
+    numbers at release time.
+
+    @return Paths of the editable files, changelogs excluded.
+    """
+    return record_free_files()
+
+
 def main() -> int:
     ap: argparse.ArgumentParser = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--result", default=str(ROOT / "docs" / "test_result.md"))
@@ -225,10 +243,7 @@ def main() -> int:
 
     repls: List[Tuple[str, str]] = total_phrase_repls(passed, failed, total)
 
-    # Every live file under the tree (see tools/live_files.py).  This covers
-    # AGENTS.md, README.md, the manifests, the canonical description, the
-    # Makefile, the CI workflows, and every docs page that carries a count.
-    files: List[Path] = live_files()
+    files: List[Path] = countable_files()
 
     stale: int = 0
     matched: int = 0

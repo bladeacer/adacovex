@@ -134,6 +134,7 @@ PROVE_PREFIXED: Set[str] = {
     "force",
     "no-loop-unrolling",
     "no-inlining",
+    "counterexamples",
     "suppress-warnings",
     "quiet",
     "args",

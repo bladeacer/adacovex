@@ -9,9 +9,10 @@ derives the SPARK level with the same rules as
 Adacovex.Parsers.GNATprove.Determine_SPARK_Level (minus the Platinum branch,
 which needs the SPARK coverage report this script does not read), and rewrites
 the anchored
-proof-metric phrases across the docs.  Historical notes (the pre-audit
-"369 total checks" row in the ledger, past-release changelogs) are left
-untouched because they do not match the anchored patterns.
+proof-metric phrases across the docs.  Historical notes are left untouched:
+the pre-audit "369 total checks" row in the ledger does not match the
+anchored patterns, and a page under `docs/changelogs/` is a release record,
+so no later run restates its numbers.
 
 The "proved" count reported and written here is the honest total proved VCs
 (flow + provers), computed the same way as Adacovex.Parsers.GNATprove sets
@@ -54,7 +55,7 @@ from typing import Dict, List, Optional, Pattern, Tuple
 
 ROOT: Path = Path(__file__).resolve().parent.parent
 
-from live_files import live_files  # noqa: E402  (same-tools import)
+from live_files import record_free_files  # noqa: E402  (same-tools import)
 
 LEVELS: List[str] = ["Stone", "Bronze", "Silver", "Gold", "Platinum"]
 LEVEL_RE: str = "(?:Stone|Bronze|Silver|Gold|Platinum)"
@@ -249,9 +250,10 @@ def main() -> int:
           f"{m['units']} units -> {m['level']}")
 
     # Every live file under the tree (see tools/live_files.py): generated
-    # outputs, past changelogs/ledgers, and the tools themselves are
-    # excluded there, so a stale reference anywhere in the repo is caught.
-    files: List[Path] = live_files()
+    # outputs, past ledgers, the tools themselves, and every release
+    # changelog are excluded there, so a stale reference anywhere in the
+    # repo's live pages is caught without rewriting a release record.
+    files: List[Path] = record_free_files()
 
     if args.dry_run:
         print(f"would scan {len(files)} live file(s)")

@@ -29,7 +29,7 @@ from test_docs_generation import (TestGenDashboard, TestGenDocsAssets,
 from test_docs_gates import (CssSpacingTests, DocsTreeTests, ParaSplitTests,
                              TerminologyTests, TestCheckBookLinks,
                              TestCheckDocs, TestCheckDocsCoverage,
-                             TestCheckSurfaceParity)
+                             TestCheckSurfaceParity, TestCountScopeTests)
 from test_tasks import (BenchCloneTests, CheckGateOrderTests,
                         CheckParallelPhaseTests, CheckReuseTests,
                         CliShardTests, DiagnosticCoverageTests,
