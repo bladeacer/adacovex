@@ -93,6 +93,7 @@ Steps       : Integer := -1;
 Memlimit    : Integer := -1;
 Force       : Boolean := False;
 No_Inlining : Boolean := False;
+Counterexamples : Boolean := True;
 Extra_Args : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;
 Suppress_Warnings : Boolean := True;
@@ -135,7 +136,7 @@ end record;
 
 ### function Build_Option_String (Opts : Adacovex.Prove.Prove_Options; Jobs : Standard.Natural) return Standard.String
 
-> Build the gnatprove option arguments as a space-separated string. Exclude the -P <project> pair. Always include `-j <jobs>` and `--no-loop-unrolling`. Pass the resolved job count (Opts.Jobs when >= 0, else a detected core count). Loop unrolling is always disabled. GNATprove then never emits the purely-informational "cannot unroll loop (too many loop iterations) [info-unrolling-inlining]" notice. This is proof-neutral for the dogfood targets. Those targets are 720/720 adacovex and 589/589 Ada_CRDT VCs with 0 unproved either way. Level, timeout, steps, and memlimit are included only when configured. --force and --no-inlining map to the corresponding gnatprove switches. Any raw --args value in Opts.Extra_Args is appended verbatim (space-split) at the end.
+> Build the gnatprove option arguments as a space-separated string. Exclude the -P <project> pair. Always include `-j <jobs>` and `--no-loop-unrolling`. Pass the resolved job count (Opts.Jobs when >= 0, else a detected core count). Loop unrolling is always disabled. GNATprove then never emits the purely-informational "cannot unroll loop (too many loop iterations) [info-unrolling-inlining]" notice. This is proof-neutral for the dogfood targets. Those targets are 720/720 adacovex and 589/589 Ada_CRDT VCs with 0 unproved either way. Level, timeout, steps, and memlimit are included only when configured. --force and --no-inlining map to the corresponding gnatprove switches. `--counterexamples=on` is included unless Opts.Counterexamples is False, which forwards `--counterexamples=off` instead. Any raw --args value in Opts.Extra_Args is appended verbatim (space-split) at the end.
 
 | Parameter | Description |
 |-----------|-------------|

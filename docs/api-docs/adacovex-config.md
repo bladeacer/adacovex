@@ -104,6 +104,8 @@ Prove_Memlimit       : Integer := -1;
 Prove_Force          : Boolean := False;
 Prove_No_Loop_Unroll : Boolean := False;
 Prove_No_Inlining    : Boolean := False;
+Prove_Counterexamples : Boolean := True;
+Prove_Counterexamples_Explicit : Boolean := False;
 Prove_Suppress_Warnings : Boolean := True;
 Prove_Suppress_Sets : Ada.Strings.Unbounded.Unbounded_String :=
 Ada.Strings.Unbounded.Null_Unbounded_String;

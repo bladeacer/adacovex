@@ -68,7 +68,7 @@ Enforced rules:
 - Files are pure ASCII; list items indented under a heading use exactly
   three spaces (never 4+).
 - `## Proof Results` states the SPARK level (Stone..Platinum), the exact VC
-  totals (e.g. `1058/1058 VCs proved across 78 analyzed units`), and calls out
+  totals (e.g. `1060/1060 VCs proved across 78 analyzed units`), and calls out
   whether any proof metrics changed.
 - `## Traceability` lists any new HLRs by tag name and package, then the
   existing `-- HLR-*` tags covering the changed packages.
@@ -102,14 +102,14 @@ Pull requests should follow the following conventions.
   beyond the GNAT runtime.
 - Keep the SPARK proof complete: run `just prove` and make sure the VC
   counts match [docs/proof/16.1.0-ledger.md](docs/proof/16.1.0-ledger.md)
-  (1058 VCs, 0 unproved under gnatprove 16.1.0).
+  (1060 VCs, 0 unproved under gnatprove 16.1.0).
 - Keep docstring coverage at 100% (strict mode, cannot be disabled):
   `just run-self` must show Gold, 100% docs, and DAL-C Achieved.
 - Platinum is the target, not the current level: it also requires full proof
   coverage (every subprogram the SPARK coverage report assesses proved), and
   the deliberate `SPARK_Mode (Off)` units keep the tree at Gold.
 - If you add or change behavior, extend the native test suite in `src/tests/`
-  (2468 tests across 30 categories) and run `just test`.
+  (2486 tests across 30 categories) and run `just test`.
 - Keep all source files pure ASCII: `just ascii-check`.
 - If a new CLI flag is added, mirror it as a matching GitHub Action input in
   `./action.yml` and document it in `docs/usage/cli-reference.md` and the README
@@ -188,7 +188,7 @@ fixture in the same change.
 | Source scanner | 89 |
 | GNATprove parser | 93 |
 | Test-result parser | 50 |
-| CLI config | 398 |
+| CLI config | 408 |
 | SVG renderer | 161 |
 | HTML/Markdown renderers | 58 |
 | SBOM generator | 580 |
@@ -203,7 +203,7 @@ fixture in the same change.
 | Opt-out markers | 20 |
 | Dir cache | 29 |
 | Diff reports | 36 |
-| Prove runner | 104 |
+| Prove runner | 112 |
 | SPARK coverage | 18 |
 | ANSI terminal report | 28 |
 | CPU and jobs | 24 |
@@ -213,4 +213,4 @@ fixture in the same change.
 | Install method | 23 |
 | tldr installer | 48 |
 | Test support | 19 |
-| **Total** | **2468** |
+| **Total** | **2486** |

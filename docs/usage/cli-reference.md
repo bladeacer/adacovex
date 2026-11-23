@@ -39,6 +39,18 @@ shorthands are for interactive use.
 Compliance selection stays on `--standard` and its level companions
 `--dal`, `--asil`, and `--class`.
 
+## Contextual help
+
+`adacovex help TOPIC` and `adacovex TOPIC --help` print the same frame: the
+version banner, a `Usage:` fence, grouped `Options:`, and the footer. The
+topics are `prove`, `serve`, `status`, `sbom`, `complexity`,
+`spark-coverage`, `man`, `tldr`, `init`, `completion`, and `cache`.
+
+An unknown topic names itself, suggests the nearest known topic or flag, and
+lists the valid topics before the full usage. A mistyped flag gets the same
+suggestion, for example `unknown option '--standrd=all' (did you mean
+--standard?)`.
+
 ## Flags
 
 | Flag | Default | Mode | Description |
@@ -106,8 +118,8 @@ exits 0. See [Global configuration and state](configuration.md#scaffolding-a-pro
 
 `prove`-mode flags are accepted by the main command and validated only in
 prove mode: `--jobs`/`-j`, `--level`/`-l`, `--timeout`, `--steps`,
-`--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`, `--args`,
-`--suppress-warnings`, `--quiet`. See
+`--memlimit`, `--force`, `--no-loop-unrolling`, `--no-inlining`,
+`--counterexamples`, `--args`, `--suppress-warnings`, `--quiet`. See
 [The `prove` subcommand](cli-reference-flags.md#the-prove-subcommand).
 
 Every flag is detailed with its default, constraints, and examples on two

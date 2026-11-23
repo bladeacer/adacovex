@@ -255,6 +255,7 @@ Vendored dependencies then participate in the proof without their sources being 
 | `--force` | off | Force full gnatprove reanalysis (`-f`). Also bypasses the result cache |
 | `--no-loop-unrolling` | always on | Disable automatic loop unrolling. Loop unrolling is always disabled, so GNATprove never emits the purely-informational `cannot unroll loop (too many loop iterations) [info-unrolling-inlining]` notice. It is proof-neutral for the dogfood targets (720/720 adacovex, 589/589 Ada_CRDT VCs, 0 unproved). Flag kept for compatibility |
 | `--no-inlining` | off | Disable contextual analysis inlining |
+| `--counterexamples=on\|off` | `on` | Ask the prover for a breaking input on every failed check. On, the default, means a failed check states the input that breaks it, and the diagnostics block prints that input beside its fix hint. `off` forwards `--counterexamples=off`, so the run skips the search and reports the check alone. The switch is part of the option string and therefore of the proof result-cache identity |
 | `--args=FLAGS` | empty | Extra raw GNATprove flags passed through verbatim. The value is space-split into individual gnatprove arguments appended after the options above (for example `--args="--prover=cvc5 --timeout=5"`) |
 | `--quiet` | on | Hide GNATprove's benign info messages (the default suppression set, the loop-unrolling/inlining notice blocks) from stdout. It is active by default for local runs. `--verbose` always shows every message and wins over it. CI passes `--verbose`, so CI output stays authoritative. This is the explicit form of the default |
 | `--suppress-warnings` | on | Alias of `--quiet` (the default suppression set). Kept for compatibility |
@@ -292,8 +293,11 @@ and the block states the call-site count. A flow finding is marked
 `(flow analysis)`, a budget finding `(provers gave up)`, and a larger
 count is still reported.
 
-`prove` always runs gnatprove with `--counterexamples=on`, so a failed
-check states the input that breaks it. The solver is the prover set the
+`prove` runs gnatprove with `--counterexamples=on` by default, so a failed
+check states the input that breaks it. A finding that carries a
+counterexample is never marked `(provers gave up)`; only a check with no
+breaking input is a budget finding. `--counterexamples=off` skips the
+search and reports the verdict alone. The solver is the prover set the
 gnatprove summary attributes to the check's category; gnatprove 16.1
 records solvers per summary row, not per SARIF result. `--diagnostics=json`
 prints the same facts as one object. `--verbose` streams the raw prover

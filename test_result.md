@@ -5,7 +5,7 @@
   | Source scanner                           |  89 |  0 | PASS     |
   | GNATprove parser                         |  93 |  0 | PASS     |
   | Test-result parser                       |  50 |  0 | PASS     |
-  | CLI config                               |  398 |  0 | PASS     |
+  | CLI config                               |  408 |  0 | PASS     |
   | SVG renderer                             |  161 |  0 | PASS     |
   | HTML/Markdown renderers                  |  58 |  0 | PASS     |
   | SBOM generator                           |  580 |  0 | PASS     |
@@ -20,7 +20,7 @@
   | Opt-out markers                          |  20 |  0 | PASS     |
   | Dir cache                                |  29 |  0 | PASS     |
   | Diff reports                             |  36 |  0 | PASS     |
-  | Prove runner                             |  104 |  0 | PASS     |
+  | Prove runner                             |  112 |  0 | PASS     |
   | SPARK coverage                           |  18 |  0 | PASS     |
   | ANSI terminal report                     |  28 |  0 | PASS     |
   | CPU and jobs                             |  24 |  0 | PASS     |
@@ -32,4 +32,4 @@
   | Test support                             |  19 |  0 | PASS     |
   |-----------------------------------------|--------|-------|----------|
 
-  Passed: 2468  Failed: 0  Skipped: 0
+  Passed: 2486  Failed: 0  Skipped: 0

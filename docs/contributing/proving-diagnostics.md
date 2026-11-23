@@ -104,12 +104,12 @@ an unconstrained array need not start at its length.
 Summary logged in obj/gnatprove/gnatprove.out
 
   proof:      1 unproved check(s) (prover alr:16.1.0)
-    prove_diag_index_broken.adb:7:17: error: array index check (provers gave up)
+    prove_diag_index_broken.adb:7:17: error: array index check
       solver: CVC5
       counterexample: when I = 1 and T = (2 => 2)
             return T (I);
                       ^
-      fix: the provers gave up before completing the proof; raise the proof budget with --steps=<N> (10000 by default)
+      fix: state the bound as a subtype constraint or a precondition, so the check follows from the contracts
 ```
 
 The replay holds the prover's own detail: the check kind, the `-->` location,
@@ -120,9 +120,16 @@ A finding line reads `file:line:col: error: <kind>`. The lines under it name
 the solver set, the counterexample, the source excerpt with a caret ruler,
 and one fix hint.
 
-`prove` always asks gnatprove for counterexamples (`--counterexamples=on`),
-so a failed check states the input that breaks it. A check whose provers gave
-up has no counterexample, and its hint raises the budget instead.
+`prove` asks gnatprove for counterexamples by default
+(`--counterexamples=on`), so a failed check states the input that breaks it.
+`--counterexamples=off` skips the search, and a failed check then reports the
+verdict alone.
+
+A finding that carries a counterexample is never reported as a budget
+failure. A `+ provers gave up` line can follow a counterexample inside one
+gnatprove message block, because the block also covers the sibling sub-block
+that needs the precondition. A check that really ran out of budget has no
+counterexample, and its hint raises the budget instead.
 
 The solver is the prover set the gnatprove summary attributes to the check's
 category. gnatprove 16.1 records solvers per summary row, not per SARIF
