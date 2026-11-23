@@ -3262,8 +3262,7 @@ package body Adacovex.Config is
       Opt
         ("  --jobs=N, -j N        GNATprove parallelism (default: auto-detect");
       Opt ("                        CPU count; 0 = all cores; e.g. -j12)");
-      Opt
-        ("  --level=N, -l N       GNATprove proof effort 0-4 (default: tool default)");
+      Opt ("  --level=N, -l N       GNATprove proof effort 0-4 (default: 4)");
       Opt ("  --timeout=N           Per-check prover timeout in seconds");
       Opt ("  --steps=N             Max proof steps (reproducible)");
       Opt ("  --memlimit=N          Prover memory limit in MB");
@@ -3887,7 +3886,11 @@ package body Adacovex.Config is
             & ASCII.LF
             & "  --level=N, -l N"
             & ASCII.LF
-            & "      GNATprove proof effort 0-4 (default: tool default)."
+            & "      GNATprove proof effort 0-4 (default: 4, the deepest"
+            & ASCII.LF
+            & "      effort).  Without --level gnatprove runs one prover with"
+            & ASCII.LF
+            & "      no per-check timeout, which is what the default avoids."
             & ASCII.LF
             & ASCII.LF
             & "  --timeout=N"

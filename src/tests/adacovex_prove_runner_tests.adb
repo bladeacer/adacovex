@@ -286,9 +286,30 @@ package body Adacovex_Prove_Runner_Tests is
          S : constant String := Adacovex.Prove.Build_Option_String (O, 8);
       begin
          R.Check
-           (S = "-j 8 --steps 10000 --counterexamples=on --no-loop-unrolling",
-            "the default option string is jobs, steps, counterexamples,"
-            & " no-unrolling");
+           (S
+            = "-j 8 --level 4 --steps 10000 --counterexamples=on"
+              & " --no-loop-unrolling",
+            "the default option string is jobs, level, steps,"
+            & " counterexamples, no-unrolling");
+      end;
+
+      --  An unset level sends the default level rather than nothing, so the
+      --  gate never drops into gnatprove's level-less default (cvc5 alone,
+      --  no per-check timeout).
+      R.Check
+        (Adacovex.Prove.Default_Proof_Level = 4,
+         "the default proof level is the deepest effort");
+      declare
+         Unset : Adacovex.Prove.Prove_Options;
+         S     : constant String :=
+           Adacovex.Prove.Build_Option_String (Unset, 4);
+      begin
+         R.Check
+           (Has_Text (S, "--level 4"),
+            "an unset level forwards the default level");
+         R.Check
+           (not Has_Text (S, "--level 5"),
+            "the default level never exceeds the supported range");
       end;
 
       --  The counterexample search is on by default; --counterexamples=off
@@ -304,7 +325,7 @@ package body Adacovex_Prove_Runner_Tests is
          begin
             R.Check
               (S
-               = "-j 8 --steps 10000 --counterexamples=off"
+               = "-j 8 --level 4 --steps 10000 --counterexamples=off"
                  & " --no-loop-unrolling",
                "--counterexamples=off forwards the opt-out switch in place");
             R.Check

@@ -266,7 +266,9 @@ package body Adacovex.Renderers.Man is
             elsif Flag = "jobs" then
                return "GNATprove parallelism -j N (default: auto).";
             elsif Flag = "level" then
-               return "GNATprove proof effort 0-4.";
+               return
+                 "GNATprove proof effort 0-4 (default: 4, the deepest"
+                 & " effort).";
             elsif Flag = "timeout" then
                return "Per-check prover timeout in seconds.";
             elsif Flag = "steps" then

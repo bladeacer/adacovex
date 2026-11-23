@@ -326,8 +326,16 @@ package body Adacovex.Prove is
       end App;
    begin
       App ("-j" & Integer'Image (Jobs));
+      --  Always send a level. gnatprove with no --level runs cvc5 alone
+      --  with no per-check timeout, which is weaker than every predefined
+      --  level, so a gate that omitted it proved less than its output
+      --  claimed. The string is the proof result-cache identity, so an
+      --  explicit level and the default now share a key only when they
+      --  name the same effort.
       if Opts.Level >= 0 then
          App ("--level" & Integer'Image (Opts.Level));
+      else
+         App ("--level" & Integer'Image (Default_Proof_Level));
       end if;
       if Opts.Timeout >= 0 then
          App ("--timeout" & Integer'Image (Opts.Timeout));

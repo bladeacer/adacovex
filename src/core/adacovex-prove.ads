@@ -50,15 +50,26 @@ with Ada.Strings.Unbounded;
 
 package Adacovex.Prove is
 
+   --  The proof level the subcommand sends when the user does not pass
+   --  --level. GNATprove without --level does not run a proof level at all:
+   --  it runs cvc5 alone with no per-check timeout, which is weaker than
+   --  every predefined level. A proof gate must ask for the deepest effort,
+   --  so the subcommand always sends a level. The value is part of the
+   --  option string and therefore of the proof result-cache identity, so
+   --  two callers of one project share one proof.
+   Default_Proof_Level : constant Integer := 4;
+
    --  GNATprove invocation options forwarded to the gnatprove command line.
    --  An integer field of -1 means "not configured". Then --jobs
-   --  auto-detects the host core count. The level, timeout, steps, and
-   --  memlimit options are not passed. --jobs=0 forwards -j0 (all cores).
+   --  auto-detects the host core count. --level falls back to
+   --  Default_Proof_Level, and timeout, steps, and memlimit keep their own
+   --  defaults. --jobs=0 forwards -j0 (all cores).
    --  The default is auto-detected parallelism. CI and the local make
    --  targets use every core without any flag. Users can pin --jobs=12
    --  (or -j12).
    type Prove_Options is record
       Jobs        : Integer := -1;
+      --  -1 selects Default_Proof_Level; 0 .. 4 is the user's choice.
       Level       : Integer := -1;
       Timeout     : Integer := -1;
       Steps       : Integer := -1;
@@ -129,14 +140,17 @@ package Adacovex.Prove is
    function Is_Proof_Input (Name : String) return Boolean;
 
    --  Build the gnatprove option arguments as a space-separated string.
-   --  Exclude the -P <project> pair. Always include `-j <jobs>` and
-   --  `--no-loop-unrolling`. Pass the resolved job count
-   --  (Opts.Jobs when >= 0, else a detected core count). Loop unrolling is
+   --  Exclude the -P <project> pair. Always include `-j <jobs>`,
+   --  a proof level, and `--no-loop-unrolling`. Pass the resolved job count
+   --  (Opts.Jobs when >= 0, else a detected core count). The level is
+   --  Opts.Level, or Default_Proof_Level when the user passed none, so the
+   --  gate never falls into gnatprove's level-less default (cvc5 alone, no
+   --  timeout). Loop unrolling is
    --  always disabled. GNATprove then never emits the purely-informational
    --  "cannot unroll loop (too many loop iterations) [info-unrolling-inlining]"
    --  notice. This is proof-neutral for the dogfood targets. Those targets
    --  are 720/720 adacovex and 589/589 Ada_CRDT VCs with 0 unproved either
-   --  way. Level, timeout, steps, and memlimit are included only when
+   --  way. Timeout, steps, and memlimit are included only when
    --  configured. --force and --no-inlining map to the corresponding gnatprove
    --  switches. `--counterexamples=on` is included unless
    --  Opts.Counterexamples is False, which forwards `--counterexamples=off`
