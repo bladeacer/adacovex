@@ -83,6 +83,9 @@ package body Adacovex_Config_Tests is
         and then A.Prove_Force = B.Prove_Force
         and then A.Prove_No_Loop_Unroll = B.Prove_No_Loop_Unroll
         and then A.Prove_No_Inlining = B.Prove_No_Inlining
+        and then A.Prove_Counterexamples = B.Prove_Counterexamples
+        and then A.Prove_Counterexamples_Explicit
+                 = B.Prove_Counterexamples_Explicit
         and then A.Prove_Suppress_Warnings = B.Prove_Suppress_Warnings
         and then A.Prove_Suppress_Explicit = B.Prove_Suppress_Explicit
         and then A.Require_SPARK = B.Require_SPARK
@@ -248,6 +251,79 @@ package body Adacovex_Config_Tests is
            (Cfg.Prove_Suppress_Explicit,
             "prove --quiet sets Prove_Suppress_Explicit");
          R.Check (not Cfg.CLI_Error, "prove --quiet is not an error");
+      end;
+
+      --  Counterexamples are on by default, so a failed check names the input
+      --  that breaks it. --counterexamples=off opts out, the bare word is the
+      --  explicit opt-in form, and any other value is an error.
+      declare
+         Cfg : constant CLI_Config := (others => <>);
+      begin
+         R.Check
+           (Cfg.Prove_Counterexamples,
+            "Default Prove_Counterexamples is True (on by default)");
+         R.Check
+           (not Cfg.Prove_Counterexamples_Explicit,
+            "Default Prove_Counterexamples_Explicit is False");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--counterexamples=off");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (not Cfg.Prove_Counterexamples,
+            "prove --counterexamples=off turns the search off");
+         R.Check
+           (Cfg.Prove_Counterexamples_Explicit,
+            "prove --counterexamples=off is an explicit prove-mode flag");
+         R.Check
+           (not Cfg.CLI_Error, "prove --counterexamples=off is not an error");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--counterexamples=on");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Prove_Counterexamples,
+            "prove --counterexamples=on keeps the search on");
+         R.Check
+           (Cfg.Prove_Counterexamples_Explicit,
+            "prove --counterexamples=on is an explicit prove-mode flag");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--counterexamples");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Prove_Counterexamples,
+            "prove --counterexamples (bare) asks for counterexamples");
+         R.Check
+           (Cfg.Prove_Counterexamples_Explicit,
+            "prove --counterexamples (bare) is an explicit prove-mode flag");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "--counterexamples=maybe");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.CLI_Error,
+            "prove --counterexamples=maybe is rejected (on or off only)");
       end;
 
       --  --suppress-warnings (bare) is an alias of --quiet, and

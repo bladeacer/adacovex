@@ -128,7 +128,8 @@ def check_prove(r: Results, tmp: Path) -> None:
 
     accepted = run(["prove", "-t", str(nope), "-l", "2", "-j", "2",
                     "--timeout=60", "--steps=1000", "--memlimit=100",
-                    "--quiet", "--no-loop-unrolling", "--no-inlining"],
+                    "--quiet", "--no-loop-unrolling", "--no-inlining",
+                    "--counterexamples=off"],
                    env_extra=env)
     r.check(
         accepted.returncode == 1
@@ -160,6 +161,8 @@ def check_prove(r: Results, tmp: Path) -> None:
          "an out-of-range --fail-on=proof"),
         (["--fail-on=spark"], "--fail-on=spark needs a level",
          "a bare --fail-on=spark with no --require-spark"),
+        (["--counterexamples=maybe"], "--counterexamples must be on or off",
+         "an unknown --counterexamples value"),
     )
     for args, needle, label in rejects:
         proc = run(["prove", "-t", str(nope), *args])
@@ -175,6 +178,7 @@ def check_prove(r: Results, tmp: Path) -> None:
         (["-l", "1"], "the -l shorthand"),
         (["--coverage"], "the --coverage flag"),
         (["--no-coverage"], "the --no-coverage flag"),
+        (["--counterexamples=off"], "the --counterexamples flag"),
     ):
         proc = run(args)
         r.check(

@@ -291,6 +291,28 @@ package body Adacovex_Prove_Runner_Tests is
             & " no-unrolling");
       end;
 
+      --  The counterexample search is on by default; --counterexamples=off
+      --  forwards the opt-out switch instead, so the option string (and
+      --  therefore the proof result-cache identity) names the choice.
+      declare
+         No_CE : Adacovex.Prove.Prove_Options := O;
+      begin
+         No_CE.Counterexamples := False;
+         declare
+            S : constant String :=
+              Adacovex.Prove.Build_Option_String (No_CE, 8);
+         begin
+            R.Check
+              (S
+               = "-j 8 --steps 10000 --counterexamples=off"
+                 & " --no-loop-unrolling",
+               "--counterexamples=off forwards the opt-out switch in place");
+            R.Check
+              (not Has_Text (S, "--counterexamples=on"),
+               "the opt-out string never carries the on switch");
+         end;
+      end;
+
       --  Zero jobs is forwarded as-is (all cores).
       declare
          S : constant String := Adacovex.Prove.Build_Option_String (O, 0);
@@ -775,6 +797,50 @@ package body Adacovex_Prove_Runner_Tests is
             R.Check
               (Has_Text (D, "unit.adb:7:17: error: array index check"),
                "the block uses the compiler diagnostic prefix");
+         end;
+      end;
+
+      --  A counterexample and a sibling `+ provers gave up` line can share
+      --  one gnatprove message block: the second line belongs to the
+      --  subprogram that needs the precondition, not to the check that the
+      --  solver broke. A recorded counterexample therefore wins over the
+      --  budget shape, so the hint stays the actionable one.
+      declare
+         Cap_Path : constant String :=
+           Fixture_Dir & "/range-counterexample.txt";
+         Stats    : Adacovex.Prove.Failure_Stats;
+         F        : Ada.Text_IO.File_Type;
+      begin
+         Fixture ("replay.gpr");
+         Ada.Text_IO.Create (F, Ada.Text_IO.Out_File, Cap_Path);
+         Ada.Text_IO.Put_Line (F, " medium: range check might fail");
+         Ada.Text_IO.Put_Line (F, "      + e.g. when X = 101");
+         Ada.Text_IO.Put_Line (F, "--> unit.adb:7:14");
+         Ada.Text_IO.Put_Line (F, "      + possible fix: add precondition");
+         Ada.Text_IO.Put_Line (F, "--> unit.ads:10:13");
+         Ada.Text_IO.Put_Line
+           (F, "      + provers gave up before completing the proof");
+         Ada.Text_IO.Close (F);
+         Adacovex.Prove.Collect_Failures (Cap_Path, Stats);
+         R.Check (Stats.Unproved = 1, "the range finding counts once");
+         R.Check
+           (not Stats.Items (1).Budget,
+            "a finding with a counterexample is not a budget failure");
+         declare
+            D : constant String := Adacovex.Prove.Diagnostics_Text ("", Stats);
+         begin
+            R.Check
+              (Has_Text (D, "error: range check"),
+               "the block names the range check");
+            R.Check
+              (not Has_Text (D, "provers gave up"),
+               "the block does not claim the provers gave up");
+            R.Check
+              (Has_Text (D, "counterexample: when X = 101"),
+               "the block states the breaking input");
+            R.Check
+              (Has_Text (D, "state the bound as a subtype constraint"),
+               "the hint advises the contract, not a bigger budget");
          end;
       end;
 

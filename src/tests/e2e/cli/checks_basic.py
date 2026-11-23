@@ -39,8 +39,27 @@ def check_help(r: Results) -> None:
     r.check(prove_help == run(["prove", "--help"]).stdout,
             "prove --help equals prove help")
     r.check(all(flag in prove_help
-                for flag in ("-j", "-l", "--args", "--suppress-warnings")),
+                for flag in ("-j", "-l", "--args", "--suppress-warnings",
+                             "--counterexamples")),
             "prove help lists the prove flags")
+    near = run(["help", "statu"])
+    r.check(
+        "unknown help topic 'statu'" in near.stdout
+        and "(did you mean --status?)" in near.stdout
+        and "Valid topics:" in near.stdout
+        and "complexity" in near.stdout,
+        "an unknown help topic suggests the nearest topic and lists them",
+    )
+    far = run(["help", "zzzzzz"])
+    r.check(
+        "unknown help topic 'zzzzzz'" in far.stdout
+        and "Valid topics:" in far.stdout
+        and "did you mean" not in far.stdout,
+        "a distant help topic gets no suggestion but still lists them",
+    )
+    typo = run(["--standrd=all"])
+    r.check("(did you mean --standard?)" in typo.stderr,
+            "the flag suggestion closes its parenthesis")
 
 def check_completion(r: Results) -> None:
     for shell in ("bash", "fish", "zsh", "pwsh"):
