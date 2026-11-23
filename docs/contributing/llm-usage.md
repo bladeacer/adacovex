@@ -89,6 +89,8 @@ just check                   # full gate: format, build, products, parallel
 
 `just check` runs `fmt` and `build` first, then the serial product gates (manual, API docs, SBOM, proof) and the tools suite, then every independent static and test gate in one parallel phase. A formatting problem fails before the expensive SPARK proof. The count-sync checks (`test-count --check`, `proof-status --check`, `description --check`) run last. A stale metric anywhere in the tree fails loudly.
 
+A missing proof summary is a skip, not a failure. The cheap CI gate job only checks out the sources, so `obj/gnatprove/gnatprove.out` does not exist there, and `proof-status --check` prints the reason and exits 0. A summary that exists but cannot be read is still an error.
+
 Regenerated files that are byte-identical when nothing changed (the version constant, the dashboard template) are left untouched. `git status` stays quiet.
 
 ## The served dashboard as a trust surface

@@ -394,6 +394,41 @@ class SyncToolCheckModeTests(unittest.TestCase):
                 self.assertIn('add_argument("--check"', text)
                 self.assertIn("--check", text.split('"""')[1])
 
+class ProofStatusMissingSummaryTests(unittest.TestCase):
+    """A tree with no proof run has no metrics to sync, and must not crash.
+
+    The cheap CI gate job only checks out the sources: no build, no proof, so
+    `obj/gnatprove/gnatprove.out` is absent there.  Reading it
+    unconditionally turned `--check` into a traceback and failed the gate on
+    a clean checkout, so a missing summary is a SKIP with its reason -- the
+    same shape as a gate whose host tool is absent.
+    """
+
+    def test_a_missing_summary_skips_with_a_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "gnatprove.out"
+            buf = io.StringIO()
+            with mock.patch.object(
+                    sys, "argv",
+                    ["update-proof-status.py", "--check", f"--out={missing}"]), \
+                    contextlib.redirect_stdout(buf), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(update_proof_status.main(), 0)
+            self.assertIn("no proof summary", buf.getvalue())
+            self.assertIn(str(missing), buf.getvalue())
+
+    def test_a_summary_that_cannot_be_parsed_still_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            empty = Path(tmp) / "gnatprove.out"
+            empty.write_text("Summary of SPARK analysis\n", encoding="utf-8")
+            with mock.patch.object(
+                    sys, "argv",
+                    ["update-proof-status.py", "--check", f"--out={empty}"]), \
+                    contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    update_proof_status.main()
+
 class TestVersionConsistency(unittest.TestCase):
     """Every version source must name the same version."""
 

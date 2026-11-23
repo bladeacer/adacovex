@@ -16,9 +16,9 @@ Exit code 0 when every test passes.
 
 import unittest
 
-from test_release import (ReleaseTagTests, RequirementsSyncTests,
-                          SyncToolCheckModeTests, TestRelease,
-                          TestVersionConsistency, TestVersions)
+from test_release import (ProofStatusMissingSummaryTests, ReleaseTagTests,
+                          RequirementsSyncTests, SyncToolCheckModeTests,
+                          TestRelease, TestVersionConsistency, TestVersions)
 from test_docs_generation import (TestGenDashboard, TestGenDocsAssets,
                                   TestGenDocsBuildHelpers,
                                   TestGenDocsBundling, TestGenDocsCodec,

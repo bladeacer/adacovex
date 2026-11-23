@@ -41,6 +41,12 @@ Usage:
 --check      Verify every live file already carries the current metrics;
              exit 1 (without editing) when any file is stale.
 
+A missing summary is a SKIP, not an error: a tree that has not run the proof
+(for example the cheap CI gates job, which only checks out the sources) has
+no metrics to sync, so the tool prints the reason and exits 0.  Only
+--run-prove, which asks for a fresh summary, treats a missing one as a
+failure.
+
 Exit code 0 when every anchored pattern matched and was updated (or, with
 --dry-run/--check, would be / already is), 1 when a metric could not be
 parsed or a pattern did not match any file.
@@ -244,7 +250,17 @@ def main() -> int:
         subprocess.run([str(exe), "prove", "--target=.", "--no-svg"],
                        check=True, cwd=str(ROOT))
 
-    m: Metrics = parse_summary(Path(args.out))
+    out: Path = Path(args.out)
+    if not out.is_file():
+        if args.run_prove:
+            print(f"error: the proof run wrote no summary at {out}",
+                  file=sys.stderr)
+            return 1
+        print(f"no proof summary at {out}; skipping proof-metric sync "
+              f"(run `just prove` first)")
+        return 0
+
+    m: Metrics = parse_summary(out)
     print(f"gnatprove: {m['total']} VCs, {m['proved']} proved, "
           f"{m['flow']} flow, {m['unproved']} unproved, "
           f"{m['units']} units -> {m['level']}")
