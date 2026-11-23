@@ -2788,9 +2788,11 @@ package body Adacovex.Prove is
                   end if;
                end if;
             end;
-            if Opts.Show_Coverage then
-               Report_Coverage (Target_Dir);
-            end if;
+         end if;
+         --  The coverage summary describes the proof, not the cache: it is
+         --  printed for every successful run, including --no-cache.
+         if Opts.Show_Coverage then
+            Report_Coverage (Target_Dir);
          end if;
       else
          Ada.Text_IO.Put_Line

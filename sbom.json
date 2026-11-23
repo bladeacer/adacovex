@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-20T14:46:39",
+    "timestamp": "2026-11-21T14:27:33",
     "tools": [
       {"vendor": "bladeacer", "name": "adacovex", "version": "1.74.0"}
     ],
@@ -15,7 +15,7 @@
       "language": "Ada; Python; JavaScript",
       "purl": "pkg:alire/covex@1.74.0",
       "licenses": [{"license": {"id": "Apache-2.0"}}],
-      "description": "Ada/SPARK coverage, proof, multi-standard compliance tool",
+      "description": "Ada/SPARK formal verification and compliance toolkit",
       "externalReferences": [{"url": "https://github.com/bladeacer/adacovex", "type": "website"}],
       "properties": [{"name": "adacovex:proof_level", "value": "Gold"}, {"name": "adacovex:standard", "value": "DO-178C, ISO 26262, IEC 62304"}, {"name": "adacovex:dal_target", "value": "DAL-C"}, {"name": "adacovex:level", "value": "DAL-C / ASIL B / Class A"}]
       }
@@ -162,6 +162,16 @@
       },
     {
       "type": "library",
+      "bom-ref": "pkg:github/pnpm/action-setup@v4",
+      "name": "pnpm/action-setup",
+      "version": "v4",
+      "language": "YAML",
+      "purl": "pkg:github/pnpm/action-setup@v4",
+      "description": "GitHub Actions workflow action",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "dev"}]
+      },
+    {
+      "type": "library",
       "bom-ref": "pkg:github/actions/attest@v4",
       "name": "actions/attest",
       "version": "v4",
@@ -193,7 +203,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/python3",
       "name": "python3",
-      "version": "3.13.11",
+      "version": "3.14.10",
       "purl": "pkg:generic/python3",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -202,7 +212,7 @@
       "type": "library",
       "bom-ref": "pkg:generic/python",
       "name": "python",
-      "version": "3.13.11",
+      "version": "3.14.10",
       "purl": "pkg:generic/python",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
@@ -265,8 +275,17 @@
       "type": "library",
       "bom-ref": "pkg:generic/perf",
       "name": "perf",
-      "version": "7.3.5-1",
+      "version": "7.3.5-2",
       "purl": "pkg:generic/perf",
+      "description": "System tool referenced by the project (dev dependency)",
+      "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
+      },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/pnpm",
+      "name": "pnpm",
+      "version": "12.22.0",
+      "purl": "pkg:generic/pnpm",
       "description": "System tool referenced by the project (dev dependency)",
       "properties": [{"name": "adacovex:proof_level", "value": "Not proved"}, {"name": "adacovex:dep_scope", "value": "system"}]
       },
@@ -292,7 +311,7 @@
   "dependencies": [
     {
       "ref": "pkg:alire/covex@1.74.0",
-      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx", "pkg:pypi/myst-parser", "pkg:pypi/furo", "pkg:github/actions/checkout@v7", "pkg:github/alire-project/setup-alire@latest", "pkg:github/actions/cache@v4", "pkg:github/actions/attest@v4", "pkg:github/actions/upload-artifact@v7", "pkg:generic/bash", "pkg:generic/python3", "pkg:generic/python", "pkg:generic/pip", "pkg:generic/alr", "pkg:generic/curl", "pkg:generic/gnat", "pkg:generic/git", "pkg:generic/jj", "pkg:generic/perf", "pkg:generic/gh", "pkg:generic/make"]
+      "dependsOn": ["pkg:generic/flexsearch", "pkg:generic/graphre", "pkg:generic/yace", "pkg:generic/nomnoml", "pkg:npm/@playwright/test@1.62.1", "pkg:alire/gnatprove", "pkg:alire/gnatdoc_bin", "pkg:alire/gnatformat_bin", "pkg:pypi/sphinx", "pkg:pypi/myst-parser", "pkg:pypi/furo", "pkg:github/actions/checkout@v7", "pkg:github/alire-project/setup-alire@latest", "pkg:github/actions/cache@v4", "pkg:github/pnpm/action-setup@v4", "pkg:github/actions/attest@v4", "pkg:github/actions/upload-artifact@v7", "pkg:generic/bash", "pkg:generic/python3", "pkg:generic/python", "pkg:generic/pip", "pkg:generic/alr", "pkg:generic/curl", "pkg:generic/gnat", "pkg:generic/git", "pkg:generic/jj", "pkg:generic/perf", "pkg:generic/pnpm", "pkg:generic/gh", "pkg:generic/make"]
     }
   ]
 }
