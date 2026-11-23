@@ -17,7 +17,8 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib.e2e_support import (  # noqa: E402  (path set above)
-    BIN, ROOT, Results, free_port, run_binary as run,
+    BIN, ROOT, Results, free_port, prover_env, resolved_prover,
+    run_binary as run,
 )
 
 GIT_ENV: Dict[str, str] = {
@@ -143,6 +144,45 @@ def write_documented_project(path: Path, packages: int) -> None:
             f"package body {name} is\n"
             f"   --  Run the {name} step.\n"
             f"   procedure Go is\n   begin\n      null;\n   end Go;\n"
+            f"end {name};\n",
+            encoding="utf-8",
+        )
+
+def write_provable_project(path: Path, packages: int) -> None:
+    """Scaffold a project gnatprove analyses and proves.
+
+    A body is selected only when it is in SPARK_Mode, so both the spec and
+    the body carry the aspect, and the contract gives the prover a check to
+    generate.  Without this a prove run ends in `no checks generated`, which
+    gnatprove reports as a warning and the binary reports as a failure.
+    """
+    src = path / "src"
+    src.mkdir(parents=True, exist_ok=True)
+    (path / "demo.gpr").write_text(
+        'project Demo is\n'
+        '   for Source_Dirs use ("src");\n'
+        '   for Object_Dir use "obj";\n'
+        'end Demo;\n',
+        encoding="utf-8",
+    )
+    for i in range(1, packages + 1):
+        name = f"P{i:02d}"
+        (src / f"p{i:02d}.ads").write_text(
+            f"package {name} with SPARK_Mode is\n"
+            f"   --  Increment the counter by one.\n"
+            f"   procedure Go (X : in out Integer) with\n"
+            f"     Pre  => X < Integer'Last,\n"
+            f"     Post => X = X'Old + 1;\n"
+            f"end {name};\n",
+            encoding="utf-8",
+        )
+        (src / f"p{i:02d}.adb").write_text(
+            f"package body {name} with SPARK_Mode is\n"
+            f"   --  Increment the counter by one.\n"
+            f"   procedure Go (X : in out Integer) is\n"
+            f"   begin\n"
+            f"      X := X + 1;\n"
+            f"   end Go;\n"
             f"end {name};\n",
             encoding="utf-8",
         )

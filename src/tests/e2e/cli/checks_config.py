@@ -354,16 +354,25 @@ def check_config_files(r: Results, tmp: Path) -> None:
     )
 
 def check_config_prove(r: Results, tmp: Path) -> None:
-    """The [prove] keys and flags need a real prover; skip without one."""
-    if shutil.which("gnatprove") is None:
+    """The [prove] keys and flags need a real prover; skip without one.
+
+    The skip asks `resolved_prover` -- the same resolution order the binary
+    uses -- not `$PATH` alone, so a host whose prover lives in the toolchain
+    cache runs the group instead of skipping it.  The group redirects the
+    state home to isolate the result cache, which also hides the cache the
+    prover came from, so the resolved executable's directory is put on
+    $PATH for the child runs.
+    """
+    if resolved_prover() is None:
         r.skip("prove-side configuration",
-               "no gnatprove on PATH (the checks need a prover)")
+               "no gnatprove on PATH or in the toolkit cache"
+               " (the checks need a prover)")
         return
     proj = tmp / "cfg-prove"
-    write_project(proj, 2)
+    write_provable_project(proj, 2)
     state = tmp / "cfg-prove-state"
     state.mkdir()
-    env = {"ADACOVEX_STATE_HOME": str(state)}
+    env = {"ADACOVEX_STATE_HOME": str(state), **prover_env()}
     base = ["prove", "-t", str(proj), "--no-cache", "-j", "1", "-l", "0"]
 
     #  Coverage is on by default for `adacovex prove`.
@@ -392,14 +401,6 @@ def check_config_prove(r: Results, tmp: Path) -> None:
         shown.returncode == 0 and "coverage:" in shown.stdout,
         "an explicit --coverage wins over the project file",
     )
-    #  Plain `adacovex` (no prove subcommand) also shows coverage when proof
-    #  artefacts are available in the target (left by the `shown` run above).
-    plain = run(["-t", str(proj)], env_extra=env, timeout=600)
-    r.check(
-        plain.returncode == 0 and "coverage:" in plain.stdout,
-        "plain `adacovex` shows coverage from cached proof artefacts",
-    )
-
     #  The composite action runs `prove` with its inputs as flags. A target
     #  repository's project file must reach that invocation too.
     action_like = run(
@@ -411,7 +412,17 @@ def check_config_prove(r: Results, tmp: Path) -> None:
         "the composite action's prove invocation honours a project file",
     )
 
+    #  Plain `adacovex` (no prove subcommand) also shows coverage when proof
+    #  artefacts are available in the target (left by the run above).  The
+    #  project file is removed first: it sets `coverage = false`, and that
+    #  key would suppress the line for the right reason but prove nothing
+    #  about the assessment path.
     (proj / "adacovex.toml").unlink()
+    plain = run(["-t", str(proj)], env_extra=env, timeout=600)
+    r.check(
+        plain.returncode == 0 and "coverage:" in plain.stdout,
+        "plain `adacovex` shows coverage from cached proof artefacts",
+    )
     global_cfg = state / "adacovex.toml"
     global_cfg.write_text("[prove]\ncoverage = false\n", encoding="utf-8")
     global_run = run(base, env_extra=env, timeout=600)
@@ -440,10 +451,60 @@ def check_config_prove(r: Results, tmp: Path) -> None:
         "a config-supplied level changes the proof cache identity",
     )
 
+def write_spark_fixture(path: Path) -> None:
+    """Scaffold a project with the two proof artefacts the report reads.
+
+    The report never runs the prover: it reads obj/gnatprove/gnatprove.out
+    and its SARIF sibling.  Writing both keeps the check independent of any
+    real proof run, so it behaves the same on a developer tree and on a
+    fresh CI checkout.
+    """
+    src = path / "src"
+    proof = path / "obj" / "gnatprove"
+    src.mkdir(parents=True, exist_ok=True)
+    proof.mkdir(parents=True, exist_ok=True)
+    (src / "foo.adb").write_text(
+        "package body Foo is\n"
+        "\n"
+        "   procedure Do_It is\n"
+        "   begin\n"
+        "      null;\n"
+        "   end Do_It;\n"
+        "\n"
+        "   procedure Helped is\n"
+        "   begin\n"
+        "      null;\n"
+        "   end Helped;\n"
+        "\n"
+        "end Foo;\n",
+        encoding="utf-8",
+    )
+    (proof / "gnatprove.out").write_text(
+        "GNATprove 16.1.0\n"
+        "in unit foo, 1 subprograms and packages out of 2 analyzed\n"
+        "  Foo.Helped at foo.adb:9 skipped; body is SPARK_Mode => Off\n",
+        encoding="utf-8",
+    )
+    (proof / "gnatprove.sarif").write_text(
+        '{"version":"2.1.0","runs":[{"results":['
+        '{"ruleId":"vc1","kind":"pass","level":"none",'
+        '"locations":[{"physicalLocation":{"artifactLocation":'
+        '{"uri":"foo.adb"},"region":{"startLine":5}}}],'
+        '"logicalLocations":[{"name":"Foo.Do_It"}]},'
+        '{"ruleId":"warn1","kind":"pass","level":"warning",'
+        '"locations":[{"physicalLocation":{"artifactLocation":'
+        '{"uri":"foo.adb"},"region":{"startLine":5}}}],'
+        '"logicalLocations":[{"name":"Foo.Do_It"}]}]}]}',
+        encoding="utf-8",
+    )
+
 def check_spark_coverage(r: Results, tmp: Path) -> None:
-    #  A project with no gnatprove artefacts fails loudly (exit 1);
-    #  the adacovex tree itself has obj/gnatprove from `just prove`,
-    #  so it produces every metric and the gate is evaluated.
+    """The report reads a committed artefact pair, never the repo's own.
+
+    A project with no artefacts fails loudly.  A project with the pair
+    produces every metric, the three off classes, a parseable JSON report,
+    and the gate's exit codes.
+    """
     empty = tmp / "spark-empty"
     write_project(empty, 1)
     no_artefacts = run(["spark-coverage", "--target", str(empty)])
@@ -452,7 +513,9 @@ def check_spark_coverage(r: Results, tmp: Path) -> None:
         "spark-coverage exits 1 when the proof artefacts are missing",
     )
 
-    report = run(["spark-coverage", "--target", ".", "--group=package"])
+    proj = tmp / "spark-fixture"
+    write_spark_fixture(proj)
+    report = run(["spark-coverage", "--target", str(proj), "--group=package"])
     r.check(
         report.returncode == 0
         and "Statement coverage" in report.stdout
@@ -468,20 +531,26 @@ def check_spark_coverage(r: Results, tmp: Path) -> None:
     )
 
     json_report = run(
-        ["spark-coverage", "--target", ".", "--spark-format=json"]
+        ["spark-coverage", "--target", str(proj), "--spark-format=json"]
     )
+    parsed = None
+    try:
+        parsed = json.loads(json_report.stdout)
+    except ValueError:
+        parsed = None
     r.check(
         json_report.returncode == 0
-        and '"statements"' in json_report.stdout
-        and '"off_classes"' in json_report.stdout,
-        "spark-coverage --spark-format=json emits the JSON report",
+        and isinstance(parsed, dict)
+        and "statements" in parsed.get("metrics", {})
+        and "off_classes" in parsed,
+        "spark-coverage --spark-format=json emits valid JSON",
     )
 
     gate_ok = run(
         [
             "spark-coverage",
             "--target",
-            ".",
+            str(proj),
             "--require-coverage=0",
             "--gate-metric=vcs",
         ]
@@ -494,14 +563,14 @@ def check_spark_coverage(r: Results, tmp: Path) -> None:
         [
             "spark-coverage",
             "--target",
-            ".",
+            str(proj),
             "--require-coverage=100",
-            "--gate-metric=statements",
+            "--gate-metric=subprograms",
         ]
     )
     r.check(
         gate_fail.returncode == 1
-        and "statements" in gate_fail.stdout,
+        and "subprograms" in gate_fail.stdout,
         "spark-coverage exits 1 below the threshold and names the metric",
     )
 
@@ -514,12 +583,17 @@ def check_spark_coverage(r: Results, tmp: Path) -> None:
     )
 
 def check_timezone(r: Results, tmp: Path) -> None:
-    """Timestamps default to UTC+0; --tz=local opts into the local zone."""
+    """Timestamps default to UTC+0; --tz=local opts into the local zone.
+
+    `status` exits 1 when the host cannot prove, which is the readiness
+    line and not a timezone failure, so the exit code is accepted as either
+    documented value and the timestamp text carries the check.
+    """
     proj = tmp / "tz-proj"
     write_project(proj, 1)
     default = run(["status", "-t", str(proj)])
     r.check(
-        default.returncode == 0 and "UTC+00:00" in default.stdout,
+        default.returncode in (0, 1) and "UTC+00:00" in default.stdout,
         "default status timestamp is UTC+00:00",
     )
     local = run(
@@ -527,11 +601,11 @@ def check_timezone(r: Results, tmp: Path) -> None:
         env_extra={"TZ": "Asia/Singapore"},
     )
     r.check(
-        local.returncode == 0 and "Asia/Singapore" in local.stdout,
+        local.returncode in (0, 1) and "Asia/Singapore" in local.stdout,
         "--tz=local reports the operator's wall-clock zone (Asia/Singapore)",
     )
     offset = run(["status", "-t", str(proj), "--tz=UTC+8"])
     r.check(
-        offset.returncode == 0 and "UTC+08:00" in offset.stdout,
+        offset.returncode in (0, 1) and "UTC+08:00" in offset.stdout,
         "--tz=UTC+8 reports the explicit offset (UTC+08:00)",
     )

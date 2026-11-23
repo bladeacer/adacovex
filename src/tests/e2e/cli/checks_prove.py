@@ -115,22 +115,30 @@ def check_differential_regression(r: Results, tmp: Path) -> None:
 
 def check_prove(r: Results, tmp: Path) -> None:
     # A target with no .gpr file makes prove fail after argument parsing and
-    # before gnatprove runs, so the flags can be exercised without a prover
-    # or a network download.
+    # before gnatprove runs.  The prover is resolved before the project file
+    # is looked for, so the resolved prover is put on $PATH (when the host
+    # has one) to reach that error deterministically; a host with no prover
+    # stops at the resolver instead.  Either stop is after the parser, which
+    # is what the check measures, so both count.
     nope = tmp / "prove-target"
     nope.mkdir(parents=True, exist_ok=True)
     no_gpr = "no root .gpr project file found"
+    no_prover = "could not download the gnatprove toolchain"
+    env = prover_env()
 
     accepted = run(["prove", "-t", str(nope), "-l", "2", "-j", "2",
                     "--timeout=60", "--steps=1000", "--memlimit=100",
-                    "--quiet", "--no-loop-unrolling", "--no-inlining"])
+                    "--quiet", "--no-loop-unrolling", "--no-inlining"],
+                   env_extra=env)
     r.check(
-        accepted.returncode == 1 and no_gpr in accepted.stderr,
+        accepted.returncode == 1
+        and (no_gpr in accepted.stderr or no_prover in accepted.stderr),
         "prove parses -t/-l/-j and the full prove option set",
     )
 
-    short = run(["prove", "-t", str(nope), "-l=2", "-j=2"])
-    long_form = run(["prove", "--target", str(nope), "--level=2", "--jobs=2"])
+    short = run(["prove", "-t", str(nope), "-l=2", "-j=2"], env_extra=env)
+    long_form = run(["prove", "--target", str(nope), "--level=2", "--jobs=2"],
+                    env_extra=env)
     r.check(
         short.returncode == long_form.returncode
         and short.stderr == long_form.stderr,
@@ -246,7 +254,13 @@ def check_tldr_install(r: Results, tmp: Path) -> None:
         encoding="utf-8",
     )
     proc = run(["tldr"], env_extra=env)
-    common_page = home / ".cache/tldr/pages/common/adacovex.md"
+    #  A base client writes into the host cache root: ~/Library/Caches on
+    #  macOS, the XDG cache (~/.cache) elsewhere.  An XDG cache override is
+    #  cleared above, so the platform rule decides the path.
+    if sys.platform == "darwin":
+        common_page = home / "Library/Caches/tldr/pages/common/adacovex.md"
+    else:
+        common_page = home / ".cache/tldr/pages/common/adacovex.md"
     r.check(
         proc.returncode == 0 and "base client" in proc.stdout,
         "tldr detects a base client from its version output",

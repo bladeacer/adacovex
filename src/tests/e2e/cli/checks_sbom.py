@@ -152,10 +152,13 @@ def check_sbom_siblings(r: Results, tmp: Path) -> None:
                     f"../{name}: the npm workspace registers npm components")
 
 def check_target_equivalence(r: Results, tmp: Path) -> None:
+    #  `status` exits 1 when the host cannot prove (its readiness line), which
+    #  says nothing about the target flags: assert the documented exit codes
+    #  and the report, not a bare 0 that only a provisioned host reaches.
     short = run(["status", "-t", str(tmp)])
     long = run(["status", f"--target={tmp}"])
     r.check(
-        short.returncode == 0 and long.returncode == 0,
+        short.returncode in (0, 1) and long.returncode in (0, 1),
         "status accepts -t and --target",
     )
     r.check(
