@@ -27,15 +27,17 @@ cherry-picking rows across versions.
 | v1.72.0 | closed | Performance close-out and documentation currency | changelog `adacovex-1.72.0.md` |
 | v1.73.0 | closed | Test suite portability and layout | changelog `adacovex-1.73.0.md` |
 | v1.74.0 | closed | Cache identity, diagnostics, terminology, and modularity | changelog `adacovex-1.74.0.md` |
-| v1.75.0 | planned | Dogfood close-out, CLI cohesion, and measured performance | 17b (Ada_CRDT robustness), 19 (contextual help audit), 26 (deterministic perf measurement), 27 (docs/stats), 28 (docs-bundle determinism and cost), final docs/STE pass |
+| v1.75.0 | in progress | Dogfood close-out, CLI cohesion, and measured performance | 17b (Ada_CRDT robustness), 19 (contextual help audit), 26 (deterministic perf measurement), 27 (docs/stats), 28 (docs-bundle determinism and cost), final docs/STE pass |
 
 ## Status (2026-11-23)
 
-v1.74.0 is closed; v1.75.0 is in progress. The tree holds 2486/2486 native
+v1.74.0 is closed; v1.75.0 is in progress and the tree now carries the 1.75.0
+version (manifests, generated version spec, SBOM, and a changelog scaffold).
+The tree holds 2486/2486 native
 tests across 30 categories, 193 CLI e2e checks (the prove-configuration group
 now runs whenever a prover is resolvable, instead of skipping on any host
 without one on `$PATH`), 274 prove-e2e checks over the committed fixture
-projects, and 1058 VCs at Gold.
+projects, and 1060 VCs at Gold.
 
 ### Delivered so far in v1.75.0
 
@@ -51,6 +53,13 @@ message block. The block then keeps the actionable fix hint.
 - [x] Unknown help topic: the message names the topic, suggests the nearest
 known topic or flag, and lists the valid topics before the full usage. The
 flag suggestion now closes its parenthesis.
+
+- [x] Proof-cache identity (debt D11): a proof key folds in the resolved
+absolute target, so a relative and an absolute `-t` for one project share
+one entry (measured: 2/2 unit hits, 17 ms). The `just run-ada-crdt` and
+Ada_CRDT `make prove` keys differ only because the two commands request
+different proofs (`-l=4` against gnatprove's legacy default), which is a
+different proof, not a per-caller cache.
 
 Item 19 stays open for its remaining scope: one `Example` and one `See also`
 line per topic, and exit codes where they are not 0/1.
