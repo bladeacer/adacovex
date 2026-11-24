@@ -140,7 +140,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2489/2489 native tests passing
+- 2494/2494 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -297,7 +297,7 @@ src/
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (20)
     |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (54)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
-    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (115)
+    |-- adacovex_prove_runner_tests.ads/.adb  -- GNATprove runner option/GPR tests (120)
     |-- adacovex_prove_tests.ads/.adb         -- GNATprove parser tests (93)
     |-- adacovex_renderer_svg_tests.ads/.adb  -- SVG renderer tests (161)
     |-- adacovex_renderer_tests.ads/.adb      -- HTML/Markdown renderer tests (58)
@@ -311,7 +311,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2489 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2494 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -562,7 +562,7 @@ there.
 The multi-step tasks delegate their orchestration to dedicated
 scripts so the runner stays declarative: `just build` runs
 tools/build.py (version + dashboard regeneration, `alr build` with the
-SFrame log filter, covex symlink),`just bench` runs tools/bench.py (hyperfine timings for the build phases -- the no-op build, a cold fresh-checkout build, both docs shapes, and a per-step generator breakdown read from `tools/build.py` and timed against the parallel bundle that build runs, with strace syscall profiles -- plus the pipeline and prove subcommand cold/warm timings and the stripped-binary size), `just doc` / `just fmt`
+SFrame log filter, covex symlink),`just bench` runs tools/bench.py (hyperfine timings for the build phases -- the no-op build, a cold fresh-checkout build, both docs shapes, and a per-step generator breakdown read from `tools/build.py` and timed against the parallel bundle that build runs, with strace syscall profiles -- plus the pipeline and prove subcommand cold/warm timings and the stripped-binary size), `just perf-report` runs tools/perf-report.py over the same recipe and renders `docs/stats/` (it also runs inside `just release`), `just doc` / `just fmt`
 run their command through tools/dev-cmd.py (the alire-dev.toml swap,
 restored unconditionally), `just coverage-gate` runs tools/coverage-gate.py
 (temp-worktree docstring delta vs the previous release tag), `just prove` /
@@ -725,7 +725,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the docs-tree regeneration, the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the sync gates -- which **regenerate** the dynamic content (test counts and the AGENTS.md source tree, proof metrics and badges, the crate-description copies, `requirements.txt`) instead of failing a stale one. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2489-test native suite |
+| `test` | Build + run the 2494-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -762,6 +762,7 @@ compatibility shim. The table names the canonical target for each task.
 | `book-links-check` | Fail when a link inside the bundled offline manual does not resolve (checked against a fresh `sphinx-build` from a temp copy of `docs/`; tools/check-book-links.py; shares the offline-asset rules with tools/gen-docs.py). `just check` also runs `python3 tools/gen-docs.py --check`, which fails when the committed spec `src/adacovex-docs_template.ads` drifts from a fresh build |
 | `bench` | Benchmark the build phases, the pipeline, and the `prove` subcommand with hyperfine (bash `time` fallback): strace syscall profiles of the no-op build and the cold-tree docs run, build warm (`alr build` no-op), cold build (`tools/build.py --release` in a fresh tree copy: no `obj/`, `bin/`, `docs/_build/`), the per-step generator breakdown and the parallel bundle (`tools/build.py --steps-only`, with the step list read from `tools/build.py`), docs cold tree (the committed spec's fingerprint hit) and docs full Sphinx (`--fresh`), pipeline cold/warm, prove cold (`prove --no-cache`, result cache + gnatprove session wiped), prove warm, prove cold clone (fresh tree: no cache, no session, no summary), + binary size (`python3 tools/bench.py build|pipeline|prove` runs one section; docs/contributing/perf/index.md) |
 | `perf-bench` | Profile the adacovex binary with perf and strace (tools/perf-bench.py; docs/contributing/perf/index.md) |
+| `perf-report` | Measure the release shapes (pipeline, prove, build, docs, binary size, syscalls, cache, tests) and rewrite the generated tables under `docs/stats/`; `just release` runs it with `--release`, which is a no-op build on an already release-built tree (tools/perf-report.py; recipe in tools/bench.py) |
 | `spark-off-check` | Fail if any `SPARK_Mode (Off)` appears outside `Types.Implementation` and `Complexity` (the non-formal `Ada.Containers` instantiations) |
 | `clean` | Remove bin/ obj/ docs/badges/ |
 | `help` | Print available targets |
@@ -853,7 +854,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2489/2489 passing |
+| Unit tests | `just test` | 2494/2494 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1060 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand always sends a level -- the requested one, else 4 -- so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -922,7 +923,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2489 tests across 30 categories).
+Native zero-dependency suite (`src/tests/`, 2494 tests across 30 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests). The Python end-to-end suites
 live under `src/tests/e2e/` in category directories (`cli/`, `prove/`,
@@ -1056,6 +1057,14 @@ docs/
 |   `-- index.md -- Badges
 |-- api-docs/ (generated by `just doc`; edit the Ada docstrings, never these pages)
 |-- changelogs/ (one page per release; `just release` adds the current one)
+|-- stats/
+|   |-- binary-size.md -- Binary size
+|   |-- bundle.md -- Docs bundle size and cost
+|   |-- cache.md -- Result-cache hit rate
+|   |-- index.md -- Measured figures
+|   |-- syscalls.md -- Syscall profile
+|   |-- tests.md -- Native test counts
+|   `-- timings.md -- Pipeline, prove, build, and docs timings
 `-- tldr/
     `-- adacovex.md -- adacovex
 

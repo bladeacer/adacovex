@@ -10,11 +10,11 @@ results and links to the evidence.
 
 | Shape | Command | What makes it fast or slow |
 |-------|---------|----------------------------|
-| Pipeline cold | `adacovex --cache-dir=<fresh>` | Scans and renders everything; about 77 ms on the benchmark machine |
+| Pipeline cold | `adacovex --cache-dir=<fresh>` | Scans and renders everything; the current mean is on [timings](../stats/timings.md) |
 | Pipeline warm | `adacovex --cache-dir=<populated>` | Serves scan and graph results from the cache |
-| Prove warm | `adacovex prove` on an unchanged tree | One content hash, then the stored proof; about 63 ms |
-| Prove cold | `adacovex prove --no-cache` with `obj/gnatprove/` wiped | The solver dominates: roughly 80 s at the open phase's 1054 VCs (the tree now proves 1058) |
-| Build no-op | `just build` on a built tree | About 0.3 s; the generators rewrite only changed specs |
+| Prove warm | `adacovex prove` on an unchanged tree | One content hash, then the stored proof |
+| Prove cold | `adacovex prove --no-cache` with `obj/gnatprove/` wiped | The solver dominates; the trend across releases is on [prove timing](../contributing/perf/prove-timing.md) |
+| Build no-op | `just build` on a built tree | The generators rewrite only changed specs; the mean is on [timings](../stats/timings.md) |
 
 An entry older than its TTL (7 days by default) is a miss, so a cache
 restored long after a project changed cannot serve a stale record. The age
@@ -42,7 +42,9 @@ spec file.
 
 ## Where the method lives
 
-The benchmark categories and how to reproduce them are on
+The current figures, with the host profile and the command behind each one,
+are on [Measured figures](../stats/index.md). The benchmark categories and
+how to reproduce them are on
 [Benchmarking adacovex](../contributing/perf/index.md). The per-phase `just
 prove` timing table and its representative-version rule are on [Prove timing
 and the optimisation review](../contributing/perf/prove-timing.md). The

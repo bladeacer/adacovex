@@ -160,6 +160,38 @@ class TestRelease(unittest.TestCase):
         self.assertLess(order.index("tools/build.py"), order.index("--version"))
         self.assertLess(order.index("--version"), order.index("prove"))
 
+    def test_release_measures_the_figures_before_bundling(self) -> None:
+        # Item 26: a release publishes measured timings, and the measurement
+        # must use the release profile so it cannot relink the release binary
+        # as a development one.  It also runs before the tag, so the fresh
+        # docs/stats pages ride in the release commit.
+        seen: dict = {}
+        order: List[str] = []
+
+        def fake_sh(cmd: List[str], check: bool = True, **kwargs) -> object:
+            joined = " ".join(cmd)
+            if "perf-report.py" in joined:
+                seen["cmd"] = cmd
+                order.append("perf-report")
+            return subprocess.CompletedProcess(
+                cmd, 0, stdout="adacovex v1.2.3\n")
+
+        def fake_bundle(version: str) -> None:
+            order.append("bundle")
+
+        with mock.patch.object(release, "sh", fake_sh), \
+                mock.patch.object(release, "previous_tag", return_value=None), \
+                mock.patch.object(release, "bundle", fake_bundle), \
+                mock.patch.object(release, "attest"), \
+                mock.patch.object(release, "bump_manifests"), \
+                mock.patch.object(release, "git_tag_ops"):
+            self.assertEqual(release.release("1.2.3", "", "o/r", True), 0)
+        self.assertEqual(seen["cmd"][1:],
+                         ["tools/perf-report.py", "--release",
+                          "--version=1.2.3"])
+        self.assertIn("perf-report", order)
+        self.assertLess(order.index("perf-report"), order.index("bundle"))
+
 class ReleaseTagTests(unittest.TestCase):
     """The tag step of `just release`, which is where a late failure lands.
 

@@ -111,6 +111,10 @@ bench:
 perf-bench:
     @python3 tools/tasks.py perf-bench
 
+# Measure the release shapes and refresh the generated docs/stats tables.
+perf-report:
+    @python3 tools/tasks.py perf-report
+
 # Docstring-coverage gate between the latest two release tags.
 coverage-gate:
     @python3 tools/tasks.py coverage-gate

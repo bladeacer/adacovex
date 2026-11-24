@@ -23,7 +23,8 @@ from typing import Callable, Dict, List
 
 from taskkit.build import (fmt_sources, task_bench, task_book, task_build,
                            task_compliance, task_coverage_gate, task_doc,
-                           task_fmt, task_man, task_perf_bench, task_prove,
+                           task_fmt, task_man, task_perf_bench,
+                           task_perf_report, task_prove,
                            task_run_ada_crdt, task_run_self, task_sbom,
                            task_test)
 from taskkit.checks import (CHECK_GATES, CHECK_PARALLEL_PROCESS,
@@ -67,6 +68,7 @@ TASKS: Dict[str, Callable[[], int]] = {
     "compliance": task_compliance,
     "bench": task_bench,
     "perf-bench": task_perf_bench,
+    "perf-report": task_perf_report,
     "coverage-gate": task_coverage_gate,
     "link-check": task_link_check,
     "action-parity-check": task_action_parity_check,

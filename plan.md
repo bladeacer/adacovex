@@ -33,8 +33,8 @@ cherry-picking rows across versions.
 
 v1.74.0 is closed; v1.75.0 is in progress and the tree now carries the 1.75.0
 version (manifests, generated version spec, SBOM, and a changelog scaffold).
-The tree holds 2486/2486 native
-tests across 30 categories, 193 CLI e2e checks (the prove-configuration group
+The tree holds 2494/2494 native
+tests across 30 categories, 213 CLI e2e checks (the prove-configuration group
 now runs whenever a prover is resolvable, instead of skipping on any host
 without one on `$PATH`), 274 prove-e2e checks over the committed fixture
 projects, and 1060 VCs at Gold.
@@ -70,8 +70,26 @@ Ada_CRDT `make prove` keys differ only because the two commands request
 different proofs (`-l=4` against gnatprove's legacy default), which is a
 different proof, not a per-caller cache.
 
-Item 19 stays open for its remaining scope: one `Example` and one `See also`
-line per topic, and exit codes where they are not 0/1.
+- [x] Item 19 (contextual help audit): every dispatched topic now closes with
+one `Examples:` command, a `See also:` line naming the related topics and the
+page that explains them, and an `Exit codes:` block where a code other than
+0/1 exists (`man --check`, `tldr --check`, `init`, `prove`, `spark-coverage`,
+`--require-*`). The CLI e2e suite asserts the frame, the two new sections,
+and the absence of a developer-only command for all twelve frames.
+
+- [x] Item 17b (Ada_CRDT dogfood): the level-4 run proves 1107 VCs with none
+unproved, and the replay reports 4 hidden notices, 11 collapsed duplicates,
+and 6 warning lines over 2 distinct messages. The run found one gap: the
+reserved suppression set `all` matched no tag, so it silently suppressed
+nothing; it now hides every tagged notice, with a regression test. The
+findings by class are on `docs/contributing/proving-diagnostics.md`.
+
+- [x] Items 26-28 (measured figures): `just perf-report` measures the
+release shapes through `tools/bench.py` and rewrites the generated tables on
+`docs/stats/`; `just release` runs it with `--release`, so the release
+commit carries fresh figures. The docs-bundle measurement and the rebuild
+decision tree are recorded on `docs/stats/bundle.md` and
+`docs/usage/dashboard-docs.md`.
 
 The test tree has one root: `src/tests/` holds the native suite, the e2e
 suites in `src/tests/e2e/`, and the fixture projects in

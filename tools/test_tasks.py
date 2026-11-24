@@ -396,3 +396,116 @@ class TaskkitLayoutTests(unittest.TestCase):
         registry = (cli / "cli_flags.py").read_text(encoding="utf-8")
         self.assertIn("CHECKS = [", registry)
         self.assertIn('("tldr install", check_tldr_install)', registry)
+
+class PerfReportTests(unittest.TestCase):
+    """`just perf-report` renders measured values, never remembered ones.
+
+    The measurement itself is a timing loop, so the tests pin the pure parts:
+    the formatter, the marked-region rewrite, the missing-tool fallbacks, and
+    the no-op write.  A report row without a measurement still renders with
+    an explicit "not measured" cell instead of a blank.
+    """
+
+    REPORT: dict = {
+        "version": "9.9.9",
+        "host": {"cpu": "Test CPU", "cores": 8, "kernel": "6.0.0",
+                 "platform": "Linux x86_64", "filesystem": "ext4",
+                 "compiler": "gnatmake 16.1.0", "gnatprove": "gnatprove 16.1.0",
+                 "build_profile": "covex=DEVELOPMENT",
+                 "hyperfine": "hyperfine 1.19.0", "strace": "strace 6.9",
+                 "load_average": "0.42"},
+        "scenarios": [
+            {"label": "pipeline warm", "command": "./bin/adacovex",
+             "runs": 10, "warmup": 2, "mean_s": 0.0482, "stddev_s": 0.0012,
+             "tool": "hyperfine"},
+            {"label": "pipeline cold", "command": "./bin/adacovex",
+             "runs": 5, "warmup": 0, "mean_s": 0.0771, "stddev_s": 0.0030,
+             "tool": "hyperfine"},
+        ],
+        "cache": {"hits": 49, "misses": 0, "evicted": 0},
+        "syscalls": [{"syscall": "newfstatat", "calls": 7924},
+                     {"syscall": "total", "calls": 20000}],
+        "binary": {"raw": 2100000, "stripped": 1500000},
+        "docs": {"spec_bytes": 640000, "assets": 91,
+                 "fingerprint": "abc123"},
+        "tests": {"passed": 2489, "failed": 0},
+    }
+
+    def test_seconds_are_formatted_with_a_unit(self) -> None:
+        self.assertEqual(perf_report.fmt_seconds(0.0482), "48.2 ms")
+        self.assertEqual(perf_report.fmt_seconds(1.234), "1.23 s")
+        self.assertEqual(perf_report.fmt_seconds(12.34), "12.3 s")
+        self.assertEqual(perf_report.fmt_seconds(None), "not measured")
+
+    def test_bytes_are_formatted_with_a_unit(self) -> None:
+        self.assertIn("2.0 MiB", perf_report.fmt_bytes(2097152))
+        self.assertIn("512.0 KiB", perf_report.fmt_bytes(524288))
+        self.assertIn("12 bytes", perf_report.fmt_bytes(12))
+
+    def test_block_replaces_only_the_marked_region(self) -> None:
+        page = "# Title\n\nhand-written prose\n\n<!-- perf-report:begin -->\nold\n<!-- perf-report:end -->\n\ntail prose\n"
+        updated = perf_report.replace_block(page, ["new"])
+        self.assertIn("hand-written prose", updated)
+        self.assertIn("tail prose", updated)
+        self.assertIn("new", updated)
+        self.assertNotIn("\nold\n", updated)
+
+    def test_block_is_appended_when_the_markers_are_missing(self) -> None:
+        updated = perf_report.replace_block("# Title\n\nprose\n", ["value"])
+        self.assertTrue(updated.index("prose") < updated.index(perf_report.BEGIN))
+        self.assertIn("value", updated)
+        self.assertTrue(updated.endswith(perf_report.END + "\n"))
+
+    def test_timings_table_names_each_scenario_and_tool(self) -> None:
+        lines = "\n".join(perf_report.timings_block(self.REPORT))
+        self.assertIn("| pipeline warm | 48.2 ms |", lines)
+        self.assertIn("| pipeline cold | 77.1 ms |", lines)
+        self.assertIn("Measured with: hyperfine.", lines)
+        self.assertIn("9.9.9", lines)
+
+    def test_missing_strace_reports_the_reason(self) -> None:
+        report = dict(self.REPORT, syscalls=[])
+        lines = "\n".join(perf_report.syscalls_block(report))
+        self.assertIn("strace", lines)
+        self.assertIn("not installed", lines)
+
+    def test_cache_rate_is_computed_from_the_counts(self) -> None:
+        lines = "\n".join(perf_report.cache_block(self.REPORT))
+        self.assertIn("| cache hits | 49 |", lines)
+        self.assertIn("| hit rate | 100.0% |", lines)
+
+    def test_bundle_block_lists_the_fingerprint_and_both_shapes(self) -> None:
+        report = dict(self.REPORT, scenarios=self.REPORT["scenarios"] + [
+            {"label": "docs fresh", "command": "gen-docs --fresh", "runs": 2,
+             "warmup": 0, "mean_s": 9.5, "stddev_s": 0.1, "tool": "hyperfine"},
+        ])
+        lines = "\n".join(perf_report.bundle_block(report))
+        self.assertIn("abc123", lines)
+        self.assertIn("| docs fresh | 9.50 s |", lines)
+
+    def test_render_writes_every_page_and_is_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            self.assertEqual(perf_report.render_pages(self.REPORT, out), 7)
+            first = (out / "timings.md").read_text(encoding="utf-8")
+            self.assertEqual(perf_report.render_pages(self.REPORT, out), 0,
+                             "a second render must not rewrite a page")
+            self.assertEqual((out / "timings.md").read_text(encoding="utf-8"),
+                             first)
+            self.assertEqual(perf_report.check_pages(out), [])
+
+    def test_check_reports_a_page_without_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            for name in perf_report.PAGES:
+                (out / name).write_text("# no markers\n", encoding="utf-8")
+            problems = perf_report.check_pages(out)
+            self.assertEqual(len(problems), len(perf_report.PAGES))
+
+    def test_measure_falls_back_to_a_wall_clock_loop(self) -> None:
+        with mock.patch.object(bench, "hyperfine_available", return_value=False):
+            row = bench.measure("noop", f"{sys.executable} -c pass", 1,
+                                warmup=0)
+        self.assertEqual(row["tool"], "time")
+        self.assertGreaterEqual(row["mean_s"], 0.0)
+        self.assertEqual(row["runs"], 1)

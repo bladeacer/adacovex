@@ -451,6 +451,14 @@ def release(version_arg: str, assess_args: str, repo: str, dry_run: bool) -> int
         print("ERROR: self-assessment failed; aborting release", file=sys.stderr)
         return 1
 
+    print("=== Measuring the release figures ===")
+    report = sh([sys.executable, "tools/perf-report.py", "--release",
+                 f"--version={version}"], check=False)
+    if report.returncode != 0:
+        print("ERROR: the perf report failed; aborting release",
+              file=sys.stderr)
+        return 1
+
     print("=== Docstring coverage gate (last release vs current) ===")
     previous = previous_tag(version)
     if previous is None:

@@ -91,6 +91,35 @@ subtree from the sidebar.
 The full composition of the bundled site, and the other size options
 measured, are on [Benchmarking adacovex -- bundled offline
 manual](../contributing/perf/benchmarks-binary-size.md#bundled-offline-manual).
+The current size and the cost of each rebuild shape are on [Docs bundle size
+and cost](../stats/bundle.md).
+
+## Rebuilding the manual
+
+The build records one content-addressed stamp at
+`docs/_build/.adacovex-docs-sources`. It holds the bundle fingerprint, every
+output path, and the digest of every input, so it is the manifest the next
+build reads.
+
+The rebuild decision tree is short:
+
+1. The committed spec carries the bundle fingerprint of the sources it was
+   built from. When that fingerprint matches the current sources, Sphinx does
+   not run and the committed spec is kept (the cold-tree shape).
+2. A changed source rebuilds incrementally, and the result is verified
+   against the page set. A stale doctree cannot survive, because the changed
+   pages' mtimes are refreshed before Sphinx reads them.
+3. A page added or removed, or a `{toctree}` edit, rewrites every page, so no
+   sidebar keeps a stale entry. The removed page's outputs are swept.
+4. A verification failure falls back to a clean rebuild. `--fresh` forces one
+   by hand.
+5. With no Sphinx toolchain, the committed spec is kept and the build prints
+   the reason. A missing build directory never produces a partial bundle.
+
+The encoder caches each body's gzip+base85 result by SHA-256 under
+`obj/adacovex-docs-encode/`, so a docs edit re-encodes only the pages it
+touched, and the uncached bodies encode in parallel across the cores. Both
+are pure speed-ups: the emitted spec is byte-identical either way.
 
 ## See also
 
@@ -99,3 +128,5 @@ manual](../contributing/perf/benchmarks-binary-size.md#bundled-offline-manual).
   views](dashboard-html.md) -- the tabs and the dependency views.
 - [The dashboard JSON API, playground, and themes](dashboard-api.md) --
   the JSON API and the themes.
+- [Docs bundle size and cost](../stats/bundle.md) -- the measured size and
+  rebuild timings.

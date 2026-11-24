@@ -67,7 +67,8 @@ a technical word in any doc, docstring, or changelog.
   [IEC 62304 and the safety classes](usage/standards-iec-62304.md), and
   [Selecting a standard](usage/standards-selection.md).
 - [Performance and benchmarks](usage/performance.md) -- run times and the
-  cache shapes behind them.
+  cache shapes behind them. The current measured figures are on
+  [Measured figures](stats/index.md).
 - [Platforms](usage/platforms.md) -- supported platforms and toolkit
   state.
 - [VCS support](usage/vcs.md) -- differential assessment across git, hg,
@@ -101,7 +102,8 @@ a technical word in any doc, docstring, or changelog.
 - [Requirements](contributing/requirements.md) -- the dependency
   categorisation.
 - [Performance](contributing/perf/index.md) -- the benchmark categories and
-  the current numbers, with [how to run them](contributing/perf/benchmarks.md),
+  the method, with [how to run them](contributing/perf/benchmarks.md),
+  the [measured figures](stats/index.md),
   the [per-phase prove timings](contributing/perf/prove-timing.md) and its
   [1.55.0 re-baseline](contributing/perf/prove-rebaseline.md), plus the
   [optimisation history](contributing/perf/optimisation-history.md).
@@ -121,6 +123,9 @@ a technical word in any doc, docstring, or changelog.
   and the HLR/LLR indexes.
 - [HLR index](compliance/HLR.md) and [LLR mapping](compliance/LLR.md).
 - [Badges](badges/index.md) -- the badge set the self-assessment emits.
+- [Measured figures](stats/index.md) -- the current timings, binary size,
+  syscall profile, cache hit rate, bundle size, and test counts, each with
+  its host profile and the command that produced it.
 - [API reference](api-docs/index.md) -- the generated package
   documentation.
 - [tldr page](tldr/adacovex.md) -- the cheat sheet for the CLI, which `adacovex tldr` installs into the local tldr client.
@@ -242,6 +247,20 @@ contributing/perf/prove-timing
 contributing/perf/prove-rebaseline
 contributing/perf/check-pipeline
 contributing/perf/optimisation-history
+```
+
+```{toctree}
+:caption: Measured figures
+:maxdepth: 1
+:hidden:
+
+stats/index
+stats/timings
+stats/binary-size
+stats/syscalls
+stats/cache
+stats/bundle
+stats/tests
 ```
 
 ```{toctree}

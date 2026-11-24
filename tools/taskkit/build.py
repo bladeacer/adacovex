@@ -266,6 +266,11 @@ def task_perf_bench() -> int:
     rc = task_build()
     return rc if rc != 0 else py("tools/perf-bench.py")
 
+def task_perf_report() -> int:
+    """Measure the release shapes and refresh the generated stats tables."""
+    rc = task_build()
+    return rc if rc != 0 else py("tools/perf-report.py")
+
 def task_coverage_gate() -> int:
     rc = task_build()
     return rc if rc != 0 else py("tools/coverage-gate.py")

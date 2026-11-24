@@ -70,6 +70,9 @@ bench-size.py reports a problem.
 import argparse
 import importlib.util
 import json
+import os
+import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -585,7 +588,346 @@ def report_binary_size() -> int:
     return rc
 
 
+#  ``just perf-report`` samples: small, because the report runs at every
+#  version bump and the cold shapes are expensive by construction.
+REPORT_RUNS: dict = {
+    "pipeline cold": 5,
+    "pipeline warm": 10,
+    "prove warm": 5,
+    "build warm": 3,
+    "docs cold tree": 2,
+    "docs fresh": 2,
+}
+
+
+def measure(label: str, command: str, runs: int, warmup: int = 1,
+            prepare: str = "", cwd: Path = ROOT,
+            env: Optional[dict] = None) -> dict:
+    """Time one command and return a report row.
+
+    The measurement primitive behind `just perf-report`: hyperfine when it is
+    installed (its JSON export owns the mean and the deviation), otherwise a
+    plain wall-clock loop.  A host without hyperfine still produces a
+    complete row, marked with the tool that measured it, so the report never
+    silently drops a metric.
+    """
+    row: dict = {
+        "label": label,
+        "command": command,
+        "runs": runs,
+        "warmup": warmup,
+        "mean_s": None,
+        "stddev_s": None,
+        "tool": "hyperfine",
+    }
+    export = Path(tempfile.gettempdir()) / "adacovex-perf-report.json"
+    if hyperfine_available():
+        export.unlink(missing_ok=True)
+        cmd = ["hyperfine", "--warmup", str(warmup), "--runs", str(runs)]
+        if prepare:
+            cmd += ["--prepare", prepare]
+        cmd += [command, "--export-json", str(export)]
+        result = subprocess.run(cmd, cwd=str(cwd), env=env)
+        if result.returncode == 0:
+            try:
+                entry = json.loads(export.read_text())["results"][0]
+                row["mean_s"] = row_seconds(entry, "mean")
+                row["stddev_s"] = row_seconds(entry, "stddev")
+                return row
+            except (OSError, ValueError, KeyError):
+                pass
+    row["tool"] = "time"
+    samples: List[float] = []
+    for _ in range(runs):
+        if prepare:
+            subprocess.run(prepare, shell=True, cwd=str(cwd), env=env,
+                           stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL)
+        started = time.perf_counter()
+        subprocess.run(command, shell=True, cwd=str(cwd), env=env,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        samples.append(time.perf_counter() - started)
+    mean = sum(samples) / len(samples)
+    variance = sum((s - mean) ** 2 for s in samples) / len(samples)
+    row["mean_s"] = mean
+    row["stddev_s"] = variance ** 0.5
+    return row
+
+
+def _first_line(argv: List[str]) -> str:
+    """The first line of a tool's version banner, or "unknown"."""
+    try:
+        result = subprocess.run(argv, capture_output=True, text=True,
+                                timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    line = (result.stdout or result.stderr or "").splitlines()
+    return line[0].strip() if line else "unknown"
+
+
+def _cpu_model() -> str:
+    """The CPU model, read from /proc/cpuinfo where the host provides it."""
+    try:
+        for line in Path("/proc/cpuinfo").read_text(errors="replace").splitlines():
+            if line.lower().startswith(("model name", "hardware", "cpu model")):
+                return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return "unknown"
+
+
+def _filesystem() -> str:
+    """The filesystem type under the repository root."""
+    try:
+        result = subprocess.run(["findmnt", "-no", "FSTYPE", "-T", str(ROOT)],
+                                capture_output=True, text=True, timeout=10)
+        kind = result.stdout.strip()
+        if result.returncode == 0 and kind:
+            return kind
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "unknown"
+
+
+def _build_profile() -> str:
+    """The Alire build profile the current workspace was built with."""
+    settings = ROOT / "alire" / "settings.toml"
+    try:
+        for line in settings.read_text(errors="replace").splitlines():
+            if line.startswith("last_build_profile"):
+                return line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return "unknown"
+
+
+def host_profile() -> dict:
+    """The machine a report was measured on.
+
+    A figure without this context is not comparable with another figure, so
+    every generated page carries the profile beside its table.
+    """
+    return {
+        "cpu": _cpu_model(),
+        "cores": os.cpu_count() or 0,
+        "kernel": platform.release(),
+        "platform": f"{platform.system()} {platform.machine()}",
+        "filesystem": _filesystem(),
+        "compiler": _first_line(["gnatmake", "--version"]),
+        "gnatprove": _first_line(["gnatprove", "--version"]),
+        "build_profile": _build_profile(),
+        "hyperfine": _first_line(["hyperfine", "--version"]),
+        "strace": _first_line(["strace", "--version"]),
+        "load_average": load_avg(),
+    }
+
+
+def cache_readings(extra_args: Sequence[str] = ()) -> dict:
+    """Run the pipeline once and report its cache hit, miss, and evicted counts.
+
+    The warm-up run of the timing scenarios already pays this work; this run
+    keeps one captured copy its own so the numbers cannot be mixed with a
+    hyperfine sample.
+    """
+    cache = tempfile.mkdtemp(prefix="adacovex-perf-cache-")
+    try:
+        run = [str(ROOT / "bin" / "adacovex")] + list(extra_args) \
+            + [f"--cache-dir={cache}"]
+        subprocess.run(run, cwd=str(ROOT), stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+        result = subprocess.run(run, cwd=str(ROOT), capture_output=True,
+                                text=True)
+        match = re.search(r"(\d+) hit\(s\), (\d+) miss\(es\), "
+                          r"(\d+) evicted", result.stdout)
+        if match:
+            return {"hits": int(match.group(1)),
+                    "misses": int(match.group(2)),
+                    "evicted": int(match.group(3))}
+        return {"hits": 0, "misses": 0, "evicted": 0,
+                "note": "no cache line in the pipeline output"}
+    finally:
+        shutil.rmtree(cache, ignore_errors=True)
+
+
+def syscall_readings(extra_args: Sequence[str] = ()) -> List[dict]:
+    """The strace -c counts of one pipeline run, for the report table.
+
+    strace serialises the workload, so these are syscall counts, never wall
+    time.  A host without strace reports an empty list and the report page
+    says why instead of inventing a figure.
+    """
+    if shutil.which("strace") is None:
+        return []
+    cache = tempfile.mkdtemp(prefix="adacovex-perf-strace-")
+    log = Path(tempfile.gettempdir()) / "adacovex-perf-strace.txt"
+    try:
+        run = [str(ROOT / "bin" / "adacovex")] + list(extra_args) \
+            + [f"--cache-dir={cache}"]
+        subprocess.run(run, cwd=str(ROOT), stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+        subprocess.run(["strace", "-f", "-c", "-o", str(log)] + run,
+                       cwd=str(ROOT), stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+        try:
+            rows = log.read_text(errors="replace").splitlines()[1:]
+        except OSError:
+            return []
+        readings: List[dict] = []
+        for row in rows:
+            parts = row.split()
+            if len(parts) < 5 or parts[-1] not in STRACE_ROWS + ("totals",):
+                continue
+            calls = parts[-3] if len(parts) >= 6 else parts[-2]
+            readings.append({
+                "syscall": "total" if parts[-1] == "totals" else parts[-1],
+                "calls": int(calls) if calls.isdigit() else 0,
+            })
+        return readings
+    finally:
+        shutil.rmtree(cache, ignore_errors=True)
+
+
+def binary_readings() -> dict:
+    """The raw and stripped size of bin/adacovex, in bytes."""
+    raw = ROOT / "bin" / "adacovex"
+    stripped = Path(tempfile.gettempdir()) / "adacovex-perf-strip"
+    try:
+        shutil.copy2(raw, stripped)
+        if subprocess.run(["strip", str(stripped)]).returncode != 0:
+            return {"raw": raw.stat().st_size, "stripped": None}
+        return {"raw": raw.stat().st_size, "stripped": stripped.stat().st_size}
+    finally:
+        stripped.unlink(missing_ok=True)
+
+
+def docs_readings() -> dict:
+    """The committed bundle's size, page count, and fingerprint.
+
+    Read from the generated spec, never from a Sphinx build directory, so the
+    figure describes the artifact the binary carries.
+    """
+    spec = ROOT / "src" / "adacovex-docs_template.ads"
+    readings: dict = {"spec_bytes": 0, "assets": 0, "bodies": 0,
+                      "fingerprint": "unknown"}
+    try:
+        readings["spec_bytes"] = spec.stat().st_size
+        text = spec.read_text(errors="replace")
+        for key, pattern in (
+                ("assets", r"Asset_Count\s*:\s*constant\s*:=\s*(\d+)"),
+                ("bodies", r"Body_Count\s*:\s*constant\s*:=\s*(\d+)")):
+            match = re.search(pattern, text)
+            readings[key] = int(match.group(1)) if match else 0
+        match = re.search(
+            r'Source_Fingerprint\s*:\s*constant\s+String\s*:=\s*"([0-9a-f]+)"',
+            text)
+        if match:
+            readings["fingerprint"] = match.group(1)
+    except OSError:
+        pass
+    return readings
+
+
+def collect_report(release: bool = False, version: str = "") -> dict:
+    """Measure every metric family `just perf-report` publishes.
+
+    One call owns the scenario list, so the report and `just bench` cannot
+    drift into two recipes.  The cold shapes wipe only their own temporary
+    cache; the working tree's cache, session store, and spec are untouched.
+
+    `release` measures the release profile: the warm build row runs `alr
+    build --release`, which is a no-op on a tree tools/release.py already
+    built, so the measurement cannot relink the release binary as a
+    development one.  `version` names the release the report describes when
+    the manifest has not been bumped yet.
+    """
+    binary_path()
+    ensure_proof_output()
+    cache = tempfile.mkdtemp(prefix="adacovex-perf-report-")
+    prove_cache = tempfile.mkdtemp(prefix="adacovex-perf-report-prove-")
+    scenarios: List[dict] = []
+    try:
+        pipeline = f"./bin/adacovex --cache-dir={cache}"
+        scenarios.append(measure(
+            "pipeline cold", pipeline, REPORT_RUNS["pipeline cold"],
+            warmup=0, prepare=f"rm -rf {cache}"))
+        scenarios.append(measure(
+            "pipeline warm", pipeline, REPORT_RUNS["pipeline warm"],
+            warmup=2))
+        scenarios.append(measure(
+            "prove warm", f"./bin/adacovex prove --cache-dir={prove_cache}",
+            REPORT_RUNS["prove warm"], warmup=1))
+        build_command = "alr build --release" if release else "alr build"
+        scenarios.append(measure(
+            "build warm", build_command, REPORT_RUNS["build warm"],
+            warmup=1))
+        #  Settle the committed spec first: the cold-tree row is the
+        #  fingerprint-hit shape, so a spec that is stale against the sources
+        #  would measure one full Sphinx build instead.  The untimed run is
+        #  also the correctness precondition the row claims.
+        subprocess.run([sys.executable, "tools/gen-docs.py"], cwd=str(ROOT),
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        scenarios.append(measure(
+            "docs cold tree", f"{shlex.quote(sys.executable)} tools/gen-docs.py",
+            REPORT_RUNS["docs cold tree"], warmup=0,
+            prepare="rm -rf docs/_build obj/adacovex-docs-encode"))
+        scenarios.append(measure(
+            "docs fresh",
+            f"{shlex.quote(sys.executable)} tools/gen-docs.py --fresh",
+            REPORT_RUNS["docs fresh"], warmup=0,
+            prepare="rm -rf obj/adacovex-docs-encode"))
+    finally:
+        shutil.rmtree(cache, ignore_errors=True)
+        shutil.rmtree(prove_cache, ignore_errors=True)
+
+    counts = _native_test_counts()
+
+    return {
+        "version": version or _project_version(),
+        "host": host_profile(),
+        "scenarios": scenarios,
+        "cache": cache_readings(),
+        "syscalls": syscall_readings(),
+        "binary": binary_readings(),
+        "docs": docs_readings(),
+        "tests": counts,
+    }
+
+
+def _native_test_counts() -> dict:
+    """The native suite counts from test_result.md, via the sync tool.
+
+    The parser lives in tools/update-test-count.py, whose hyphenated name
+    needs an explicit import; a missing or unreadable result file reports
+    zeros rather than failing the whole report.
+    """
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "adacovex_test_count", ROOT / "tools" / "update-test-count.py")
+        if spec is None or spec.loader is None:
+            return {"passed": 0, "failed": 0}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _, passed, failed = module.parse_result(ROOT / "test_result.md")
+        return {"passed": passed, "failed": failed}
+    except (OSError, SystemExit, ValueError, AttributeError):
+        return {"passed": 0, "failed": 0}
+
+
+def _project_version() -> str:
+    """The version the report describes, read from the dev manifest."""
+    try:
+        for line in (ROOT / "alire-dev.toml").read_text(errors="replace").splitlines():
+            if line.startswith("version"):
+                return line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return "unknown"
+
+
 def bench(section: str = "all") -> int:
+    if section == "report":
+        print(json.dumps(collect_report(), indent=2))
+        return 0
     binary_path()  # fail fast when the binary is missing
     if section in ("all", "build"):
         build_phase_section()
@@ -673,10 +1015,11 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "section", nargs="?", default="all",
-        choices=("all", "build", "pipeline", "prove"),
+        choices=("all", "build", "pipeline", "prove", "report"),
         help="which scenarios to run (default: all; 'build' is the "
              "cold-build phases: strace profiles, warm no-op, cold "
-             "fresh-checkout build, and the two docs shapes)")
+             "fresh-checkout build, and the two docs shapes; 'report' "
+             "prints the perf-report measurement set as JSON)")
     return parser.parse_args(argv)
 
 

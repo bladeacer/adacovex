@@ -33,9 +33,9 @@ from test_docs_gates import (CssSpacingTests, DocsTreeTests, ParaSplitTests,
 from test_tasks import (BenchCloneTests, CheckGateOrderTests,
                         CheckParallelPhaseTests, CheckReuseTests,
                         CliShardTests, DiagnosticCoverageTests,
-                        LiveFilePruneTests, ProofStatusSyncTests,
-                        TaskkitLayoutTests, TestCoverageGate,
-                        TestLayoutTests)
+                        LiveFilePruneTests, PerfReportTests,
+                        ProofStatusSyncTests, TaskkitLayoutTests,
+                        TestCoverageGate, TestLayoutTests)
 from test_misc import (SparkOffCheckTests, TestAsciiCheck, TestDevCmd,
                        TestGNATprovePin, TestRun)
 

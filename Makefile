@@ -16,7 +16,7 @@
         requirements changelog-check action-parity-check docs-coverage-check \
         diagnostics-coverage-check surface-parity-check tools-check \
         test-layout-check portability-check \
-        bench perf-bench complexity-check csslint-check \
+        bench perf-bench perf-report complexity-check csslint-check \
         version-consistency-check sync docs-check para-split-check tldr-check \
         tldr-lint book-links-check cli-e2e prove-e2e e2e check
 
@@ -139,6 +139,9 @@ bench:
 
 perf-bench:
 	@python3 tools/tasks.py perf-bench
+
+perf-report:
+	@python3 tools/tasks.py perf-report
 
 complexity-check:
 	@python3 tools/tasks.py complexity-check
