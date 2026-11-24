@@ -296,6 +296,18 @@ The first run prints the replay and the diagnostics block. The second prints
 `--debug` to print every full prover output. `just prove-e2e` runs the same
 script as a gate, and it skips itself when no gnatprove is resolvable.
 
+## Dogfood: Ada_CRDT
+
+The sibling `../Ada_CRDT` crate is the second target the diagnostics are tested on, and `just run-ada-crdt` runs it in strict mode. The run below is the complete level-4 output of 2026-11-24, and it is a clean prover result: 1107 VCs with none unproved and none justified, over 43 analysed units. The assessment grades the tree Gold and DAL-C Achieved, docstring coverage is complete at 273 of 273 subprograms, and all 10 441 native tests pass.
+
+A clean run produces no findings block, because the block exists to explain an unproved check. The replay still reports what it filtered: 4 informational notices hidden, 11 repeated diagnostic lines shown once, and 6 warning lines over 2 distinct messages.
+
+The actionable warnings are real contract hints, and both point at the SHA-256 helper's output parameter: `"Ctx" is set by "Final" but not used after the call` at `crdt-security-hmac.adb:54:21` and at `crdt-security-lms.adb:190:24`. The third message, `statement has no effect` at `crdt-security-lms.adb:155:07`, repeats through two inlined call sites. None of the three is a finding: the check that owns each line is proved, and the message is a proof warning about the call's shape.
+
+The dogfood run found one gap, and it is fixed: `--suppress-warnings=all` was matched as a tag name, so it suppressed nothing and said so nowhere. The reserved name `all` now hides every tagged informational block, and a regression test in `adacovex_prove_runner_tests` pins it. `--verbose` still streams the raw output, and the default quiet replay still keeps every actionable line.
+
+The committed fixtures under `src/tests/projects/contract-errors/` cover the finding classes, so CI never needs the sibling checkout. The Ada_CRDT run stays a local regression, and the counts above are the numbers it must keep.
+
 ## See also
 
 - [Proving and writing proofs](proving.md) -- contracts, VC categories, and

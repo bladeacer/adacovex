@@ -523,6 +523,38 @@ package body Adacovex_Prove_Runner_Tests is
          R.Check (Stats.Hidden = 0, "an unmatched set suppresses nothing");
       end;
 
+      --  The reserved set name `all` hides every tagged informational block,
+      --  so a reader does not have to name each gnatprove tag. The dogfood
+      --  run over Ada_CRDT found the gap: `--suppress-warnings=all` used to
+      --  be matched as a tag name, so it suppressed nothing and said so
+      --  nowhere.
+      declare
+         Replay_Path : constant String := Fixture_Dir & "/replay-all.txt";
+         Stats       : Adacovex.Prove.Replay_Stats;
+      begin
+         Fixture ("replay.gpr");
+         Write_Capture (Fixture_Dir & "/capture.txt");
+         Adacovex.Prove.Replay_Suppressed
+           (Fixture_Dir & "/capture.txt", "all", Replay_Path, Stats);
+         declare
+            T : constant String := To_String (Slurp (Replay_Path));
+         begin
+            R.Check
+              (not Has_Text (T, "[info-unrolling-inlining]"),
+               "the all set hides every tagged notice block");
+            R.Check
+              (not Has_Text (T, "add a contract"),
+               "the all set drops each notice's continuation lines");
+            R.Check
+              (Has_Text (T, "filtered:  2"),
+               "the all set reports how many notices it hid");
+            R.Check
+              (Has_Text (T, "error: cannot use call to function"),
+               "the all set never hides an actionable error");
+         end;
+         R.Check (Stats.Hidden = 2, "the all set counts both hidden notices");
+      end;
+
       --  The diagnostics pass keeps the source location and the check kind
       --  of every unproved finding, and the block it renders names the
       --  prover, the locations, and the fix hint for the first check.

@@ -1731,7 +1731,9 @@ package body Adacovex.Prove is
       end Push;
 
       --  True when L carries a suppressed tag: `[info-<Set>]` or `[<Set>]`
-      --  for any configured set name.
+      --  for any configured set name. The reserved name `all` hides every
+      --  tagged informational block, so a reader who asks for every notice
+      --  does not have to name each gnatprove tag.
       function Is_Suppressed (L : String) return Boolean is
       begin
          for I in 1 .. Set_Ct loop
@@ -1741,6 +1743,8 @@ package body Adacovex.Prove is
                if Index (L, "[info-" & S & "]") > 0
                  or else Index (L, "[" & S & "]") > 0
                then
+                  return True;
+               elsif S = "all" and then Index (L, "[info-") > 0 then
                   return True;
                end if;
             end;
