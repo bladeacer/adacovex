@@ -3461,6 +3461,51 @@ package body Adacovex.Config is
       Ada.Text_IO.Put_Line ("Run 'adacovex --help' for the full option list.");
    end Print_Help_Footer;
 
+   --  Close a topic with the sections every Unix help page carries: one
+   --  example, the exit codes that are not the default 0/1 pair, and a See
+   --  also pointer. An empty Exit_Codes omits that block, because 0 means
+   --  success and 1 means failure everywhere else.
+   --  @param Example  One indented command line that uses the topic.
+   --  @param See_Also  The related topics and the page that explains them.
+   --  @param Exit_Codes  Extra exit-code lines, or "" for the default pair.
+   procedure Print_Topic_Tail
+     (Example : String; See_Also : String; Exit_Codes : String := "")
+   is
+      --  Print a block of lines separated by line feeds.
+      --  @param Text  The block to print.
+      procedure Print_Lines (Text : String) is
+         Start : Natural := Text'First;
+      begin
+         while Start <= Text'Last loop
+            declare
+               Fin : Natural := Start;
+            begin
+               while Fin < Text'Last and then Text (Fin) /= ASCII.LF loop
+                  Fin := Fin + 1;
+               end loop;
+               if Text (Fin) = ASCII.LF then
+                  Ada.Text_IO.Put_Line (Text (Start .. Fin - 1));
+               else
+                  Ada.Text_IO.Put_Line (Text (Start .. Fin));
+               end if;
+               exit when Fin = Text'Last;
+               Start := Fin + 1;
+            end;
+         end loop;
+      end Print_Lines;
+   begin
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line ("Examples:");
+      Print_Lines (Example);
+      if Exit_Codes'Length > 0 then
+         Ada.Text_IO.Put_Line ("");
+         Ada.Text_IO.Put_Line ("Exit codes:");
+         Print_Lines (Exit_Codes);
+      end if;
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line ("See also: " & See_Also);
+   end Print_Topic_Tail;
+
    --  Lowercase a string, stripping a leading "--"/"-" and any "=value"
    --  suffix so "--standard=all", "--Serve", "-r", and "standard" all
    --  match a canonical topic. A single shorthand letter resolves to its
@@ -3598,6 +3643,10 @@ package body Adacovex.Config is
             & "TOPIC is case-insensitive; a leading -- is optional, and a"
             & ASCII.LF
             & "=value suffix is ignored (help --standard=all == help standard).");
+         Print_Topic_Tail
+           ("  adacovex help prove",
+            "adacovex --help, adacovex help completion;"
+            & " docs/usage/cli-reference.md");
       elsif T = "serve" then
          Print_Section
            ("--serve",
@@ -3635,6 +3684,9 @@ package body Adacovex.Config is
             & ASCII.LF
             & ASCII.LF
             & "Related: --theme, --port.");
+         Print_Topic_Tail
+           ("  adacovex --serve --port=9000 --theme=dark",
+            "--port, --theme, --no-watch; docs/usage/dashboard.md");
       elsif T = "theme" then
          Print_Section
            ("--theme=NAME",
@@ -3653,12 +3705,18 @@ package body Adacovex.Config is
             & "browser's selection is persisted in localStorage and wins over"
             & ASCII.LF
             & "--theme on later visits.  Only relevant with --serve.");
+         Print_Topic_Tail
+           ("  adacovex --serve --theme=light",
+            "--serve, --port; docs/usage/dashboard-api.md");
       elsif T = "port" then
          Print_Section
            ("--port=N",
             "HTTP server port for --serve (default 8080).  Must be a valid"
             & ASCII.LF
             & "positive integer.  Only relevant with --serve.");
+         Print_Topic_Tail
+           ("  adacovex --serve --port=8081",
+            "--serve, --serve-workers; docs/usage/dashboard.md");
       elsif T = "serve-workers" or else T = "workers" then
          Print_Section
            ("--serve-workers=N / --workers=N",
@@ -3674,6 +3732,9 @@ package body Adacovex.Config is
             & ASCII.LF
             & ASCII.LF
             & "Related: --serve, --port.");
+         Print_Topic_Tail
+           ("  adacovex --serve --serve-workers=4",
+            "--serve, --port; docs/usage/dashboard.md");
       elsif T = "tz" or else T = "timezone" then
          Print_Section
            ("--tz=ZONE / --timezone=ZONE",
@@ -3693,6 +3754,9 @@ package body Adacovex.Config is
             & "  adacovex status --tz=Asia/Singapore"
             & ASCII.LF
             & "  adacovex status --timezone=UTC+8");
+         Print_Topic_Tail
+           ("  adacovex status --tz=Asia/Singapore",
+            "adacovex help status, --timezone; docs/usage/platforms.md");
       elsif T = "excludes" or else T = "complexity" or else T = "skip-path"
       then
          Print_Section
@@ -3720,6 +3784,10 @@ package body Adacovex.Config is
             & "  adacovex complexity --target=. --excludes=md,rst"
             & ASCII.LF
             & "  adacovex complexity --target=. --skip-path=docs/api-docs");
+         Print_Topic_Tail
+           ("  adacovex complexity --target=. --excludes=md,rst",
+            "adacovex help --target, adacovex help --relaxed;"
+            & " docs/usage/cli-reference-flags.md");
       elsif T = "spark-coverage"
         or else T = "group"
         or else T = "metric"
@@ -3757,6 +3825,11 @@ package body Adacovex.Config is
             & ASCII.LF
             & "  adacovex spark-coverage --require-coverage=60 "
             & "--gate-metric=subprograms");
+         Print_Topic_Tail
+           ("  adacovex spark-coverage --target=. --group=package",
+            "adacovex help --require-coverage;"
+            & " docs/usage/cli-reference-flags.md",
+            "  1  --require-coverage is below its threshold");
       elsif T = "standard"
         or else T = "dal"
         or else T = "asil"
@@ -3799,6 +3872,9 @@ package body Adacovex.Config is
             & "Run `adacovex status` for toolkit state; see docs/standards.md"
             & ASCII.LF
             & "for the full tier mapping.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --standard=all",
+            "--dal, --asil, --class; docs/usage/standards.md");
       elsif T = "target" or else T = "manifest" then
          Print_Section
            ("--target / --manifest",
@@ -3809,6 +3885,9 @@ package body Adacovex.Config is
             & "to absolute.  --manifest=PATH (shorthand -m) overrides the"
             & ASCII.LF
             & "auto-detected Alire manifest (alire-dev.toml, then alire.toml).");
+         Print_Topic_Tail
+           ("  adacovex --target=../my-project --dal=C",
+            "--manifest, --standard; docs/usage/target-projects.md");
       elsif T = "compare-base"
         or else T = "coverage-delta"
         or else T = "diff"
@@ -3831,6 +3910,9 @@ package body Adacovex.Config is
             & "VC/DAL delta; --coverage-delta gates on docstring coverage"
             & ASCII.LF
             & "only.  Works on git, mercurial, subversion, fossil, and jj.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --compare-base=v1.2.0",
+            "--coverage-delta; docs/usage/vcs.md");
       elsif T = "sbom"
         or else T = "format"
         or else T = "out"
@@ -3856,6 +3938,9 @@ package body Adacovex.Config is
             & "and destination.  --no-sbom skips SBOM generation in the main"
             & ASCII.LF
             & "pipeline entirely.");
+         Print_Topic_Tail
+           ("  adacovex sbom --format=spdx-json --out=sbom.spdx.json",
+            "--format, --out, --no-sbom; docs/usage/sbom.md");
       elsif T = "prove"
         or else T = "jobs"
         or else T = "level"
@@ -3943,7 +4028,9 @@ package body Adacovex.Config is
             & ASCII.LF
             & "      is the default for local runs and --verbose shows"
             & ASCII.LF
-            & "      everything."
+            & "      everything.  SETS names the tags to hide; the"
+            & ASCII.LF
+            & "      reserved name all hides every tagged notice."
             & ASCII.LF
             & ASCII.LF
             & "  --coverage / --no-coverage"
@@ -3969,6 +4056,11 @@ package body Adacovex.Config is
             & "from the gnatprove run via -u and its checks no longer count"
             & ASCII.LF
             & "against the proof metrics.");
+         Print_Topic_Tail
+           ("  adacovex prove --level=2 --jobs=4",
+            "adacovex help --diagnostics, adacovex help --counterexamples;"
+            & " docs/usage/cli-reference-flags.md",
+            "  1  a check is unproved, or the proof run failed");
       elsif T = "status" then
          Print_Section
            ("adacovex status",
@@ -3986,6 +4078,9 @@ package body Adacovex.Config is
             & "--metrics        print the report as a compact key=value"
             & ASCII.LF
             & "                 metrics summary (one per line) for scripts.");
+         Print_Topic_Tail
+           ("  adacovex status --metrics",
+            "--export; docs/usage/platforms.md");
       elsif T = "tldr" then
          Print_Section
            ("adacovex tldr",
@@ -4007,6 +4102,12 @@ package body Adacovex.Config is
             & "the page.  With no supported client the page is printed to"
             & ASCII.LF
             & "stdout instead, so the command is never useless.");
+         Print_Topic_Tail
+           ("  adacovex tldr --check",
+            "adacovex help man; docs/tldr/adacovex.md",
+            "  0  the installed page matches the bundled one"
+            & ASCII.LF
+            & "  1  the page is missing or stale");
       elsif T = "init" then
          Print_Section
            ("adacovex init",
@@ -4024,6 +4125,10 @@ package body Adacovex.Config is
             & "--force overwrites it.  `[init] scaffold = false` in the"
             & ASCII.LF
             & "global configuration disables the scaffold for every project.");
+         Print_Topic_Tail
+           ("  adacovex init --target=../my-project",
+            "--target, --force; docs/usage/configuration.md",
+            "  1  adacovex.toml exists and --force is not given");
       elsif T = "watch" or else T = "no-watch" or else T = "serve-workers" then
          Print_Section
            ("--watch / --no-watch",
@@ -4040,6 +4145,9 @@ package body Adacovex.Config is
             & "compliance results keep the values of the run that started"
             & ASCII.LF
             & "the server.  The prove subcommand never watches.");
+         Print_Topic_Tail
+           ("  adacovex --serve --no-watch",
+            "--serve, --theme; docs/usage/dashboard.md");
       elsif T = "man" or else T = "check" or else T = "dir" or else T = "force"
       then
          Print_Section
@@ -4062,6 +4170,12 @@ package body Adacovex.Config is
             & "already matches this binary -- use it to repair a hand-edited"
             & ASCII.LF
             & "or corrupt installed page.");
+         Print_Topic_Tail
+           ("  adacovex man --check",
+            "adacovex help tldr; docs/usage/platforms.md",
+            "  0  the installed page matches this binary"
+            & ASCII.LF
+            & "  1  the page is missing, or a newer version is available");
       elsif T = "emit-svg" or else T = "no-svg" or else T = "svg-path" then
          Print_Section
            ("--emit-svg / --no-svg",
@@ -4072,6 +4186,9 @@ package body Adacovex.Config is
             & "--svg-path=PATH alias) uses the default <target>/docs/badges."
             & ASCII.LF
             & "--no-svg suppresses badge output and wins over the emit form.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --emit-svg=docs/badges",
+            "--no-svg, --emit-markdown; docs/usage/cli-reference-emit.md");
       elsif T = "emit-markdown"
         or else T = "emit-md"
         or else T = "md-path"
@@ -4088,6 +4205,9 @@ package body Adacovex.Config is
             & "optional: bare forms use the default <target>/docs."
             & ASCII.LF
             & "--no-md suppresses the reports and wins over the emit forms.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --emit-markdown=docs",
+            "--no-md, --emit-svg; docs/usage/cli-reference-emit.md");
       elsif T = "emit-metrics" then
          Print_Section
            ("--emit-metrics=FILE",
@@ -4100,6 +4220,9 @@ package body Adacovex.Config is
             & "dependency tree) -- the same data the served dashboard's"
             & ASCII.LF
             & "/api/metrics + /api/deps expose.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --emit-metrics=metrics.json",
+            "--serve, --emit-markdown; docs/usage/cli-reference-emit.md");
       elsif T = "completion" then
          Print_Section
            ("completion [bash|fish|zsh|pwsh]",
@@ -4112,6 +4235,9 @@ package body Adacovex.Config is
             & "completes the live flag set (the same list the 'did you mean'"
             & ASCII.LF
             & "suggestion walks) plus the subcommands.");
+         Print_Topic_Tail
+           ("  adacovex completion bash > ~/.bashrc",
+            "adacovex --help; docs/usage/cli-reference.md");
       elsif T = "skip-dir" or else T = "relaxed" or else T = "strict" then
          Print_Section
            ("--skip-dir / --relaxed",
@@ -4120,12 +4246,18 @@ package body Adacovex.Config is
             & "source dirs, and patch overlays are inactive).  --skip-dir=NAME"
             & ASCII.LF
             & "adds a directory to the skip list in relaxed mode.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --relaxed --skip-dir=vendor",
+            "--strict, --target; docs/usage/target-projects.md");
       elsif T = "verbose" then
          Print_Section
            ("--verbose",
             "Print extra progress detail while scanning, proving, parsing,"
             & ASCII.LF
             & "and rendering.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --verbose",
+            "adacovex help status; docs/usage/cli-reference-options.md");
       elsif T = "version" then
          Print_Section
            ("--version",
@@ -4134,6 +4266,9 @@ package body Adacovex.Config is
             & "on the installation method: ADACOVEX_VERSION (release builds),"
             & ASCII.LF
             & "then alire-dev.toml (source checkouts), then alire.toml.");
+         Print_Topic_Tail
+           ("  adacovex --version",
+            "adacovex help status; docs/usage/installation.md");
       elsif T = "cache"
         or else T = "no-cache"
         or else T = "cache-dir"
@@ -4154,6 +4289,9 @@ package body Adacovex.Config is
             & "--cache-expiry=DAYS sets the entry lifetime (default 7; 0 ="
             & ASCII.LF
             & "never).  --cache-clear removes every entry and exits.");
+         Print_Topic_Tail
+           ("  adacovex --cache-dir=.cache --cache-expiry=30",
+            "--no-cache, --cache-clear; docs/usage/configuration.md");
       elsif T = "require-spark"
         or else T = "require-docstrings"
         or else T = "require-tests"
@@ -4171,6 +4309,10 @@ package body Adacovex.Config is
             & "(alias --docstrs), --require-tests=N (alias --tests),"
             & ASCII.LF
             & "--require-proof=PCT (shorthand -r).  Default off.");
+         Print_Topic_Tail
+           ("  adacovex --target=. --require-spark=Gold --require-tests=2489",
+            "--fail-on; docs/usage/cli-reference-options.md",
+            "  1  a pinned minimum is not met");
       else
          --  An unknown topic names itself, suggests the nearest known topic
          --  or flag, and lists the valid topics before the full usage, so

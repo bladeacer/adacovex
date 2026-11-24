@@ -171,7 +171,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2489 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2494 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level
@@ -231,6 +231,13 @@ the topic body, and a pointer to the full option list. `adacovex prove help`
 and `adacovex prove --help` both select the prove topic, and `adacovex --serve
 help` equals `adacovex help serve`. `--help` and `help` with no topic stay
 byte-identical.
+
+Every topic closes the same way. An `Examples:` block gives one runnable
+command, a `See also:` line names the related topics and the page that
+explains them, and an `Exit codes:` block appears only where a code other
+than 0 for success and 1 for failure exists (`man --check`, `tldr --check`,
+`init`, `prove`, `spark-coverage`, and the `--require-*` gates). The frame
+names no developer-only command, so it pipes cleanly into a file or a pager.
 
 The topic is case-insensitive and an `=value` suffix is ignored
 (`help --standard=all` == `help standard`). Unknown topics print the full

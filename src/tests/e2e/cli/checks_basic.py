@@ -30,8 +30,14 @@ def check_help(r: Results) -> None:
             and "Usage:" in text
             and f"  {usage}" in text
             and "Options:" in text
+            and "Examples:" in text
+            and "See also:" in text
             and "Run 'adacovex --help' for the full option list." in text,
             f"help {topic} renders the --help frame",
+        )
+        r.check(
+            "just " not in text and "alr build" not in text,
+            f"help {topic} names no developer-only command",
         )
     r.check(run(["help", "serve"]).stdout == run(["--serve", "help"]).stdout,
             "--serve help equals help serve")

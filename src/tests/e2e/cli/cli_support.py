@@ -33,7 +33,15 @@ GIT_ENV: Dict[str, str] = {
 HELP_FRAMES: Tuple[Tuple[str, str], ...] = (
     ("prove", "adacovex prove [options]"),
     ("serve", "adacovex [--serve] [serve options]"),
+    ("status", "adacovex status [options]"),
     ("sbom", "adacovex sbom [options]"),
+    ("complexity", "adacovex complexity [options]"),
+    ("spark-coverage", "adacovex spark-coverage [options]"),
+    ("man", "adacovex man [options]"),
+    ("tldr", "adacovex tldr [options]"),
+    ("init", "adacovex init [options]"),
+    ("completion", "adacovex completion [options]"),
+    ("cache", "adacovex [options]"),
     ("target", "adacovex [options]"),
 )
 
