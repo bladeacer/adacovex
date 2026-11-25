@@ -46,7 +46,7 @@ def check_help(r: Results) -> None:
             and "Options:" in text
             and "Examples:" in text
             and "See also:" in text
-            and "Run 'adacovex --help' for the full option list." in text,
+            and "Run 'adacovex man' for the full reference" in text,
             f"help {topic} renders the --help frame",
         )
         r.check(

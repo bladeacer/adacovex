@@ -3268,7 +3268,8 @@ package body Adacovex.Config is
    procedure Print_Help_Footer is
    begin
       Ada.Text_IO.Put_Line ("");
-      Ada.Text_IO.Put_Line ("Run 'adacovex --help' for the full option list.");
+      Ada.Text_IO.Put_Line
+        ("Run 'adacovex man' for the full reference, or 'adacovex --help' for the summary.");
    end Print_Help_Footer;
 
    --  Close a topic with the sections every Unix help page carries: one
@@ -3436,7 +3437,7 @@ package body Adacovex.Config is
       elsif T = "help" then
          Print_Section
            ("help [TOPIC]",
-            "Show the full usage message, or contextual help for a single"
+            "Show the usage summary, or contextual help for a single"
             & ASCII.LF
             & "flag or subcommand when TOPIC names one."
             & ASCII.LF
@@ -3447,7 +3448,7 @@ package body Adacovex.Config is
             & ASCII.LF
             & "  adacovex --serve help     topic after the flag also works"
             & ASCII.LF
-            & "  adacovex help             full usage"
+            & "  adacovex help             usage summary"
             & ASCII.LF
             & ASCII.LF
             & "TOPIC is case-insensitive; a leading -- is optional, and a"
