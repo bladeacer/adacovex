@@ -43,12 +43,13 @@ the memo. A warm run reads 18 904 `newfstatat` and 378 ms, against 282 020 on
 the 1.75.0 binary for the same tree. `Skip_Walk_Dir` is now in the
 `Adacovex.Parsers.Manifest` spec, so a walker cannot keep a private copy.
 
-- [x] R1: `-h` equals `--help` in every position, including `prove -h` and
-`help`/`-h` topic selection, and the base `--help` is now a 50-line summary
-grouped under Assess, Report, Prove, Cache and scope, CI gates, Differential
-and SBOM, and More detail. Its last group points at `help TOPIC` and `man`,
-which carry the detail; the CLI e2e checks the line count, each heading, and
-the pointer.
+- [x] R1, first slice: `-h` equals `--help` in every position, including
+`prove -h` and `help`/`-h` topic selection, and the base `--help` is now a
+50-line summary grouped under Assess, Report, Prove, Cache and scope, CI
+gates, Differential and SBOM, and More detail. Its last group points at
+`help TOPIC` and `man`, which carry the detail; the CLI e2e checks the line
+count, each heading, and the pointer. The man page option list and the tldr
+page keep their flat order until R2 generates both from the same table.
 
 - [x] R2, first slice: every option on the man page carries its own
  description, default, and related flag; the `See --help for details` stub is
@@ -115,6 +116,7 @@ detail lives, and keeps maintainer material out of the way of the task.
 - [x] Accept `-h` wherever `--help` works, including after a subcommand.
 - [x] Group and shorten the base `--help` so it fits one screen, and point
   its footer at contextual help and the man page.
+- [ ] Group the man-page option sections and the tldr page the same way.
 
 **Goal:** The base `--help` fits one screen and groups its flags by task. A
 user who wants detail reaches it through contextual help, not by scrolling.
