@@ -14,7 +14,7 @@ package Adacovex.Docs_Template is
    --  committed spec instead of rebuilding the site to
    --  reproduce the same bytes. --check always rebuilds.
    Source_Fingerprint : constant String :=
-     "227e3f94bec71bb0bf248b09ae2f74e94747a7fada4fa69a801a66c952e04172";
+     "47ddeb47e3572235bf3ff82d24399f3df3d4a22d2ba0b39b7f17e70986a01d0e";
 
    --  One entry of the lookup table. The path and MIME type
    --  are fixed-size (space-padded) strings; Idx selects the
@@ -18529,21 +18529,21 @@ package Adacovex.Docs_Template is
        & "XhmxmN(N?MYgPu(AxLSAvFkf&:YDY$q90m@bZkx-aONasu>o8ISR@p[}A{#}+w}2pQ)FBNhUyahb"
        & "D4M6J9&rjHLo!:7fOuikl!?piSLb=E+cKzs>]nhaxGC]#]qVOD61ogu>f?QuISwIZwdaE/A3yE.p"
        & "B.2-Jx[st.Ow58:e7Sq4ZYf1e7UgRO8zO!]}Kt*C%n5=$kyAB(!WI-iLdv6uEstCOW.2!=Bbof$V"
-       & "aA52bLf)$>a#VbGbhH^^+VzqGXQNV7<4-bB^6X:zFD7eaGwK96W11TYU<Q5t0k3JO(@f?pB!l4Mf"
-       & "J7Wx0]i@t3W[bGsNpGem}^}Q]c79T2nzQ8K/g{>XgHIyw4nb}EWe2U{?xIRA*hpFMT(mDtA@jVmj"
-       & "dgq^+[=FGyoZVUYj9/YnJkLDS1N?Z>mAjVraF*2RF7:V4x&uYN{}sVl84z1t&R:>73^z<Bbi9?dL"
-       & "-z1vnK<Eo.AUG50EesTc<O48PVAxMj1VUXSEy#P6W-p.^3=9Ah(V5a@Y6w3.ch{iLJ:0LX&o<A-N"
-       & "*:[@89?fVxhGp(rAKfGL]W@k)wS%4jcEjljjuUPFx4=nfVb[/BcqPW%O()%%DtJe@VDpN9Lv{gQO"
-       & "/Tv-VUYj8/YnDiLC=CF=N+MM9?eK1hzEuMf%+X9DtE55/#iKn-ltJz(9l8kwFrK56eN/URPg2}Mq"
-       & "75lp0teTM(.-:sVd#$hzIKOQiZTIx4YPB/Hi#&Ir.v5NQ)e.v?Q-ycAt9kyl?N[K4[aPO2vx$S98"
-       & "2QjVlfzy[=k(QgS7D{1hWSVpLN3x33?NcBl$9.&&$uBB2(8+WdZbYj+{Lyj$D.2^XdYDm6Oxxq<U"
-       & "&hl6N=3mqh0yphK7ZN.ZA+hMG9h0@i5*7VYnKtACPX*>()Rf5.!LI7tGZ:ebycG&}tW4j{[{Z/AI"
-       & "Z4ZfO*!H!Hpbpw!Txp:2R6:Q#z<#OYudd:bAqhLv(7ip6IoG^f5WFN@){Qy6[#3Ww^-VfIrm/PoJ"
-       & "[c^F/6]v:52CVj^)F^0gmGtV2oF)05E[Xvwb^=qU=VZjpAj<8HQ^w7Gl/<in@W[9pM<%%ZE]%]@2"
-       & "{0?ViMk/>F=@x8G)Q0ilQTpewLao)^w7VoGr3-)V9z]j!]<>c0xwId=J&}7MV2^g)q]I5FPIKy4("
-       & "mcO]19i8?I(2}?[rXi+z0:R1uofVxEcng0y!VgK4x}jLF(*!3O+{fgaJWYga#q[k>0bu>OnzsF:$"
-       & "0rEKT#XHyxIs(%O*rt{W8aoHxMWs3&(N*]1[+T>/jG4iEAG#ZP$:LDj=8(iVUek)PoIme6}+o9QN"
-       & "H&T>{D2TF^{}egm{4k@poG}52kofRG4DZT<00"
+       & "aA52bLf)$>a#VbGbhH^^+VzqGUDF&g3AOn(l.jG?pbhtkVC1id3O<oD587aWq[Bj*]KKLpPFbee7"
+       & "q$&+XA#2tb+VbUawXCSmCvVR4[]R!eEN=JM=bD]%xD=Wfy}X1g8h7/C6Y:q>RgdZ:$@RjViEQ/+A"
+       & "UPdkn@xk-XS<sVcCfyZOy(:>73^z<Bbi9?dL-z1vnK<Eo.AUG50EesR2IhU*$r<M<7)h{iKPK4)t"
+       & ">hU?Vn]3aFZ/jg1.Mqb7mN%.LU&^bC2x4+b}/U(4uIr?B6N}in+v?Q/AcA+xozKa14K4[yXO46Je"
+       & "Xlg.fjVmq^y#P+S&+3(Z{1mjcVDpN9Lv{gQO/Tv-VUYj8/YnDiLC=CF=N+LFjVmN$*2Rz5:UR9!p"
+       & "MFkwsVgLKz1t/Q:<T:-xo(n-9?bo#y*}ZbvRjri]W}aaVwE?JIj4]*^{<4E+o<abct5MroPI](es"
+       & "S1FO0Wtpf*dAHVUT8%y*}2f-pRZ2+^98<V5a]X6v*OahoNtD:0LL!o&NfF!gv8/9?f9hhC(Q}ql$"
+       & "8kDtGr//*LI=m9S2](AMhmwFrQ76e^@WjV5MMLocanA.c^mHvrHN?p%Yh!L+>gRp?)YDkv*IO[mb"
+       & "Rwse{YDk1/bpcy1)wp*(jpws:h=I3Lj11FI)Ei-0=7]U(kRC*/5w.B1IqUs@-HP?zUDy-iyZ<qI4"
+       & "!hF0Zj/rr8aa5K[x>2W=E.qi^TmAvwl@J5ZgF$eBMhzWkPqLxsLJsV:4##Gr/46TXlt]^3]V/:2O"
+       & "6o4uDB?ufj4P+#j{{CC-i%]pI16}G^)J=y1nLcPP=X7pF5GyCMhyAm<fdFO{DN.npV$iCAPVWX3G"
+       & "7v85m{FUa1*T*aBS%@82^1ypdk?eD3#cdio[Gs?t3dA:a8Z%g4IkPg)(36+reJ*OquE&^ybOcpyX"
+       & "?9bjvnN@V6dC+]QsYA1dr&f?Nkw@7Jv.?^{zyK%SwEND[.7U>&uhN?yjt3{TOe+a0C6:vvuKICCM"
+       & ")0UCQpg-N^Z4<bQDc8@AqYSF>t1f&n5PJ/3]pQ$>VF=p}5UU4J(t8x9BXv99ZYm0wGL!.].+a*lf"
+       & "MEbSt0h=xAB0VD:At4^oYE+@j+!Ia<k1$VmRwc9ytVH?8"
        ;
 
    Asset_196 : aliased constant String :=
