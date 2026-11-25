@@ -228,7 +228,7 @@ def overview_block(report: Dict) -> List[str]:
         f"[Timings](timings.md) |",
         f"| Prove warm | {fmt_seconds((prove_warm or {}).get('mean_s'))} | "
         f"[Timings](timings.md) |",
-        f"| Build warm (`alr build`, no-op) | "
+        f"| Build warm (no-op) | "
         f"{fmt_seconds((build_warm or {}).get('mean_s'))} | "
         f"[Timings](timings.md) |",
         f"| Binary size | {fmt_bytes(binary.get('raw'))} | "
@@ -354,8 +354,8 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument("--out", default=str(ROOT / "docs" / "stats"),
                         help="directory to write the pages into")
     parser.add_argument("--release", action="store_true",
-                        help="measure the release profile (alr build "
-                             "--release is a no-op on a built tree)")
+                        help="build through tools/build.py --release and "
+                             "measure that profile")
     parser.add_argument("--version", default="",
                         help="version the report names (default: the dev "
                              "manifest)")

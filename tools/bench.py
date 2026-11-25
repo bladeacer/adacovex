@@ -689,23 +689,14 @@ def _filesystem() -> str:
     return "unknown"
 
 
-def _build_profile() -> str:
-    """The Alire build profile the current workspace was built with."""
-    settings = ROOT / "alire" / "settings.toml"
-    try:
-        for line in settings.read_text(errors="replace").splitlines():
-            if line.startswith("last_build_profile"):
-                return line.split("=", 1)[1].strip().strip('"')
-    except OSError:
-        pass
-    return "unknown"
-
-
 def host_profile() -> dict:
     """The machine a report was measured on.
 
     A figure without this context is not comparable with another figure, so
-    every generated page carries the profile beside its table.
+    every generated page carries the profile beside its table.  The caller
+    adds `build_profile`, because only it knows which GPR external the
+    measured binary was built with: Alire's own profile flag does not reach
+    `ADACOVEX_PROFILE`.
     """
     return {
         "cpu": _cpu_model(),
@@ -715,7 +706,6 @@ def host_profile() -> dict:
         "filesystem": _filesystem(),
         "compiler": _first_line(["gnatmake", "--version"]),
         "gnatprove": _first_line(["gnatprove", "--version"]),
-        "build_profile": _build_profile(),
         "hyperfine": _first_line(["hyperfine", "--version"]),
         "strace": _first_line(["strace", "--version"]),
         "load_average": load_avg(),
@@ -834,12 +824,18 @@ def collect_report(release: bool = False, version: str = "") -> dict:
     drift into two recipes.  The cold shapes wipe only their own temporary
     cache; the working tree's cache, session store, and spec are untouched.
 
-    `release` measures the release profile: the warm build row runs `alr
-    build --release`, which is a no-op on a tree tools/release.py already
-    built, so the measurement cannot relink the release binary as a
-    development one.  `version` names the release the report describes when
-    the manifest has not been bumped yet.
+    `release` measures the release profile: one untimed `tools/build.py
+    --release` selects the `ADACOVEX_PROFILE=release` external first, and the
+    warm build row times that same entry point, which is a no-op on the tree
+    it just built.  `alr build --release` is not enough, because Alire's own
+    profile flag never reaches the GPR external that drops `-g` and raises
+    `-O2`.  `version` names the release the report describes when the
+    manifest has not been bumped yet.
     """
+    if release:
+        subprocess.run(
+            [sys.executable, "tools/build.py", "--release"], cwd=str(ROOT),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     binary_path()
     ensure_proof_output()
     cache = tempfile.mkdtemp(prefix="adacovex-perf-report-")
@@ -856,7 +852,8 @@ def collect_report(release: bool = False, version: str = "") -> dict:
         scenarios.append(measure(
             "prove warm", f"./bin/adacovex prove --cache-dir={prove_cache}",
             REPORT_RUNS["prove warm"], warmup=1))
-        build_command = "alr build --release" if release else "alr build"
+        build_command = (f"{shlex.quote(sys.executable)} tools/build.py --release"
+                         if release else "alr build")
         scenarios.append(measure(
             "build warm", build_command, REPORT_RUNS["build warm"],
             warmup=1))
@@ -880,10 +877,14 @@ def collect_report(release: bool = False, version: str = "") -> dict:
         shutil.rmtree(prove_cache, ignore_errors=True)
 
     counts = _native_test_counts()
+    profile = ("release (-O2 -gnatn; tools/build.py --release)" if release
+               else "development (-O1 -gnatn -g; alr build)")
+    host = host_profile()
+    host["build_profile"] = profile
 
     return {
         "version": version or _project_version(),
-        "host": host_profile(),
+        "host": host,
         "scenarios": scenarios,
         "cache": cache_readings(),
         "syscalls": syscall_readings(),
