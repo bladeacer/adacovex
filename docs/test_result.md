@@ -5,13 +5,13 @@
   | Source scanner                           |  89 |  0 | PASS     |
   | GNATprove parser                         |  93 |  0 | PASS     |
   | Test-result parser                       |  50 |  0 | PASS     |
-  | CLI config                               |  408 |  0 | PASS     |
+  | CLI config                               |  412 |  0 | PASS     |
   | SVG renderer                             |  161 |  0 | PASS     |
   | HTML/Markdown renderers                  |  58 |  0 | PASS     |
   | SBOM generator                           |  580 |  0 | PASS     |
   | Result cache                             |  56 |  0 | PASS     |
   | IR synthesis                             |  42 |  0 | PASS     |
-  | Man page renderer                        |  30 |  0 | PASS     |
+  | Man page renderer                        |  33 |  0 | PASS     |
   | VCS support                              |  37 |  0 | PASS     |
   | Server routing                           |  183 |  0 | PASS     |
   | Proof patches                            |  35 |  0 | PASS     |
@@ -32,4 +32,4 @@
   | Test support                             |  19 |  0 | PASS     |
   |-----------------------------------------|--------|-------|----------|
 
-  Passed: 2494  Failed: 0  Skipped: 0
+  Passed: 2501  Failed: 0  Skipped: 0

@@ -20,7 +20,7 @@ against the post-fix baseline.
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.76.0 | planned | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`), R2 (man page as full context), R3 (end-user documentation audience), R4 (bundled `adacovex.toml`), R5 (bare invocation and level 4) |
+| v1.76.0 | in progress | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`), R2 (man page as full context), R3 (end-user documentation audience), R4 (bundled `adacovex.toml`), R5 (bare invocation and level 4) |
 | v1.77.0 | planned | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI) |
 
 ## Status (2026-11-25)
@@ -31,8 +31,26 @@ version spec, SBOM), and its changelog is
 2494/2494 native tests across 30 categories, 213 CLI e2e checks, 274
 prove-e2e checks over 20 committed fixture projects, and 1060 VCs at Gold.
 
-The debt register carries one open row: D16 (the warm stat regression), owned
-by v1.76.0.
+The debt register holds no open row.
+
+### Delivered so far in v1.76.0
+
+- [x] D16 (warm stat regression): the SPARK coverage walker uses the shared
+skip predicate and the directory memo, so it no longer enters `.venv`; the
+coverage summary line reuses the rollup the level assessment measured instead
+of walking the tree a second time; and the vendor-hash discovery walk takes
+the memo. A warm run reads 18 904 `newfstatat` and 378 ms, against 282 020 on
+the 1.75.0 binary for the same tree. `Skip_Walk_Dir` is now in the
+`Adacovex.Parsers.Manifest` spec, so a walker cannot keep a private copy.
+
+- [x] R1, first slice: `-h` equals `--help` in every position, including
+`prove -h` and `help`/`-h` topic selection. Grouping and shortening the base
+`--help` remain.
+
+- [x] R2, first slice: every option on the man page carries its own
+ description, default, and related flag; the `See --help for details` stub is
+gone and a test fails on its return. Building the page from the help option
+table remains.
 
 ## Every change
 
@@ -91,7 +109,8 @@ detail lives, and keeps maintainer material out of the way of the task.
 
 ### R1 - A shorter `--help`, grouped, with `-h` and contextual help first
 
-- [ ] Accept `-h` wherever `--help` works, including after a subcommand.
+- [x] Accept `-h` wherever `--help` works, including after a subcommand.
+- [ ] Group and shorten the base `--help` so it fits one screen.
 
 **Goal:** The base `--help` fits one screen and groups its flags by task. A
 user who wants detail reaches it through contextual help, not by scrolling.
@@ -124,7 +143,9 @@ one screen of lines and that each group heading appears once.
   no entry reads "See --help for details".
 
 **Goal:** The man page is the complete offline reference: the union of every
-help frame, not a synopsis with stubs.
+help frame, not a synopsis with stubs. The stub descriptions are gone; what
+remains is generating the text from the help option table so the two cannot
+drift.
 
 **Work:**
 - Build the man page from the same option table the help renderer reads, so a

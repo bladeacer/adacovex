@@ -43,6 +43,17 @@ package body Adacovex_Man_Tests is
       R.Check
         (Index (Page, "--compare-base") > 0,
          "man page documents --compare-base");
+      --  Every option carries its own description: a stub that points the
+      --  reader back at --help makes the man page useless offline (R2).
+      R.Check
+        (Index (Page, "See --help for details") = 0,
+         "man page option entries carry a real description");
+      R.Check
+        (Index (Page, "Alias for --serve-workers") > 0,
+         "man page describes the --workers alias");
+      R.Check
+        (Index (Page, "skip every file whose path contains") > 0,
+         "man page describes --skip-path");
       R.Check (Index (Page, "--version") > 0, "man page documents --version");
       R.Check (Index (Page, "mercurial") > 0, "man page mentions VCS support");
       --  Platform support: both indexers and the man path are documented.
