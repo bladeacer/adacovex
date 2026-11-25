@@ -9,11 +9,10 @@ The register is the source of truth for **open** debt. A release that adds
 debt adds a row in the same change, so a later reader sees the cost before
 the next release is planned.
 
-Item 8c closed or accepted every open row in v1.72.0. Two rows stay Open
-because a later release owns them: D11 (cache identity) is item 18 in
-v1.74.0, and D7 (help frames) is item 19 in v1.75.0. Both carry their owning
-release in the State column, so neither is unrecorded debt. No other defect
-that v1.69.0-v1.75.0 surfaced is missing from this table.
+Item 8c closed or accepted every open row in v1.72.0. D11 (cache identity)
+closed in v1.74.0, D7 (help frames) in v1.75.0, and D16 (the warm stat
+regression) in v1.76.0, so the register holds no open row. No other defect
+that v1.69.0-v1.76.0 surfaced is missing from this table.
 
 ## State
 
@@ -44,7 +43,7 @@ new entry must not propose work that breaks them.
 | D4 | Manifest parsing | The scan and the cache key kept two copies of the directory-exclusion list, so the two could disagree about which files the tool set covers. | One predicate (`Skip_Scan_Dir`) owns the decision for the scan and for `Source_Tree_Hash`. | Closed (v1.70.0) |
 | D5 | Bounded strings | Fixed-width copies of artefact names in `Adacovex.Prove`, and `Max_*` constants without one shared bound, can overflow or silently truncate. | Every bounded copy has a checked bound, the overflow contract names each `Max_*`, and a test covers the limit. | Closed (v1.71.0, item 8b): `Copy_Artefact` checks each unconstrained artefact name against `Max_Path`, the overflow contract tabulates all five constants with their tier, and the types suite pins every field width. |
 | D6 | Time | Timestamp formatting had more than one path, so a surface could disagree with another about the zone. | `Adacovex.Timezones` is the only formatter, and every surface honours `--tz`. | Closed (v1.68.0) |
-| D7 | Help | The main usage and the contextual topics rendered different frames, so one tool read as several. | Every topic renders the `prove` frame, and `help <topic>` is byte-identical to `<subcommand> --help`. | Open (v1.75.0, item 19) |
+| D7 | Help | The main usage and the contextual topics rendered different frames, so one tool read as several. | Every topic renders the `prove` frame, and `help <topic>` is byte-identical to `<subcommand> --help`. | Closed (v1.75.0, item 19): twelve frames share the usage, summary, example, see-also, and exit-code shape, and the CLI e2e suite asserts the frame for each. |
 | D8 | Cache | A warm cache hit printed less than the cold run it served, so the two told different stories. | The replay is cached as plain text and reprinted, and warm and cold output agree. | Closed (v1.69.0) |
 | D9 | Colour | Escape codes could reach the cache, and one report path built its own codes. | Every coloured surface goes through `Adacovex.Ansi`, and the cache stores plain text only. | Closed (v1.69.0) |
 | D10 | CI output | Annotations were emitted outside GitHub Actions, where no reader consumes them. | An annotation prints only when `GITHUB_ACTIONS` is set, and a local run keeps the text block. | Closed (v1.69.0) |
@@ -53,4 +52,4 @@ new entry must not propose work that breaks them.
 | D13 | Docstrings | gnatdoc left every subprogram description out of its RST directives, and about forty public types carried no docstring at all, so the API reference named items without describing them. | `just doc` emits no empty description, parameter, or return, and docstring coverage stays 100%. | Closed (v1.72.0, item 9): `tools/rst2md.py` renders the docstring prose as the item description and fails the run on an incomplete item, the two parser defects that dropped annotation blocks are fixed, and every public type carries a one-line description. |
 | D14 | SBOM accuracy | The scanner recognises only a curated tool list, so a project's real build tool that is absent from that list (for example `meson`) never appears. | The list covers the build tools of the fixture projects, or the page states the closed list as accepted. | Closed (v1.71.0, item 8b): `meson` joined the table, every build tool the fixture projects name is covered, and the page states the closed list as accepted. |
 | D15 | SBOM output | A licence the manifest states as an SPDX **expression** (`Apache-2.0 OR MIT`, `MIT + file LICENSE`, `Apache-2.0 WITH LLVM-exception`) is written into CycloneDX `license.id`, which permits only a single licence id. The document is then invalid where the project uses an expression. | An expression is emitted as `license.expression` (or as `name`), a single id stays `id`, and a test pins both shapes. | Closed (v1.71.0, item 6b): `Is_SPDX_Id` sends an expression to `license.expression`, and the SBOM suite pins an id, an `OR` expression, and a `WITH` expression. |
-| D16 | Performance | A warm 1.75.0 run reads 2.72 s and 282 020 `newfstatat`, against 48.1 ms and 7 924 in the 1.63.0 column. Each directory is stat'ed about 52 times per run, and the macOS-only marker path `/System/Library/CoreServices` 525 times, because the platform probe repeats per call (that stat fails on Linux by design). The directory walk no longer shares one snapshot. | A paired warm run against the 1.75.0 binary reads the 1.63.0 shape again, and `docs/stats/` records it. | Open (v1.76.0) |
+| D16 | Performance | A warm 1.75.0 run read 282 020 `newfstatat`, against 7 924 in the 1.63.0 column, because the walkers did not share one directory snapshot. The SPARK coverage walk kept a private skip list that entered `.venv`, the coverage rollup ran twice per assessment, and the vendor-hash walk re-enumerated the tree. | A paired warm run reads the one-pass shape again, and `docs/stats/` records it. | Closed (v1.76.0): the coverage walk uses the shared skip predicate and the directory memo, the coverage line reuses the measured rollup, and the vendor-hash discovery walk takes the memo. A warm run reads 18 904 stats and 378 ms at load 0.7, against 282 020 stats for the 1.75.0 binary on the same tree. |

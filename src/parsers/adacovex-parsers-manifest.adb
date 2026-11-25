@@ -425,9 +425,6 @@ package body Adacovex.Parsers.Manifest is
    --  @return True for vendored directory names.
    function Is_Vendor_Dir_Name (N : String) return Boolean is separate;
 
-   --  Whether to skip descending into a directory during a source walk:
-   --  VCS metadata, the adacovex config dir, installer/build outputs, and
-   --  Alire's own dependency cache never carry project source.
    function Skip_Walk_Dir (N : String) return Boolean is separate;
 
    --  Whether the system-tool scan skips descending into a directory. A

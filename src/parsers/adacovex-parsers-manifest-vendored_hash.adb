@@ -222,21 +222,26 @@ begin
       declare
          Current  : Dir_Entry := Dir_Stack.Last_Element;
          Dir_Path : String renames Current.Path (1 .. Current.Len);
+         Snap     : Adacovex.Dir_Cache.Dir_Entry_List;
+         SCt      : Natural;
+         STrunc   : Boolean;
+         SOK      : Boolean;
       begin
          Dir_Stack.Delete_Last;
-         Start_Search (Search, Dir_Path, "");
-         begin
-            while More_Entries (Search) loop
-               Get_Next_Entry (Search, Ent);
+         --  Shared snapshot first, so this walk costs one stat per
+         --  directory instead of a full enumeration (debt D16).
+         Adacovex.Dir_Cache.Snapshot (Dir_Path, Snap, SCt, STrunc, SOK);
+         if SOK and then not STrunc then
+            for SI in 1 .. SCt loop
                declare
-                  N    : constant String := Simple_Name (Ent);
-                  Path : constant String := Full_Name (Ent);
+                  N    : constant String :=
+                    Snap (SI).Name (1 .. Snap (SI).Name_Len);
+                  Path : constant String := Dir_Path & "/" & N;
+                  Is_D : constant Boolean :=
+                    Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind);
                begin
-                  if Kind (Ent) = Directory then
-                     if N /= "."
-                       and then N /= ".."
-                       and then not Skip_Walk_Dir (N)
-                     then
+                  if Is_D then
+                     if not Skip_Walk_Dir (N) then
                         if Is_Vendor_Dir_Name (N) then
                            Hash_Tree
                              (Path, (if N = "node_modules" then 1 else 3));
@@ -244,19 +249,46 @@ begin
                            Push_Dir (Dir_Stack, Path, 0, 99);
                         end if;
                      end if;
-                  elsif Kind (Ent) = Ordinary_File
-                    and then Is_Owner_Manifest (N)
-                  then
+                  elsif Is_Owner_Manifest (N) then
                      Add (Adacovex.Cache.Hash_File (Path));
                   end if;
                end;
             end loop;
-         exception
-            when others =>
-               End_Search (Search);
-               raise;
-         end;
-         End_Search (Search);
+         else
+            Start_Search (Search, Dir_Path, "");
+            begin
+               while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Ent);
+                  declare
+                     N    : constant String := Simple_Name (Ent);
+                     Path : constant String := Full_Name (Ent);
+                  begin
+                     if Kind (Ent) = Directory then
+                        if N /= "."
+                          and then N /= ".."
+                          and then not Skip_Walk_Dir (N)
+                        then
+                           if Is_Vendor_Dir_Name (N) then
+                              Hash_Tree
+                                (Path, (if N = "node_modules" then 1 else 3));
+                           else
+                              Push_Dir (Dir_Stack, Path, 0, 99);
+                           end if;
+                        end if;
+                     elsif Kind (Ent) = Ordinary_File
+                       and then Is_Owner_Manifest (N)
+                     then
+                        Add (Adacovex.Cache.Hash_File (Path));
+                     end if;
+                  end;
+               end loop;
+            exception
+               when others =>
+                  End_Search (Search);
+                  raise;
+            end;
+            End_Search (Search);
+         end if;
       end;
    end loop;
 

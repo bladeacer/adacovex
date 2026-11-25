@@ -64,6 +64,16 @@ package Adacovex.Parsers.Manifest is
      (Target_Dir : String;
       Graph      : in out Types.Implementation.Component_Vectors.Vector);
 
+   --  Whether to skip descending into a directory during a source walk.
+   --  VCS metadata, the adacovex config dir, installer and build outputs,
+   --  virtual environments, and Alire's dependency cache never carry
+   --  project source. Every walker shares this one list, because a private
+   --  copy drifts: one that omitted `.venv` enumerated an entire virtualenv
+   --  on every run (debt D16).
+   --  @param N  Directory base name.
+   --  @return True when the walk must not descend into the directory.
+   function Skip_Walk_Dir (N : String) return Boolean;
+
    --  Language name for a source file, derived from its extension.
    --  @param Name  File base name (for example "a.py").
    --  @return Language display name ("Python"), or "" for unknown.

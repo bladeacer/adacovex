@@ -53,14 +53,11 @@ package body Adacovex.Prove is
    --  never fails the run it follows. The line is a summary, not a gate: the
    --  `--require-*` flags and `--fail-on` decide pass or fail.
    --  @param Target_Dir  Target whose obj/gnatprove artefacts are read.
-   procedure Report_Coverage (Target_Dir : String) is
-      Units   : Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
-      Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
-      Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
-      Skipped : Natural := 0;
-      P_OK    : Boolean := False;
-      Line    : String (1 .. 512) := (others => ' ');
-      L       : Natural := 0;
+   procedure Report_Coverage_Line
+     (Totals : Adacovex.Types.Implementation.Spark_Coverage_Totals)
+   is
+      Line : String (1 .. 512) := (others => ' ');
+      L    : Natural := 0;
 
       procedure Add (S : String) is
       begin
@@ -100,6 +97,26 @@ package body Adacovex.Prove is
          Add (" " & Label & " " & Pct (Proved, Total));
       end Add_Metric;
    begin
+      if Totals.Stmts_Total = 0
+        and then Totals.Subs_Total = 0
+        and then Totals.Checks_Total = 0
+      then
+         return;
+      end if;
+      Add ("  coverage: ");
+      Add_Metric ("statements", Adacovex.Types.Metric_Statements);
+      Add_Metric ("subprograms", Adacovex.Types.Metric_Subprograms);
+      Add_Metric ("VCs", Adacovex.Types.Metric_Checks);
+      Ada.Text_IO.Put_Line (Line (1 .. L));
+   end Report_Coverage_Line;
+
+   procedure Report_Coverage (Target_Dir : String) is
+      Units   : Adacovex.Types.Implementation.Spark_Coverage_Vectors.Vector;
+      Groups  : Adacovex.Types.Implementation.Spark_Group_Vectors.Vector;
+      Totals  : Adacovex.Types.Implementation.Spark_Coverage_Totals;
+      Skipped : Natural := 0;
+      P_OK    : Boolean := False;
+   begin
       Adacovex.Spark_Coverage.Analyze
         (Target_Dir,
          "",
@@ -112,11 +129,7 @@ package body Adacovex.Prove is
       if not P_OK then
          return;
       end if;
-      Add ("  coverage: ");
-      Add_Metric ("statements", Adacovex.Types.Metric_Statements);
-      Add_Metric ("subprograms", Adacovex.Types.Metric_Subprograms);
-      Add_Metric ("VCs", Adacovex.Types.Metric_Checks);
-      Ada.Text_IO.Put_Line (Line (1 .. L));
+      Report_Coverage_Line (Totals);
    end Report_Coverage;
 
    --  Normalise a trailing separator off a directory path. Both '/' and '\'

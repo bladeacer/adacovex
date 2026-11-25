@@ -33,6 +33,16 @@ HLR-MANIFEST: Manifest and dependency-graph parsing
 
 **Returns:** Language display name ("Python"), or "" for unknown.
 
+### function Skip_Walk_Dir (N : Standard.String) return Standard.Boolean
+
+> Whether to skip descending into a directory during a source walk. VCS metadata, the adacovex config dir, installer and build outputs, virtual environments, and Alire's dependency cache never carry project source. Every walker shares this one list, because a private copy drifts: one that omitted `.venv` enumerated an entire virtualenv on every run (debt D16).
+
+| Parameter | Description |
+|-----------|-------------|
+| `N` | Directory base name. |
+
+**Returns:** True when the walk must not descend into the directory.
+
 ## Procedures
 
 ### procedure Build_Dependency_Graph (Target_Dir : Standard.String; Manifest_Path : Standard.String; Graph : Adacovex.Types.Implementation.Component_Vectors.Vector; Success : Standard.Boolean; Use_Cache : Standard.Boolean) `[Pre]`

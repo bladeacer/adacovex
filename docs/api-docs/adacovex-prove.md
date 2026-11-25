@@ -238,6 +238,14 @@ end record;
 |-----------|-------------|
 | `Target_Dir` | Project root whose obj/gnatprove artefacts are read. |
 
+### procedure Report_Coverage_Line (Totals : Adacovex.Types.Implementation.Spark_Coverage_Totals)
+
+> Print the same summary line from an already-measured rollup. A caller that measured the coverage itself reuses it instead of paying for a second walk of the target tree (debt D16).
+
+| Parameter | Description |
+|-----------|-------------|
+| `Totals` | Measured statement, subprogram, and VC coverage. |
+
 ### procedure Resolve_GNATprove (Target_Dir : Standard.String; Pinned_Version : Standard.String; Exe_Path : Standard.String; Exe_Len : Standard.Natural; Toolkit_Dir : Standard.String; Dir_Len : Standard.Natural; Identity : Standard.String; Ident_Len : Standard.Natural; Success : Standard.Boolean)
 
 > Resolve how to run gnatprove for a target project. The priority is manifest-declared deployment via `alr get`. Then the global version pin follows (see Pinned_Version in the package comment). Then PATH, then <data>/toolkit/bin, then a platform toolkit download. Pinned_Version applies only when the manifest does not declare gnatprove. The manifest pin is authoritative and always wins. When Pinned_Version is not empty, the exact gnatprove version is deployed via `alr -n get gnatprove=<version>` and run directly. A failure to deploy is a failure to run. It is never a silent fallback to a different prover. This is how mission-critical CI fixes the proof toolchain across projects that do not pin one themselves. Exe_Path always holds a directly-executable gnatprove binary. It is never the `alr` wrapper. The deployment path runs the deployed binary itself. Toolkit_Dir is the bin directory to prepend to PATH for the child. It is empty when the binary is already on PATH. Identity is a short fingerprint of the resolved prover. For the deploy path it is the pinned version. Otherwise it is the executable or toolchain path. Run_Prove folds Identity into the result-cache key. Proofs from different gnatprove deployments are then never mixed.

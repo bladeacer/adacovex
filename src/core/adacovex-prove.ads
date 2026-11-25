@@ -353,6 +353,13 @@ package Adacovex.Prove is
    --  @param Target_Dir  Project root whose obj/gnatprove artefacts are read.
    procedure Report_Coverage (Target_Dir : String);
 
+   --  Print the same summary line from an already-measured rollup. A caller
+   --  that measured the coverage itself reuses it instead of paying for a
+   --  second walk of the target tree (debt D16).
+   --  @param Totals  Measured statement, subprogram, and VC coverage.
+   procedure Report_Coverage_Line
+     (Totals : Adacovex.Types.Implementation.Spark_Coverage_Totals);
+
    --  Print a non-mutating toolkit and platform report for the `adacovex
    --  status` subcommand. It checks, in order, whether:
    --    * Alire (`alr`) is installed on $PATH.

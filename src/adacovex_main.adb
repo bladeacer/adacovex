@@ -1141,8 +1141,12 @@ begin
    if not Cfg.Prove_Mode
      and then Cfg.Prove_Show_Coverage
      and then Proof.Total_VCs > 0
+     and then Cov_OK
    then
-      Adacovex.Prove.Report_Coverage (Target (1 .. TLen));
+      --  Reuse the rollup the level assessment measured above. A second
+      --  walk of the target tree for the same numbers cost half of a warm
+      --  run's file system traffic (debt D16).
+      Adacovex.Prove.Report_Coverage_Line (Cov_Totals);
    end if;
 
    Verbose

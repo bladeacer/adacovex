@@ -94,6 +94,10 @@ from an older version never fills the gap.
 - The 1.63.0 record of this phase is the paired evidence that its release did
   not regress: the packed memo cut one tree from 13 428 to 7 924 stats and read
   5 ms faster warm against the v1.62.0 binary.
+- The D16 fix landed after this column and reads 18 904 stats, 378 ms pipeline
+  warm, and 680 ms prove warm at load 0.7, on the same release profile and the
+  same tree. Those figures are the v1.76.0 column when that version is
+  measured; this row stays the 1.75.0 record.
 
 ### 1.55.0-1.62.0 (the three closed phases)
 

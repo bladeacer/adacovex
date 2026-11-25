@@ -3,7 +3,7 @@
 The result cache is content-addressed per file, so a second run on an unchanged tree is a hit for every scanned file. The readings below come from one warm-up run and one captured run, so they describe the steady state and not a cold start.
 
 <!-- perf-report:begin -->
-Measured on adacovex `1.75.0` on 2026-11-24.
+Measured on adacovex `1.75.0` on 2026-11-25.
 
 | Reading | Count |
 |---------|-------|

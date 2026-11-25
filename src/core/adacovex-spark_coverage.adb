@@ -1,7 +1,9 @@
 with Ada.Text_IO;
 with Ada.Directories;
+with Adacovex.Dir_Cache;
 with Adacovex.Parsers;
 with Adacovex.Parsers.GNATprove;
+with Adacovex.Parsers.Manifest;
 
 package body Adacovex.Spark_Coverage is
 
@@ -26,24 +28,20 @@ package body Adacovex.Spark_Coverage is
    --  exactly.
    Max_Pkg_Depth : constant := 32;
 
-   --  Directory names the source walk never descends into: version
-   --  control metadata, generated and dependency trees, and the
-   --  build output. None of them hold assessed Ada source.
+   --  Directory names the source walk never descends into. The shared
+   --  predicate owns the rules every walker needs (version control
+   --  metadata, `.venv`, `.adacovex`, `obj`, `bin`, `alire`, `_build`),
+   --  so this walk cannot drift from them: a private list here once
+   --  omitted `.venv` and enumerated an entire virtualenv on every run
+   --  (debt D16). `node_modules` and `build` are added locally, because
+   --  the shared predicate leaves vendor roots discoverable and no
+   --  generated tree holds assessed Ada source.
    function Skip_Dir (N : String) return Boolean is
    begin
       return
-        N = ".git"
-        or else N = ".jj"
-        or else N = ".hg"
-        or else N = ".svn"
-        or else N = ".fslckout"
-        or else N = "_FOSSIL_"
-        or else N = "obj"
-        or else N = "bin"
-        or else N = "alire"
+        Adacovex.Parsers.Manifest.Skip_Walk_Dir (N)
         or else N = "build"
-        or else N = "node_modules"
-        or else N = "_build";
+        or else N = "node_modules";
    end Skip_Dir;
 
    --  Strip leading and trailing spaces.
@@ -1546,9 +1544,57 @@ package body Adacovex.Spark_Coverage is
       Skipped_Ct : in out Natural)
    is
       use Ada.Directories;
+      use type Adacovex.Dir_Cache.Entry_Kind;
+      Snap   : Adacovex.Dir_Cache.Dir_Entry_List;
+      SCt    : Natural;
+      STrunc : Boolean;
+      SOK    : Boolean;
       Search : Search_Type;
       Ent    : Directory_Entry_Type;
+
+      --  The skip classification for one Ada source name, shared by the
+      --  snapshot path and the direct fallback so the two cannot differ.
+      procedure Note_Ada_File (N : String) is
+      begin
+         if N'Length > 4
+           and then (N (N'Last - 3 .. N'Last) = ".adb"
+                     or else N (N'Last - 3 .. N'Last) = ".ads")
+         then
+            for I in 1 .. Integer (Skips.Length) loop
+               if Skips (I).File_Len = N'Length
+                 and then Skips (I).File (1 .. N'Length) = N
+               then
+                  Classify_File_Skips (Dir, N, Skips, Entities);
+                  exit;
+               end if;
+            end loop;
+         end if;
+      end Note_Ada_File;
    begin
+      --  Shared snapshot first: this walk runs beside the source scanner
+      --  and the graph key, so re-enumerating the tree here doubled a warm
+      --  run's stat count (debt D16).
+      Adacovex.Dir_Cache.Snapshot (Dir, Snap, SCt, STrunc, SOK);
+      if SOK and then not STrunc then
+         for SI in 1 .. SCt loop
+            declare
+               N : constant String := Snap (SI).Name (1 .. Snap (SI).Name_Len);
+            begin
+               if Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind) then
+                  if not Skip_Dir (N) then
+                     Walk_And_Classify
+                       (Dir & "/" & N, Skips, Entities, Skipped_Ct);
+                  end if;
+               elsif Snap (SI).Kind /= Adacovex.Dir_Cache.K_Other then
+                  Note_Ada_File (N);
+               end if;
+            end;
+         end loop;
+         return;
+      end if;
+
+      --  A directory the memo cannot hold (unreadable, or above its entry
+      --  cap) is walked directly, so a large tree never loses a skip.
       if not Exists (Dir) then
          return;
       end if;
@@ -1566,19 +1612,7 @@ package body Adacovex.Spark_Coverage is
                     (Dir & "/" & N, Skips, Entities, Skipped_Ct);
                end if;
             elsif Kind (Ent) = Ordinary_File then
-               if N'Length > 4
-                 and then (N (N'Last - 3 .. N'Last) = ".adb"
-                           or else N (N'Last - 3 .. N'Last) = ".ads")
-               then
-                  for I in 1 .. Integer (Skips.Length) loop
-                     if Skips (I).File_Len = N'Length
-                       and then Skips (I).File (1 .. N'Length) = N
-                     then
-                        Classify_File_Skips (Dir, N, Skips, Entities);
-                        exit;
-                     end if;
-                  end loop;
-               end if;
+               Note_Ada_File (N);
             end if;
          end;
       end loop;
@@ -1955,9 +1989,45 @@ package body Adacovex.Spark_Coverage is
       Skipped_Ct : in out Natural)
    is
       use Ada.Directories;
+      use type Adacovex.Dir_Cache.Entry_Kind;
+      Snap   : Adacovex.Dir_Cache.Dir_Entry_List;
+      SCt    : Natural;
+      STrunc : Boolean;
+      SOK    : Boolean;
       Search : Search_Type;
       Ent    : Directory_Entry_Type;
+
+      --  Scan one Ada source name, shared by the snapshot path and the
+      --  direct fallback so the two cannot differ.
+      procedure Note_Ada_File (N : String) is
+      begin
+         if N'Length > 4 and then N (N'Last - 3 .. N'Last) = ".adb" then
+            Scan_Source (Dir, N, Entities, Units, Skipped_Ct);
+         elsif N'Length > 4 and then N (N'Last - 3 .. N'Last) = ".ads" then
+            Claim_Unit_File (Dir, N, Units);
+         end if;
+      end Note_Ada_File;
    begin
+      Adacovex.Dir_Cache.Snapshot (Dir, Snap, SCt, STrunc, SOK);
+      if SOK and then not STrunc then
+         for SI in 1 .. SCt loop
+            declare
+               N : constant String := Snap (SI).Name (1 .. Snap (SI).Name_Len);
+            begin
+               if Adacovex.Dir_Cache.Is_Directory (Snap (SI).Kind) then
+                  if not Skip_Dir (N) then
+                     Walk_Source (Dir & "/" & N, Entities, Units, Skipped_Ct);
+                  end if;
+               elsif Snap (SI).Kind /= Adacovex.Dir_Cache.K_Other then
+                  Note_Ada_File (N);
+               end if;
+            end;
+         end loop;
+         return;
+      end if;
+
+      --  A directory the memo cannot hold is walked directly, so a large
+      --  tree never loses a unit.
       if not Exists (Dir) then
          return;
       end if;
@@ -1974,12 +2044,7 @@ package body Adacovex.Spark_Coverage is
                   Walk_Source (Dir & "/" & N, Entities, Units, Skipped_Ct);
                end if;
             elsif Kind (Ent) = Ordinary_File then
-               if N'Length > 4 and then N (N'Last - 3 .. N'Last) = ".adb" then
-                  Scan_Source (Dir, N, Entities, Units, Skipped_Ct);
-               elsif N'Length > 4 and then N (N'Last - 3 .. N'Last) = ".ads"
-               then
-                  Claim_Unit_File (Dir, N, Units);
-               end if;
+               Note_Ada_File (N);
             end if;
          end;
       end loop;
