@@ -1,106 +1,38 @@
-# adacovex release plan: v1.68.0 - v1.75.0
+# adacovex release plan: v1.76.0 - v1.77.0
 
-Current version: `1.74.0`. Work is scoped across **eight minor releases**:
-`v1.68.0` through `v1.74.0` (closed), then `v1.75.0`.
+Current version: `1.75.0`. Work ahead is scoped across **two minor releases**:
+`v1.76.0` (CLI help ergonomics and documentation audience) and `v1.77.0`
+(glossary, diagnostics depth, and the developer configuration).
 Closed releases are recorded in their changelogs, not repeated here.
 
 ## Proof-timing phase note
 
-All of these land in the **open `v1.61.0 -` phase** (representative `1.63.0`)
-of `docs/contributing/perf/prove-timing.md`. The methodology is unchanged
-(gnatprove-driven prove via the `prove` subcommand, result cache keyed the
-same way, bundle specs excluded from the proof-input hash), so no phase
-boundary or methodology-shift note is required. Item 18 changed what a warm
-cache hit is keyed on, not how gnatprove runs, and items 26-28 add measurement
-and documentation, not a prover change. When item 26 records fresh figures,
-record the open-phase column from one run's complete metric set rather than
-cherry-picking rows across versions.
+All of this work lands in the **open `v1.63.0 - v1.75.0` phase**, represented
+by `1.75.0`, in `docs/contributing/perf/prove-timing.md`. No item changes how
+gnatprove runs or how the proof cache is keyed, so no phase boundary is
+required. From `1.75.0` the open column is re-measured at each version, so a
+release that moves a figure re-runs `just perf-report`, takes the complete
+metric set again, and moves the representative. The v1.75.0 tree fails the
+warm-run perf check by 35 times in stat count (debt D16), and the rule reads
+against the post-fix baseline.
 
 ## How work is distributed
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.68.0 | closed | Output defaults and time | changelog `adacovex-1.68.0.md` |
-| v1.69.0 | closed | Compiler-style diagnostics and output | changelog `adacovex-1.69.0.md` |
-| v1.70.0 | closed | SBOM robustness and debt | changelog `adacovex-1.70.0.md` |
-| v1.71.0 | closed | SBOM depth and pipeline speed | changelog `adacovex-1.71.0.md` |
-| v1.72.0 | closed | Performance close-out and documentation currency | changelog `adacovex-1.72.0.md` |
-| v1.73.0 | closed | Test suite portability and layout | changelog `adacovex-1.73.0.md` |
-| v1.74.0 | closed | Cache identity, diagnostics, terminology, and modularity | changelog `adacovex-1.74.0.md` |
-| v1.75.0 | in progress | Dogfood close-out, CLI cohesion, and measured performance | 17b (Ada_CRDT robustness), 19 (contextual help audit), 26 (deterministic perf measurement), 27 (docs/stats), 28 (docs-bundle determinism and cost), final docs/STE pass |
+| v1.76.0 | planned | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`), R2 (man page as full context), R3 (end-user documentation audience), R4 (bundled `adacovex.toml`), R5 (bare invocation and level 4) |
+| v1.77.0 | planned | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI) |
 
-## Status (2026-11-23)
+## Status (2026-11-25)
 
-v1.74.0 is closed; v1.75.0 is in progress and the tree now carries the 1.75.0
-version (manifests, generated version spec, SBOM, and a changelog scaffold).
-The tree holds 2494/2494 native
-tests across 30 categories, 213 CLI e2e checks (the prove-configuration group
-now runs whenever a prover is resolvable, instead of skipping on any host
-without one on `$PATH`), 274 prove-e2e checks over the committed fixture
-projects, and 1060 VCs at Gold.
+v1.75.0 is closed: the tree holds version `1.75.0` (manifests, generated
+version spec, SBOM), and its changelog is
+[`adacovex-1.75.0.md`](docs/changelogs/adacovex-1.75.0.md). The tree carries
+2494/2494 native tests across 30 categories, 213 CLI e2e checks, 274
+prove-e2e checks over 20 committed fixture projects, and 1060 VCs at Gold.
 
-### Delivered so far in v1.75.0
-
-- [x] Counterexample switch: `--counterexamples=on|off` on `prove`, on by
-default. The switch is part of the option string and therefore of the proof
-result-cache identity, and `--counterexamples=off` skips the search.
-
-- [x] Diagnostics accuracy: a finding that carries a counterexample is no
-longer reported as a budget failure ("provers gave up"), because a
-`+ provers gave up` line can follow a counterexample inside one gnatprove
-message block. The block then keeps the actionable fix hint.
-
-- [x] Unknown help topic: the message names the topic, suggests the nearest
-known topic or flag, and lists the valid topics before the full usage. The
-flag suggestion now closes its parenthesis.
-
-- [x] Default proof level: `prove` always sends a level -- `--level=N` when
-given, else 4. Without `--level`, gnatprove runs cvc5 alone with no
-per-check timeout, so an unflagged run proved less than its output claimed,
-and a Makefile target that omitted the flag never shared a cache entry with
-`just run-ada-crdt`. The default is in the option string, so it is part of
-the proof result-cache identity: every existing proof entry is invalidated
-once, by design. Help, the man page, and the flag-detail page state the
-default and why.
-
-- [x] Proof-cache identity (debt D11): a proof key folds in the resolved
-absolute target, so a relative and an absolute `-t` for one project share
-one entry (measured: 2/2 unit hits, 17 ms). The `just run-ada-crdt` and
-Ada_CRDT `make prove` keys differ only because the two commands request
-different proofs (`-l=4` against gnatprove's legacy default), which is a
-different proof, not a per-caller cache.
-
-- [x] Item 19 (contextual help audit): every dispatched topic now closes with
-one `Examples:` command, a `See also:` line naming the related topics and the
-page that explains them, and an `Exit codes:` block where a code other than
-0/1 exists (`man --check`, `tldr --check`, `init`, `prove`, `spark-coverage`,
-`--require-*`). The CLI e2e suite asserts the frame, the two new sections,
-and the absence of a developer-only command for all twelve frames.
-
-- [x] Item 17b (Ada_CRDT dogfood): the level-4 run proves 1107 VCs with none
-unproved, and the replay reports 4 hidden notices, 11 collapsed duplicates,
-and 6 warning lines over 2 distinct messages. The run found one gap: the
-reserved suppression set `all` matched no tag, so it silently suppressed
-nothing; it now hides every tagged notice, with a regression test. The
-findings by class are on `docs/contributing/proving-diagnostics.md`.
-
-- [x] Items 26-28 (measured figures): `just perf-report` measures the
-release shapes through `tools/bench.py` and rewrites the generated tables on
-`docs/stats/`; `just release` runs it with `--release`, so the release
-commit carries fresh figures. The docs-bundle measurement and the rebuild
-decision tree are recorded on `docs/stats/bundle.md` and
-`docs/usage/dashboard-docs.md`.
-
-The test tree has one root: `src/tests/` holds the native suite, the e2e
-suites in `src/tests/e2e/`, and the fixture projects in
-`src/tests/projects/`. `just test-layout-check` and `just portability-check`
-keep that shape.
-
-The debt register has no unowned open row: D13 closed with the API docstring
-pass, and D11 and D7 stay open with v1.75.0. The v1.74.0 scope carried the
-toolkit terminology rename, the documentation accuracy audit, the Python and
-test script split, and the per-unit proof cache; v1.75.0 carries the dogfood
-close-out, the help audit, and the measured-performance and stats work.
+The debt register carries one open row: D16 (the warm stat regression), owned
+by v1.76.0.
 
 ## Every change
 
@@ -112,7 +44,8 @@ Every change also updates, in the same change: `docs/`, Ada docstrings feeding
 `surface-parity-check`, `version-consistency-check`, `docs-tree`, `link-check`,
 `book-links-check`, `python3 tools/gen-docs.py --check`, then `just book`).
 After `just test` and `just prove`, run `just test-count` and
-`just proof-status`.
+`just proof-status`. Every change also runs the warm-run perf check in
+AGENTS.md.
 
 ## Working constraints
 
@@ -122,12 +55,15 @@ After `just test` and `just prove`, run `just test-count` and
 2. `src/tests/e2e/prove/prove_diagnostics.py` sets `NO_COLOR=1` so the text
    assertions compare plain output. Keep that when adding checks.
 3. `just test-count` rewrites the live docs and the AGENTS.md tree. The crate
-description carries no test count, so no historical release manifest is
-rewritten; commit the generated manifests as-is.
+   description carries no test count, so no historical release manifest is
+   rewritten; commit the generated manifests as-is.
 4. `Adacovex.Prove_Output` counts as a proof unit. `just proof-status` keeps
    the VC ledger, the badges, and the timing page in sync.
 5. `just check` runs `fmt` first. Re-run the full chain after a source edit; a
    green `complexity-check` alone does not cover the parity gates.
+6. `surface-parity-check` ties the `--help` usage block, the man SYNOPSIS, the
+   cli-reference usage fence, and the completion lists to the parser's
+   subcommand set. A help restructure changes all of them in one change.
 
 ## Closed releases
 
@@ -141,200 +77,242 @@ the changelog is the durable record of what shipped and why.
 | v1.70.0 | Generated-build-tree fix, syft comparison, debt register, per-gate check timing | [`adacovex-1.70.0.md`](docs/changelogs/adacovex-1.70.0.md) |
 | v1.71.0 | Syft-complete ecosystem table, lockfile readers, workflow actions, bounded artefact copy, command-text tool scan, build-once check pipeline | [`adacovex-1.71.0.md`](docs/changelogs/adacovex-1.71.0.md) |
 | v1.72.0 | Root-project tooling hygiene, docs currency sweep, expected-output blocks, diagnostics matrix, generated docs tree, warm check under 60 s, complete API docstrings | [`adacovex-1.72.0.md`](docs/changelogs/adacovex-1.72.0.md) |
-
-The v1.65.0-v1.67.0 plan and `old-plan.md` are retired. The warm-tree check
-history (344 s, then 453 s), the 60 s budget, and the closing 38.77 s run are
-on
-[`docs/contributing/perf/check-pipeline.md`](docs/contributing/perf/check-pipeline.md).
+| v1.73.0 | One test root and real fixture projects, platform-agnostic suite | [`adacovex-1.73.0.md`](docs/changelogs/adacovex-1.73.0.md) |
+| v1.74.0 | Resolved cache identity, per-unit proof entries, contract-error fixtures, toolkit terminology, docs accuracy audit, modular tool scripts | [`adacovex-1.74.0.md`](docs/changelogs/adacovex-1.74.0.md) |
+| v1.75.0 | Counterexamples switch, default proof level, proof-cache identity, help-topic frames, `all` suppression, `docs/stats/` and `just perf-report`, one phase column | [`adacovex-1.75.0.md`](docs/changelogs/adacovex-1.75.0.md) |
 
 ---
 
-## v1.72.0 - closed
+## v1.76.0 - CLI help ergonomics and documentation audience
 
-Performance close-out and documentation currency: items 15c, 21-25, the
-debt close-out (8c), and the API docstring pass (9).
-Record: [`adacovex-1.72.0.md`](docs/changelogs/adacovex-1.72.0.md).
+The theme is one question: what does a user see in the first ten seconds. The
+tool should read like a Unix program that expects flags, tells a user where the
+detail lives, and keeps maintainer material out of the way of the task.
 
----
+### R1 - A shorter `--help`, grouped, with `-h` and contextual help first
 
-## v1.73.0 - closed
+- [ ] Accept `-h` wherever `--help` works, including after a subcommand.
 
-Test suite portability and layout: item 20 (one test root and real fixture
-projects) and item 16 (platform-agnostic suite).
-Record: [`adacovex-1.73.0.md`](docs/changelogs/adacovex-1.73.0.md).
-
-<!-- v1.73.0 item detail retired with its changelog -->
-
----
-
-## v1.74.0 - closed
-
-Cache identity, diagnostics, terminology, and modularity: items 18 (resolved
-location, per-unit proof entries, lifetime, clear), 17a (contract-error
-matrix), 21 (toolkit terminology), 22 (docs accuracy audit), 23 (modular
-Python and test scripts), 24 (cache-path audit), and 25 (complexity language
-parity). The release also closes the item 18 gap with a per-unit proof cache
-and extends the fixtures to every classified check kind.
-Record: [`adacovex-1.74.0.md`](docs/changelogs/adacovex-1.74.0.md).
-
-<!-- v1.74.0 item detail retired with its changelog -->
-
----
-
-## v1.75.0 - Dogfood close-out, CLI cohesion, and measured performance
-
-- [ ] Item 17b - Ada_CRDT dogfood: useful, robust diagnostics
-
-**Goal:** The diagnostics earned on `../Ada_CRDT` are accurate, quiet, and
-actionable, and the remaining gaps are documented rather than hidden.
+**Goal:** The base `--help` fits one screen and groups its flags by task. A
+user who wants detail reaches it through contextual help, not by scrolling.
 
 **Work:**
-- Run `just run-ada-crdt` with `--diagnostics=text` and `--diagnostics=json`;
-  record every finding by class, location, and whether the block is
-  actionable.
-- Fix grouping and dedup gaps the dogfood exposes: missing source locations,
-  multi-line messages, inlined call sites, warnings without a line, and
-  solver attribution when a category has more than one prover.
-- Confirm `--suppress-warnings`, `--quiet`, and `--verbose` keep their
-  contracts on the dogfood tree.
-- Copy representative Ada_CRDT findings into synthetic fixtures under
-  `src/tests/projects/contract-errors/` (with attribution in the README) so
-  CI covers them; CI must not require the sibling checkout.
-- Document a "Dogfood: Ada_CRDT" section in
-  `docs/contributing/proving-diagnostics.md` with counts by class, the
-  actionable findings, the fallback findings, and the link to the item 17a
-  gaps. Update `docs/usage/target-projects.md` if the behaviour changes.
-- If a finding is an adacovex false positive rather than a gnatprove
-  diagnostic, fix it and add a regression test.
+- Group the base `--help` flags by intent (assessment, output, cache, serve,
+  CI gates, subcommands) with a one-line heading per group, and keep the
+  per-flag text to a phrase.
+- Point to the detail: the base footer names `adacovex help <topic>`,
+  `adacovex <subcommand> --help`, and the man page.
+- Apply the same grouping to the man page option sections and to the tldr
+  page, keeping the tldr page shorter than the base `--help`.
+- Audit `prove --help` first: it is the frame with the most options, so it
+  sets the grouping and the wording every other topic copies.
+- Keep `help <topic>` and `<subcommand> --help` byte-identical, and keep the
+  exit code of a help request at 0.
+- Update the CLI reference, the tldr page, and the completion subcommand lists
+  in the same change, because `surface-parity-check` reads all of them.
 
-**Tests:** the new fixtures, plus the existing `just run-ada-crdt` gate.
-
-**Verify:** `just run-ada-crdt`, `just prove-e2e`, `just test`.
-
----
-
-- [ ] Item 19 - Contextual help audit and Unix CLI cohesion
-
-**Goal:** Every help topic reads like one Unix tool. `prove` help is the
-reference frame; the main `--help` and every contextual topic share it.
-
-**Work:**
-- Audit every topic the parser dispatches: `prove`, `serve`, `status`,
-  `sbom`, `complexity`, `spark-coverage`, `man`, `tldr`, `init`,
-  `completion`, and `cache`. Each topic gets a `Usage:` block, a one-line
-  summary, aligned option columns with wrapped descriptions, one example,
-  exit codes where they are not 0/1, a `See also` line, and the standard
-  footer.
-- Keep the option layout and blank-line grouping from `prove` help. Do not
-  put developer commands (`just`, `alr build`) in help or dashboard prose.
-- Make an unknown topic list the valid topics and suggest the nearest match,
-  in the same style as `Suggest_Flags`.
-- Keep `help <topic>` and `<subcommand> --help` byte-identical, and keep a
-  flag before `--help` selecting the main usage.
-- Do not add a pager or colour outside a TTY; the output must pipe cleanly.
-- Update `docs/usage/cli-reference.md` and the flag-detail pages for any
-  wording or grouping change.
-
-**Tests:** `adacovex_config_tests.adb` snapshots each topic's frame and
-option order; `cli-e2e` asserts every topic has `Usage:`, `Options:`, and the
-footer, and that no developer command appears.
+**Tests:** `adacovex_config_tests.adb` snapshots the group order and asserts
+`-h` equals `--help` in every position; `cli-e2e` asserts the base frame holds
+one screen of lines and that each group heading appears once.
 
 **Verify:** `just test`, `just cli-e2e`, `just surface-parity-check`,
 `just docs-coverage-check`.
 
----
+### R2 - The man page carries the full context
 
-- [ ] Final docs, STE, and parity drift pass
+- [ ] Generate each option's man-page description from its `--help` text, so
+  no entry reads "See --help for details".
 
-**Goal:** Re-read the user docs against the codebase surface after the
-v1.73.0-v1.75.0 changes: every `Known_Flags` entry in the CLI reference,
-every dashboard route in the dashboard page, every action input in the CI/CD
-inputs table, every new Technical Name in the STE100 list, and every new test
-category in the CONTRIBUTING table. Fix drift in place; no follow-ups.
-
-**Verify:** the full `just check` chain.
-
----
-
-- [ ] Item 26 - Deterministic performance measurement at every release
-
-**Goal:** Every version bump publishes measured timings, not remembered ones.
-A figure names its version, its host profile, and the command that produced
-it, and a speed-up claim always carries a before/after pair from one host.
+**Goal:** The man page is the complete offline reference: the union of every
+help frame, not a synopsis with stubs.
 
 **Work:**
-- Use `hyperfine` for the stable shapes (`prove` warm/cold, pipeline
-  warm/cold, docs bundle), `strace -c` for the syscall profile of the no-op
-  and warm shapes, `perf stat` where the host permits it, and the shell `time`
-  fallback when a tool is missing. `tools/bench.py` stays the single owner of
-  the measurement recipe.
-- Add a `just perf-report` task that writes the current table under
-  `docs/stats/`, and run it at every version bump. A release without a fresh
-  row is incomplete.
-- Record the host profile beside each table: CPU, kernel, filesystem, compiler,
-  gnatprove version, and the build profile.
-- Keep the raw output under `obj/` and the summary in the docs; never edit a
-  number by hand.
-- Do not claim a speed-up without a same-host, same-profile before/after pair.
+- Build the man page from the same option table the help renderer reads, so a
+  description has one source and the man page cannot drift.
+- For each option: the summary sentence, the default, an example where the
+  flag needs one, and the related flag it is often paired with.
+- Order the man sections as the help groups are ordered, and keep the
+  SYNOPSIS and the DESCRIPTION tagline that `surface-parity-check` requires.
+- Fail the build when an option in the table has no description.
 
-**Tests:** the tools suite covers the table formatter and every missing-tool
-fallback, so a host without `perf` or `hyperfine` still produces a complete
-report.
+**Tests:** `adacovex_man_tests.adb` asserts that every `Known_Flags` entry has
+a non-empty description, that no description contains "See --help", and that
+the section order matches the help groups.
 
-**Verify:** `just perf-report`, one release dry run, `just tools-check`.
+**Verify:** `just test`, `just man`, `just surface-parity-check`.
 
----
+### R3 - The documentation speaks to end users first
 
-- [ ] Item 27 - A stats section for contributors and curious users
+- [ ] Move maintainer-only detail into blockquotes and callouts.
 
-**Goal:** `docs/stats/` is the single home for measured numbers: pipeline and
-prove timings, binary size, syscall profiles, cache hit rates, bundle size,
-and test counts. A reader finds the current value and the method behind it
-without reading a changelog.
+**Goal:** A user who installs the tool and reads the docs meets the task
+first. A contributor still finds every detail, one level down.
 
 **Work:**
-- Create `docs/stats/` with one page per metric family, and add it to the
-  `docs/index.md` toctree.
-- Move the current figures from `docs/contributing/perf/` and
-  `docs/usage/performance.md` behind links; keep the method and optimisation
-  history pages where they are.
-- Each page states the version, host profile, command, and raw result. The
-  prose explains only what moved and why.
-- Keep `docs/contributing/perf/` for method and history; `docs/stats/` is the
-  record.
+- Read `docs/usage/` as an end user and move `just` targets, `alr` recipes,
+  fixture layout, gate internals, and CI job wiring into a callout at the
+  point they are needed, or into `docs/contributing/`.
+- Keep the detail, never delete it: a callout keeps the text and the reason.
+- State the user-facing command for every operation a user can perform
+  (`adacovex prove`, `adacovex sbom`, `adacovex status`), and leave the
+  developer command inside the callout.
+- Apply the rule to the dashboard prose too, which must keep naming the
+  user-facing subcommands only.
+- Use the glossary (R6) for the first mention of a term on a page.
 
-**Tests:** `just docs-tree`, `just docs-coverage-check`, `just link-check`,
-and `just book-links-check`.
+**Tests:** `just docs-check`, `just docs-coverage-check`,
+`just docs-tree`.
 
 **Verify:** `just book`, `just check`.
 
----
+### R4 - The sample configuration ships inside the manual
 
-- [ ] Item 28 - Make the docs bundle deterministic and cheap
+- [ ] Show the full `adacovex.toml` as a code block on the configuration page.
 
-**Goal:** The offline manual stays embedded in the Ada binary, with no new
-non-dev dependency, but a docs build is incremental, reproducible, verified,
-and cheap.
+**Goal:** A reader of the bundled manual copies the complete configuration for
+the version they run, without opening the repository.
 
 **Work:**
-- Measure the current bundle cost (Sphinx build, gzip, base85, spec write) and
-  record it under `docs/stats/`.
-- Replace the remaining brittle steps with one content-addressed manifest that
-  names every input and output. A missing build directory still falls back to
-  the committed spec, never a partial bundle.
-- Keep the encoder pure standard-library `gzip` + base85 and parallel across
-  cores. Add no JSON, JavaScript, or npm tool.
-- Fail loudly when a page is missing from the bundle, a link does not resolve,
-  or the fingerprint disagrees with the committed spec.
-- Document the rebuild decision tree and the measured cost.
+- Embed the repository's `adacovex.toml` on
+  `docs/usage/configuration.md` as a copyable code block, generated from the
+  file so the two cannot drift.
+- State which version the block belongs to and that every key shows its
+  default.
+- Add a check that fails when the block differs from the committed file.
 
-**Tests:** `tools/test_docs_generation.py` covers the fingerprint, the
-incremental rebuild, the removed-page sweep, and the canonical search index;
-`just book-links-check` and `python3 tools/gen-docs.py --check` cover the
-committed artifact.
+**Tests:** the new check joins `just docs-check` or `just tools-check`; the
+manual link check covers the page.
 
-**Verify:** `just book`, `python3 tools/gen-docs.py --check`,
-`just tools-check`.
+**Verify:** `just book`, `just docs-check`.
+
+### R5 - A bare invocation prints help, and `just prove` is level 4
+
+- [ ] `adacovex` with no arguments prints the help frame and exits 0.
+
+**Goal:** The CLI behaves like a Unix tool: flags select work, and a bare
+invocation asks for one. Proof targets agree on level 4.
+
+**Work:**
+- Make a bare `adacovex` print the main usage and exit 0. A run needs a flag
+  (`--target`, `--serve`, or a subcommand). Print a hint that names the flag.
+- Record the change as breaking in the changelog, because the old bare form
+  ran an assessment on the current directory. Keep `--target=.` the exact
+  replacement and say so in the hint.
+- Confirm `just prove` and `./bin/adacovex prove` both send level 4, and add a
+  check that fails when the task passes another level.
+- Update the README quick start, the tldr page, the CLI reference, and the
+  action docs.
+
+**Tests:** `adacovex_config_tests.adb` covers the bare form, the hint, and the
+exit code; `cli-e2e` asserts the bare form prints the usage and that
+`./bin/adacovex prove` reports level 4.
+
+**Verify:** `just test`, `just cli-e2e`, `just surface-parity-check`,
+`just action-parity-check`.
+
+---
+
+## v1.77.0 - Glossary, diagnostics depth, and developer configuration
+
+The theme is a reader's footing: one glossary in plain language, a diagnostic
+matrix backed by examples and tests, and a developer configuration that lets a
+contributor use the sibling projects they actually have.
+
+### R6 - A glossary at `docs/glossary/`, linked from the prose
+
+- [ ] Move `docs/contributing/ste100/` to `docs/glossary/ste100/`.
+
+**Goal:** The technical names live where a reader looks for them. A reader can
+reach a term from the page that uses it.
+
+**Work:**
+- Move the seven term pages under `docs/glossary/ste100/`, add the new
+  toctree entry, and update every inbound link (`AGENTS.md`, the contributing
+  pages, and the `GUIDE_PAGES` table in `tools/rst2md.py`).
+- Link the first mention of a term on a page to its glossary heading, as a
+  plain Markdown link with the anchor, so the Read the Docs link preview works
+  offline and online.
+- Keep the glossary a documentation-only surface: a term entry still needs
+  part of speech, definition, and banned synonyms.
+- Add the glossary to `docs/index.md` in the reader-facing order, before the
+  contributing section.
+
+**Tests:** `just link-check` and `just book-links-check` cover the anchors;
+`just docs-tree` regenerates the tree; the STE100 index remains the
+single list.
+
+**Verify:** `just book`, `just check`.
+
+### R7 - Every diagnostics row has a test and a worked example
+
+- [ ] Cover the documented support level of every diagnostic case.
+
+**Goal:** A row in the diagnostics matrix is a claim, and a claim needs a test
+and a rendered example a user can recognise.
+
+**Work:**
+- Add a fixture pair under `src/tests/projects/contract-errors/` for every
+  case the matrix marks Supported without one, so the status column reads the
+  fixture directory instead of a hand-written list.
+- For each case marked Supported, render the diagnostics block for the broken
+  variant and the quiet run for the fixed variant, and check the block's
+  prover identity, source location, check kind, and fix hint.
+- Add a page under `docs/usage/` that shows each case's diagnostics block in a
+  fenced code block, generated from the fixtures so the page cannot drift.
+- State the scope: the matrix targets the Ada 2012 / SPARK 2014 contract
+  specification, and later-version features are out of scope for now.
+- Keep `just prove-e2e` as the runner and keep the checks offline.
+
+**Tests:** `prove_diagnostics.py` grows one case per matrix row; the new page
+is checked against the fixture output.
+
+**Verify:** `just prove-e2e`, `just diagnostics-coverage-check`,
+`just test`.
+
+### R8 - The sibling projects are optional
+
+- [ ] A developer configuration selects which sibling projects a target
+  checks.
+
+**Goal:** A new contributor needs no checkout of `../polars`, `../playwright`,
+or any other sibling. A contributor who has them can use them.
+
+**Work:**
+- Add `adacovex-dev.toml` at the repository root, with a `[[siblings]]` entry
+  per project (name, path, ecosystem) and an empty default.
+- Make the parser regression target read that file and skip a sibling whose
+  path is absent, with a printed reason, instead of failing.
+- Keep the committed fixture projects as the CI evidence; a sibling project is
+  a local extra, never a CI requirement.
+- Document the file on `docs/usage/configuration.md` and in the developer
+  guide, and name the skip rule the target prints.
+
+**Tests:** a tools test covers the parser and the missing-path skip; the target
+runs green with an empty file.
+
+**Verify:** `just tools-check`, `just sbom` or the parser target with an empty
+file, `just check`.
+
+### R9 - The configuration file matches the CLI
+
+- [ ] Gate configuration parity with a check, before the 2.0.0 cut.
+
+**Goal:** Every flag that changes a run can also live in `adacovex.toml`, and
+a drift fails CI instead of waiting for a reader to find it.
+
+**Work:**
+- Map each `Known_Flags` entry to its configuration key, or to a documented
+  exception (early-exit flags, output paths, serve-only options).
+- Add `tools/check-config-parity.py`, wired as `just config-parity-check` and
+  into `just check` and the CI quality job: a flag without a key, a key
+  without a flag, or a key without a row in the configuration page fails.
+- Document every key with its type, default, and the flag it mirrors, and keep
+  the global file and the project file on one table.
+- Fold the sample `adacovex.toml` from R4 into the same parity check.
+
+**Tests:** the new gate plus its tools unit test.
+
+**Verify:** `just config-parity-check`, `just check`.
 
 ---
 
@@ -345,9 +323,9 @@ committed artifact.
 3. Regenerate `src/adacovex_version_info.ads` (`just build`), `sbom.json`
    (`just sbom`), and `src/adacovex-docs_template.ads` (`just book`).
 4. Run `just check`, then `just test`, `just prove`, `just test-count`,
-   `just proof-status`. Wire any new gate into `just check`,
-   `tools/tasks.py` (`CHECK_GATES`), the CI jobs, and the AGENTS.md task
-   table.
+   `just proof-status`, and `just perf-report`. Wire any new gate into
+   `just check`, `tools/tasks.py` (`CHECK_GATES`), the CI jobs, and the
+   AGENTS.md task table.
 5. Update AGENTS.md if the source layout, CLI flags, SBOM behaviour, or
    dashboard features drifted.
 6. Suggest a Conventional Commit message (British English, <=72 characters,
@@ -355,13 +333,12 @@ committed artifact.
    If the release spans several components, suggest the atomic commit chain
    from the AGENTS.md rule.
 7. State which version the change belongs to and whether it needs a MAJOR
-   version (none of these items break the CLI contract, so no MAJOR).
+   version. R5 is the one breaking change in this plan: a bare `adacovex`
+   prints help instead of running an assessment. It ships in a minor release
+   because no flag, output format, or exit code changes, and the changelog
+   marks it as breaking with the one-flag replacement.
 8. When the release closes, replace its item detail in this plan with a
    changelog link. A closed release leaves no checklist text behind.
-
-> **Before the v1.75.0 release:** delete `plan.md` and create
-> `docs/changelogs/adacovex-1.75.0.md`. The changelog is the durable record
-> once the plan retires.
 
 ## Decisions (resolved)
 
@@ -377,17 +354,13 @@ committed artifact.
 7. Item 13: reuse `Adacovex.Ansi`; never store escape codes in the cache.
 8. Item 14: annotations are emitted only when `GITHUB_ACTIONS` is set; a local
    run keeps the text block.
-9. Item 15: the 60 s budget is split into measure (v1.70.0), build-once
-   (v1.71.0), and close-out (v1.72.0), so no release promises an unmeasured
-   speed-up.
-10. Item 16: a platform dependency is an explicit skip with a reason, never a
-    silent pass.
-11. Item 18: the cache identity is the resolved absolute project path, the
-    TTL is 7 days by default, and `--cache-clear` is a flag, not a new
-    subcommand, because `cache` already selects `--cache`.
-12. Item 20: one test root under `src/tests`; the e2e suites live in
-    `src/tests/e2e/` by category, and fixture projects live under
-    `src/tests/projects` and are never compiled by the root GPR.
-13. Item 17: a class counts as supported only when it is classified and gives
-    an actionable fix; otherwise it is documented as fallback or a gap.
-14. Item 19: `prove` help is the reference frame for every contextual topic.
+9. R1: the base `--help` stays a summary and the man page carries the detail.
+   Contextual help is the route to a flag's full meaning.
+10. R5: a bare invocation asks for a flag. The old bare form becomes
+    `--target=.`, and the hint prints that command.
+11. R6: `docs/glossary/` is the reader-facing home for the STE100 terms; the
+    contributing section keeps only the writing rules.
+12. R8: a sibling project is a local extra. CI reads the committed fixtures
+    and never a sibling checkout.
+13. R9: configuration parity is a CI gate before 2.0.0, not a documentation
+    convention.

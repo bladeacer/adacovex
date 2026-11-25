@@ -11,12 +11,12 @@ Measured on adacovex `1.75.0` on 2026-11-24.
 
 | Metric family | Current value | Detail |
 |---------------|---------------|--------|
-| Pipeline warm | 2.74 s | [Timings](timings.md) |
-| Pipeline cold | 2.64 s | [Timings](timings.md) |
-| Prove warm | 2.83 s | [Timings](timings.md) |
-| Build warm (`alr build`, no-op) | 853.1 ms | [Timings](timings.md) |
-| Binary size | 16.7 MiB (17507072 bytes) | [Binary size](binary-size.md) |
-| Bundled manual spec | 2.6 MiB (2736903 bytes) | [Docs bundle](bundle.md) |
+| Pipeline warm | 5.93 s | [Timings](timings.md) |
+| Pipeline cold | 6.02 s | [Timings](timings.md) |
+| Prove warm | 6.01 s | [Timings](timings.md) |
+| Build warm (no-op) | 5.34 s | [Timings](timings.md) |
+| Binary size | 10.7 MiB (11269352 bytes) | [Binary size](binary-size.md) |
+| Bundled manual spec | 2.6 MiB (2726826 bytes) | [Docs bundle](bundle.md) |
 | Cache hits (warm run) | 49 | [Cache](cache.md) |
 | Native tests | 2494 passed | [Tests](tests.md) |
 
@@ -31,10 +31,10 @@ Measured on adacovex `1.75.0` on 2026-11-24.
 | Filesystem | `ext4` |
 | Compiler | `GNATMAKE 16.2.1 20260810` |
 | gnatprove | `unknown` |
-| Build profile | `covex=DEVELOPMENT` |
+| Build profile | `release (-O2 -gnatn; tools/build.py --release)` |
 | hyperfine | `hyperfine 2.0.0` |
 | strace | `strace -- version 7.3` |
-| Load average (1 min) | `4.49` |
+| Load average (1 min) | `18.50` |
 <!-- perf-report:end -->
 
 ## What the numbers mean

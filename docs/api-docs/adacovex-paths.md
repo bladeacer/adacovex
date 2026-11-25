@@ -116,7 +116,7 @@ type Platform_Kind is (Platform_Linux, Platform_MacOS, Platform_Windows);
 
 ### function Detect_Platform return Adacovex.Paths.Platform_Kind `[Global]`
 
-> Detect the host platform at run time. Windows is recognised by the directory-separator convention (the one compile-time fact that distinguishes it), macOS by the existence of /System/Library/CoreServices (a macOS-only directory), and everything else is treated as XDG.
+> Detect the host platform at run time. Windows needs no probe: the directory-separator convention is a compile-time fact. macOS has no such fact, so the check asks whether /System/Library/CoreServices (the marker directory that only macOS creates) exists. On every other host that question answers "no" by design, and the host is treated as XDG.
 
 **Returns:** The host platform family.
 

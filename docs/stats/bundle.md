@@ -7,11 +7,11 @@ Measured on adacovex `1.75.0` on 2026-11-24.
 
 | Reading | Value |
 |---------|-------|
-| spec size | 2.6 MiB (2736903 bytes) |
+| spec size | 2.6 MiB (2726826 bytes) |
 | bundled assets | 294 |
-| source fingerprint | `583b92574ab83e853e86e215f451d4eb355c943ba5b8e31a65c4957cc65d8f24` |
-| docs cold tree | 191.0 ms |
-| docs fresh | 37.3 s |
+| source fingerprint | `6647163a1bb1d912e2d5fd24f4593c744df00322eaf74d035111737161fd3e86` |
+| docs cold tree | 696.0 ms |
+| docs fresh | 108.6 s |
 <!-- perf-report:end -->
 
 The rebuild decision tree and the encoder rules are on [The bundled offline manual](../usage/dashboard-docs.md). The build-phase timings that run beside it are on [Timings](timings.md).

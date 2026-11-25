@@ -81,9 +81,13 @@ tools, or output must also update, in the same change:
 `just prove` timing table as one column per **phase**, never one per release.
 A phase is a range of versions whose implementation methodology is largely
 similar (so far 1.55.0-1.56.0 (closed, rep 1.55.0), 1.57.0-1.60.0 (closed,
-rep 1.58.0), 1.61.0-1.62.0 (closed, rep 1.62.0), 1.63.0- (open, rep 1.63.0)).
+rep 1.58.0), 1.61.0-1.62.0 (closed, rep 1.62.0), 1.63.0-1.75.0 (open, rep
+1.75.0)).
 Fold each new version into the open phase while the methodology holds; close
-the phase and open a new one on a methodology shift. Each phase carries exactly one
+the phase and open a new one on a methodology shift. From 1.75.0 the open
+column is re-measured at each version, so its representative is the latest
+measured version, and a row the session did not take reads "not measured"
+rather than carrying an older number. Each phase carries exactly one
 representative version, and the table uses that version's *complete* metric
 set -- never the best value picked row by row from different versions in the
 phase. When the metrics trade off, weigh them, choose the representative,
@@ -93,6 +97,22 @@ the open one, so a retired phase is deleted rather than kept. Before deleting
 one, move whatever still explains a surviving number -- most often how the
 warm syscall floor was reached -- into the "Across every phase" notes, so no
 figure loses the reason it moved.
+
+**Perf check on every change.**  A warm run is a fixed shape (scan, SBOM walk,
+renderers, proof-cache hit), and a functional test cannot see it move. After any
+change to `src/`, `tools/`, the bundled docs or dashboard, or a gate, run
+`./bin/covex` twice on the warm tree and read the wall and
+`strace -f -c ./bin/covex | grep newfstatat` against the latest figures in
+`docs/stats/timings.md` and `docs/stats/syscalls.md`. Treat 2x the recorded warm
+wall or 2x the recorded `newfstatat` count as a regression: fix it, or add a
+`docs/contributing/debt.md` row in the same change with the measured evidence
+and the release that owns the fix. A change that moves a figure re-runs
+`just perf-report` and folds its version into the open phase of
+`docs/contributing/perf/prove-timing.md`, with the complete set re-measured
+when the representative moves. Compare two versions with a paired run on one
+box, never with two columns from different sessions. The v1.75.0 tree fails
+this check by 35 times in stat count (D16); the rule reads against the post-fix
+baseline, and no change may widen the gap.
 
 Before finishing, re-verify that the user-facing docs still cover the
 codebase's current surface: every `Known_Flags` entry is documented in

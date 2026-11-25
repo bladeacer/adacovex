@@ -7,17 +7,19 @@ the generator's own pipeline. The machine and the harness are on
 
 ## Binary size
 
-Before 1.58.0 the release profile kept GNAT's default `-g`, so the build
-was ~14.0 MiB at `-O2` on the 1.50.0 tree and ~5.3 MiB after `strip bin/adacovex`.
-Since 1.58.0 the release profile drops `-g` (it stays on the development
-profile, where debuggability is the point), so no strip pass is needed for a
-sane size. The open phase's representative (1.63.0) links at 10 202 640 bytes
-(9.7 MiB) and strips to 6 552 528 bytes (6.2 MiB); the growth over 1.58.0's
-~6.0 MiB reflects the code added since, notably the SPARK coverage analyser
-and its report paths. All figures on this page are taken on the release
-profile (`-O2 -gnatn`); a development build (`-O1`, with debug info) is
-larger by design. `just bench` reports both raw and stripped sizes, so a size
-regression is visible in the same command as the timings.
+Before 1.58.0 the release profile kept GNAT's default `-g`, so the build was
+~14.0 MiB at `-O2` on the 1.50.0 tree and ~5.3 MiB after `strip bin/adacovex`.
+Since 1.58.0 the release profile compiles adacovex's own units at `-O2` without
+`-g`, and keeps `-g` on the development profile, where debuggability is the
+point. The 3.6 MiB that a strip pass still removes at 1.75.0 belongs to the
+toolchain runtime.
+
+The open phase's representative (1.75.0) links at 11 269 352 bytes (10.7 MiB)
+and strips to 7 442 032 bytes (7.1 MiB). The stripped figure is 0.9 MiB above
+1.63.0's 6 552 528 bytes (6.2 MiB), which the larger manual and the SPARK
+coverage paths account for. All figures here are release-profile (`-O2 -gnatn`),
+a development build (`-O1`, with debug info) is larger by design, and `just
+bench` reports both sizes so a regression is visible beside the timings.
 
 ## Bundled offline manual
 

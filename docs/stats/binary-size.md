@@ -7,9 +7,9 @@ Measured on adacovex `1.75.0` on 2026-11-24.
 
 | Shape | Size |
 |-------|------|
-| `bin/adacovex` | 16.7 MiB (17507072 bytes) |
-| after `strip` | 6.9 MiB (7216752 bytes) |
-| stripped saving | 58.8% |
+| `bin/adacovex` | 10.7 MiB (11269352 bytes) |
+| after `strip` | 7.1 MiB (7442032 bytes) |
+| stripped saving | 34.0% |
 <!-- perf-report:end -->
 
 The strip figure is a copy in the temporary directory; `bin/adacovex` itself is never modified. The bundled manual's share of the binary is on [Docs bundle size and cost](bundle.md).

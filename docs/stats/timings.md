@@ -7,12 +7,12 @@ Measured on adacovex `1.75.0` on 2026-11-24.
 
 | Scenario | Mean | Std. dev. | Runs | Command |
 |----------|------|-----------|------|---------|
-| pipeline cold | 2.64 s | 219.5 ms | 5 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-iaehixar` |
-| pipeline warm | 2.74 s | 217.9 ms | 10 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-iaehixar` |
-| prove warm | 2.83 s | 312.7 ms | 5 | `./bin/adacovex prove --cache-dir=/tmp/adacovex-perf-report-prove-o804l9ya` |
-| build warm | 853.1 ms | 65.9 ms | 3 | `alr build` |
-| docs cold tree | 191.0 ms | 11.2 ms | 2 | `/usr/bin/python3 tools/gen-docs.py` |
-| docs fresh | 37.3 s | 6.34 s | 2 | `/usr/bin/python3 tools/gen-docs.py --fresh` |
+| pipeline cold | 6.02 s | 811.8 ms | 5 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-yqd4og9l` |
+| pipeline warm | 5.93 s | 425.1 ms | 10 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-yqd4og9l` |
+| prove warm | 6.01 s | 550.0 ms | 5 | `./bin/adacovex prove --cache-dir=/tmp/adacovex-perf-report-prove-u7k5yuvq` |
+| build warm | 5.34 s | 694.5 ms | 3 | `/usr/bin/python3 tools/build.py --release` |
+| docs cold tree | 696.0 ms | 117.8 ms | 2 | `/usr/bin/python3 tools/gen-docs.py` |
+| docs fresh | 108.6 s | 7.94 s | 2 | `/usr/bin/python3 tools/gen-docs.py --fresh` |
 
 Measured with: hyperfine.
 <!-- perf-report:end -->
