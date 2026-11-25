@@ -3123,298 +3123,107 @@ package body Adacovex.Config is
      & Adacovex.Version
      & " -- Ada/SPARK coverage, proof, and multi-standard compliance tool";
 
+   --  The base usage frame. It is a summary by design: one phrase per flag,
+   --  grouped by the job a user is doing, and a closing pointer to the
+   --  contextual topics and the man page that carry the detail. The full
+   --  reference lives in `adacovex help <topic>` and in the man page, so a
+   --  user never has to read a 260-line wall to find a flag (R1).
    procedure Print_Usage is
-      --  Print one usage entry, with a blank line before each new option so
-      --  the list reads as groups instead of one dense wall. A wrapped
-      --  continuation line starts with enough spaces to align under the
-      --  option, so it gets no break.
-      --  @param S  Option or continuation line.
-      procedure Opt (S : String) is
+      --  Print a group heading and the blank line above it, so the groups
+      --  stay readable without a blank line being written by hand.
+      --  @param Name  Heading text, ending with a colon.
+      procedure Head (Name : String) is
       begin
-         if S'Length >= 3
-           and then S (S'First) = ' '
-           and then S (S'First + 1) = ' '
-           and then S (S'First + 2) /= ' '
-         then
-            Ada.Text_IO.Put_Line ("");
-         end if;
-         Ada.Text_IO.Put_Line (S);
-      end Opt;
+         Ada.Text_IO.Put_Line (Name);
+      end Head;
 
    begin
       Ada.Text_IO.Put_Line (Help_Banner);
       Ada.Text_IO.Put_Line ("");
-      Ada.Text_IO.Put_Line ("Usage: adacovex [options]");
       Ada.Text_IO.Put_Line
-        ("       adacovex sbom [--format=FMT] [--out=PATH] [--standard=NAME]");
+        ("Usage: adacovex [options]                    assess the target project");
       Ada.Text_IO.Put_Line
-        ("                        [--dal=LEVEL | --asil=LEVEL | --class=LEVEL]");
-      Ada.Text_IO.Put_Line ("       adacovex prove --target=PATH");
-      Ada.Text_IO.Put_Line ("       adacovex status --target=PATH");
-      Ada.Text_IO.Put_Line ("       adacovex man [--check] [--dir=PATH]");
-      Ada.Text_IO.Put_Line ("       adacovex tldr [--check]");
-      Ada.Text_IO.Put_Line ("       adacovex init [--target=PATH] [--force]");
-      Ada.Text_IO.Put_Line ("       adacovex complexity [--target=PATH]");
-      Ada.Text_IO.Put_Line ("       adacovex spark-coverage [--target=PATH]");
-      Ada.Text_IO.Put_Line ("       adacovex completion [bash|fish|zsh|pwsh]");
-      Ada.Text_IO.Put_Line ("       adacovex help [TOPIC]");
+        ("       adacovex prove [--target=PATH]        adacovex status [--target=PATH]");
+      Ada.Text_IO.Put_Line
+        ("       adacovex complexity [--target=PATH]   adacovex spark-coverage");
+      Ada.Text_IO.Put_Line
+        ("       adacovex sbom [--format=FMT]          adacovex man [--check]");
+      Ada.Text_IO.Put_Line
+        ("       adacovex tldr [--check]               adacovex init [--target=PATH]");
+      Ada.Text_IO.Put_Line
+        ("       adacovex completion [SHELL]           adacovex help [TOPIC]");
       Ada.Text_IO.Put_Line ("");
       Ada.Text_IO.Put_Line ("Options:");
-      Opt
-        ("  --target=PATH, -t PATH  Target project path (default: current directory)");
-      Opt ("  --manifest=PATH, -m PATH  Target manifest file override");
-      Opt ("  --dal=LEVEL           DO-178C DAL level: A | B | C | D | E");
-      Opt ("                        (default: C; also the shared rigor tier)");
-      Opt ("  --asil=LEVEL          ISO 26262 ASIL level: A | B | C | D | QM");
-      Opt ("                        (e.g. --asil=B selects ASIL B)");
-      Opt ("  --class=LEVEL         IEC 62304 safety class: A | B | C");
-      Opt ("                        (e.g. --class=A selects Class A)");
-      Opt ("  --standard=NAME       Compliance standard: do178c | iso26262 |");
-      Opt
-        ("                        iec62304 | all (default: do178c); all emits");
-      Opt
-        ("                        badges for every standard at the same tier.");
-      Opt
-        ("                        Also accepts a combined tier token: dal-A..E,");
-      Opt ("                        asil-A..D, asil-QM, class-A..C (e.g.");
-      Opt ("                        --standard=asil-b == --asil=B)");
-      Opt ("  status                Report toolkit + platform status (no");
-      Opt
-        ("                        assessment); exit 0 when alire + gnatprove are");
-      Opt ("                        available or dependency-managed");
-      Opt
-        ("  --export[=PATH]       With status: write the report as machine-");
-      Opt ("                        readable JSON to PATH (or stdout when no");
-      Opt ("                        path is given)");
-      Opt ("  --metrics             With status: print the report as compact");
-      Opt
-        ("                        key=value metrics lines for shell scripts");
-      Opt
-        ("  --serve, -s, serve    Start HTTP dashboard on :8080 (standard-aware,");
-      Opt
-        ("                        defaults to all standards; light/dark/system");
-      Opt ("                        themes via the header dropdown)");
-      Opt ("  --theme=NAME          Dashboard theme: light | dark | system");
-      Opt ("                        (default: system; only with --serve)");
-      Opt ("  --port=N, -p N        HTTP server port (default: 8080)");
-      Opt
-        ("  --serve-workers=N     HTTP server task-pool workers (alias --workers;");
-      Opt
-        ("                        default: 2..8 scaled to the CPU count; only");
-      Opt ("                        with --serve)");
-      Opt
-        ("  --watch               Refresh the served document metrics when the");
-      Opt
-        ("                        target changes (default: on; only with --serve)");
-      Opt ("  --no-watch            Turn watch mode off for this server");
-      Opt
-        ("  --emit-svg[=PATH]     Write SVG badges to directory (alias --svg-path;");
-      Opt
-        ("                        default: <target>/docs/badges when no path)");
-      Opt
-        ("  --no-svg              Suppress automatic SVG output (wins over the");
-      Opt ("                        emit form)");
-      Opt
-        ("  --emit-markdown[=PATH] Write VERIFICATION.md + TRACE.md (aliases");
-      Opt
-        ("                        --emit-md, --md-path; default <target>/docs)");
-      Opt
-        ("  --no-md               Suppress Markdown report output (wins over the");
-      Opt ("                        emit form)");
-      Opt ("  --emit-metrics=FILE   Write a JSON metrics + dependency export");
-      Opt
-        ("  completion [SHELL]    Print a shell completion script (bash/fish/zsh/pwsh)");
-      Opt
-        ("  --skip-dir=NAME       Add directory name to skip list (repeatable)");
-      Opt
-        ("  --relaxed, relaxed    Disable strict mode (skip dirs, no patches);");
-      Opt
-        ("                        strict is default (--strict re-enables it)");
-      Opt ("  --cache, -c, cache    Enable result caching (default: on)");
-      Opt
-        ("  --no-cache            Disable result caching (always re-scan/re-prove)");
-      Opt
-        ("  --cache-dir=PATH      Cache directory (default: the platform cache dir)");
-      Opt
-        ("  --cache-max=N         Max cache entries before eviction (default: 4096)");
-      Opt
-        ("  --cache-expiry=DAYS   Entry lifetime in days (default: 7; 0 = never");
-      Opt ("                        expire)");
-      Opt
-        ("  --cache-clear         Remove every cache entry, print the count, exit");
-      Opt
-        ("  --compare-base=REF    Differential mode (aliases --diff, --base, -b):");
-      Opt
-        ("                        compare against a base revision (branch/commit/");
-      Opt
-        ("                        rev) in a temporary snapshot and report VC/DAL");
-      Opt
-        ("                        delta (supports git, mercurial, subversion,");
-      Opt ("                        fossil, jj)");
-      Opt
-        ("  --coverage-delta=REF  Docstring coverage gate (alias --delta, -d):");
-      Opt
-        ("                        exit non-zero if current docstring coverage is");
-      Opt ("                        below the base (any supported VCS)");
-      Opt
-        ("  prove --target=PATH   Run GNATprove on the target project, then");
-      Opt ("                        assess it (bundled gnatprove resolution,");
-      Opt ("                        no alire.toml required in the target)");
-      Opt
-        ("  --jobs=N, -j N        GNATprove parallelism (default: auto-detect");
-      Opt ("                        CPU count; 0 = all cores; e.g. -j12)");
-      Opt ("  --level=N, -l N       GNATprove proof effort 0-4 (default: 4)");
-      Opt ("  --timeout=N           Per-check prover timeout in seconds");
-      Opt ("  --steps=N             Max proof steps (reproducible)");
-      Opt ("  --memlimit=N          Prover memory limit in MB");
-      Opt ("  --force               Force full gnatprove reanalysis (-f)");
-      Opt ("  --no-loop-unrolling   Disable automatic loop unrolling (always");
-      Opt
-        ("                        on: the prove subcommand never unrolls loops,");
-      Opt ("                        so GNATprove's 'cannot unroll loop' info");
-      Opt
-        ("                        notices never appear; flag kept for compat)");
-      Opt ("  --no-inlining         Disable contextual analysis inlining");
-      Opt
-        ("  --counterexamples=on|off  Ask the prover for a breaking input on a");
-      Opt
-        ("                        failed check (default: on); off skips the");
-      Opt ("                        search and reports the check alone");
-      Opt
-        ("  --args=FLAGS          Pass extra raw GNATprove flags verbatim (e.g.");
-      Opt ("                        --args='--prover=cvc5 --timeout=5');");
-      Opt
-        ("                        space-split into gnatprove arguments; a file");
-      Opt ("                        can opt out of the proof with a");
-      Opt ("                        no-covex-spark-proof header marker");
-      Opt
-        ("  --quiet               Hide GNATprove's benign info messages (the");
-      Opt ("                        default suppression set: loop-unrolling/");
-      Opt
-        ("                        inlining notices) from stdout.  Active by");
-      Opt ("                        default for local runs; --verbose shows");
-      Opt ("                        every message and wins");
-      Opt ("  --suppress-warnings[=SETS]  Hide GNATprove info messages from");
-      Opt
-        ("                        stdout; SETS is a comma-separated list of");
-      Opt
-        ("                        suppression-set names (empty = the default");
-      Opt ("                        set, e.g. unrolling-inlining); --verbose");
-      Opt ("                        always shows every message");
-      Opt
-        ("  --coverage            Show the proof-coverage summary after prove");
-      Opt
-        ("                        (default; --no-coverage or [prove] coverage =");
-      Opt ("                        false in adacovex.toml hides it)");
-      Opt
-        ("  --diagnostics=SHAPE   With prove: text (default) or json for the");
-      Opt ("                        finding detail after the replay");
-      Opt
-        ("  --require-spark=LVL   Fail if SPARK level < LVL (alias --spark)");
-      Opt
-        ("  --require-docstrings=PCT Fail if docstring coverage < PCT% (alias --docstrs)");
-      Opt
-        ("  --require-tests=N     Fail if passing test count < N (alias --tests)");
-      Opt
-        ("  --require-proof=PCT   Fail if proved-VC coverage < PCT% (alias -r)");
-      Opt
-        ("                        (CI gates: default off, fail loudly when set)");
-      Opt
-        ("  --fail-on=DIM[=VAL]   CI policy gate over the same four checks:");
-      Opt
-        ("                        spark, docstrings, proof, tests, or coverage");
-      Opt ("                        (comma-separated or repeatable; a bare");
-      Opt
-        ("                        dimension reuses its --require-* threshold)");
-      Opt
-        ("  sbom --format=FMT     Generate a proof-aware SBOM (FMT: cyclonedx-json");
-      Opt
-        ("                        | spdx-json | md; default: cyclonedx-json)");
-      Opt
-        ("  sbom --out=PATH       SBOM output path (default: <target>/sbom.json");
-      Opt ("                        or <target>/sbom.spdx.json, or");
-      Opt ("                        <target>/docs/compliance/SBOM.md for md)");
-      Opt
-        ("  --no-sbom             Skip the automatic SBOM generated at the end");
-      Opt
-        ("                        of every assessment (generated by default)");
-      Opt
-        ("  --sbom-format=FMT     Format for the automatic SBOM (cyclonedx-json");
-      Opt
-        ("                        | spdx-json | md; default: cyclonedx-json)");
-      Opt
-        ("  --tz=ZONE             Display timezone for status reports.  Accepts");
-      Opt
-        ("  --timezone=ZONE       an IANA name (Asia/Singapore) or a fixed UTC/");
-      Opt
-        ("                        GMT offset (UTC+8, GMT+8, UTC+08, GMT+08);");
-      Opt ("                        default: the operating system timezone");
-      Opt
-        ("  --excludes=EXT,EXT    With complexity only: skip file extensions");
-      Opt
-        ("                        (e.g. --excludes=md,rst); a file can also");
-      Opt ("                        opt out with a no-covex-complexity-scan");
-      Opt ("                        marker in its leading comment block");
-      Opt
-        ("  --skip-path=PATH      With complexity only: skip any file whose");
-      Opt ("                        path contains PATH (repeatable; e.g.");
-      Opt ("                        --skip-path=docs/api-docs)");
-      Opt ("  --verbose             Verbose diagnostics");
-      Opt ("  --group=KIND          With spark-coverage only: row grouping");
-      Opt ("                        (file | folder | package; default file)");
-      Opt ("  --metric=METRIC       With spark-coverage only: metric for the");
-      Opt ("                        summary (statements | subprograms | vcs)");
-      Opt ("  --spark-format=FMT    With spark-coverage only: text | json");
-      Opt
-        ("  --min-coverage=PCT    With spark-coverage only: hide rows below PCT");
-      Opt
-        ("  --require-coverage=P  With spark-coverage only: CI gate (exit 1");
-      Opt
-        ("                        below PCT); --gate-metric names the metric");
-      Opt ("  --gate-metric=METRIC  With spark-coverage only: gate metric");
-      Opt ("                        (default statements)");
-      Opt ("  --version             Print the bundled version (read from");
-      Opt
-        ("                        alire-dev.toml; release builds bundle the");
-      Opt ("                        release tag) and exit");
-      Opt ("  man [--check]         Install the man page into the local man");
-      Opt ("                        database (platform data root; mandb or");
-      Opt ("                        makewhatis refreshes it);");
-      Opt
-        ("                        --check exits 0 when the installed man page");
-      Opt ("                        matches this binary's version, 1 when a");
-      Opt ("                        newer version is available or none is");
-      Opt
-        ("                        installed (man page contains the version)");
-      Opt
-        ("  man --dir=PATH        Install the man page into PATH/man1 instead");
-      Opt ("                        of the default man root");
-      Opt
-        ("  man --force           Override an existing man page even when it");
-      Opt ("                        already matches this binary (repair a");
-      Opt ("                        hand-edited/corrupt installed page)");
-      Opt
-        ("  tldr [--check]        Install the bundled tldr page into the local");
-      Opt ("                        tldr client (tealdeer custom pages, or a");
-      Opt ("                        base client's cache pages tree); --check");
-      Opt
-        ("                        exits 0 when the installed page matches the");
-      Opt
-        ("                        bundled one, 1 when it is missing or stale");
-      Opt
-        ("  help [TOPIC]          Show this message, or contextual help for a");
-      Opt
-        ("                        flag/subcommand (e.g. `adacovex help serve`);");
-      Opt ("                        `adacovex --serve help` also works");
-      Opt ("  --help, -h            Show this message and exit");
-      Opt ("");
-      Opt ("Outputs: ANSI terminal report, SVG badges, Markdown reports,");
-      Opt ("         HTML dashboard (--serve), JSON API (GET /api/metrics)");
-      Opt ("");
-      Opt ("Zero-dependency Ada/SPARK formal verification and compliance");
-      Opt ("toolkit for coverage analysis, proof verification, test-result");
-      Opt ("parsing, multi-standard safety-compliance assessment");
-      Opt ("(DO-178C / ISO 26262 / IEC 62304), and interactive dashboards");
+      Ada.Text_IO.Put_Line ("");
+      Head ("Assess:");
+      Ada.Text_IO.Put_Line
+        ("  --target=PATH, -t PATH  project to assess (default: current directory)");
+      Ada.Text_IO.Put_Line ("  --manifest=PATH         manifest override");
+      Ada.Text_IO.Put_Line
+        ("  --standard=NAME         do178c | iso26262 | iec62304 | all (default: do178c)");
+      Ada.Text_IO.Put_Line
+        ("  --dal, --asil, --class  compliance tier (default: C)");
+      Head ("Report:");
+      Ada.Text_IO.Put_Line
+        ("  --emit-svg[=PATH]       SVG badges (alias --svg-path)");
+      Ada.Text_IO.Put_Line
+        ("  --emit-markdown[=PATH]  VERIFICATION.md + TRACE.md (alias --emit-md;)");
+      Ada.Text_IO.Put_Line
+        ("  --no-md, --no-svg       suppress the report above");
+      Ada.Text_IO.Put_Line
+        ("  --emit-metrics=FILE     JSON metrics + dependency graph");
+      Ada.Text_IO.Put_Line
+        ("  --serve, -s             HTTP dashboard on :8080 (--port, --theme, --serve-workers)");
+      Ada.Text_IO.Put_Line
+        ("  --timezone=ZONE         display timezone (alias --tz)");
+      Head ("Prove:");
+      Ada.Text_IO.Put_Line
+        ("  --jobs=N, -j N          gnatprove parallelism (default: detected cores)");
+      Ada.Text_IO.Put_Line
+        ("  --level=N, -l N         proof effort 0-4 (default: 4)");
+      Ada.Text_IO.Put_Line
+        ("  --timeout=N, --steps=N, --memlimit=N   prover budget");
+      Ada.Text_IO.Put_Line
+        ("  --counterexamples=on|off   breaking input on a failed check (default: on)");
+      Ada.Text_IO.Put_Line
+        ("  --args=FLAGS            extra raw gnatprove flags");
+      Ada.Text_IO.Put_Line
+        ("  --quiet, --suppress-warnings[=SETS]   hide notices (--verbose shows all)");
+      Head ("Cache and scope:");
+      Ada.Text_IO.Put_Line
+        ("  --cache, -c / --no-cache   result cache (default: on)");
+      Ada.Text_IO.Put_Line
+        ("  --cache-dir, --cache-max, --cache-expiry   cache policy");
+      Ada.Text_IO.Put_Line
+        ("  --cache-clear           remove every cache entry, then exit");
+      Ada.Text_IO.Put_Line
+        ("  --relaxed / --strict    docstring strictness (strict is the default)");
+      Ada.Text_IO.Put_Line
+        ("  --skip-dir=NAME         skip a directory name (repeatable)");
+      Head ("CI gates:");
+      Ada.Text_IO.Put_Line
+        ("  --require-spark=LVL, --require-docstrings=PCT, --require-tests=N,");
+      Ada.Text_IO.Put_Line
+        ("  --require-proof=PCT, --fail-on=DIM[=VAL]   fail loudly on a threshold");
+      Head ("Differential and SBOM:");
+      Ada.Text_IO.Put_Line
+        ("  --compare-base=REF, -b REF   compare against a base revision (alias --diff)");
+      Ada.Text_IO.Put_Line
+        ("  --coverage-delta=REF, -d REF   docstring coverage gate");
+      Ada.Text_IO.Put_Line
+        ("  --sbom-format=FMT, --no-sbom   SBOM written with every assessment");
+      Head ("More detail:");
+      Ada.Text_IO.Put_Line
+        ("  adacovex help TOPIC      every flag of one topic; TOPIC --help and -h agree");
+      Ada.Text_IO.Put_Line
+        ("  adacovex man             the full offline reference");
+      Ada.Text_IO.Put_Line ("");
+      Ada.Text_IO.Put_Line
+        ("Zero-dependency Ada/SPARK formal verification and compliance toolkit for coverage");
+      Ada.Text_IO.Put_Line
+        ("analysis, proof verification, test-result parsing, multi-standard safety-compliance");
+      Ada.Text_IO.Put_Line
+        ("assessment (DO-178C / ISO 26262 / IEC 62304), and interactive dashboards.");
    end Print_Usage;
 
    --  Topics whose usage names a subcommand, as one pipe-delimited string so

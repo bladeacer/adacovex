@@ -230,7 +230,12 @@ fence that names the topic's subcommand or flag form, an `Options:` heading,
 the topic body, and a pointer to the full option list. `adacovex prove help`
 and `adacovex prove --help` both select the prove topic, and `adacovex --serve
 help` equals `adacovex help serve`. `--help` and `help` with no topic stay
-byte-identical.
+byte-identical, and `-h` works wherever `--help` does.
+
+The base `--help` is a summary: one phrase per flag, grouped by task (`Assess`,
+`Report`, `Prove`, `Cache and scope`, `CI gates`, `Differential and SBOM`,
+`More detail`) in about fifty lines. It ends by naming `adacovex help TOPIC`
+and `adacovex man`, which carry the detail.
 
 Every topic closes the same way. An `Examples:` block gives one runnable
 command, a `See also:` line names the related topics and the page that

@@ -43,9 +43,12 @@ the memo. A warm run reads 18 904 `newfstatat` and 378 ms, against 282 020 on
 the 1.75.0 binary for the same tree. `Skip_Walk_Dir` is now in the
 `Adacovex.Parsers.Manifest` spec, so a walker cannot keep a private copy.
 
-- [x] R1, first slice: `-h` equals `--help` in every position, including
-`prove -h` and `help`/`-h` topic selection. Grouping and shortening the base
-`--help` remain.
+- [x] R1: `-h` equals `--help` in every position, including `prove -h` and
+`help`/`-h` topic selection, and the base `--help` is now a 50-line summary
+grouped under Assess, Report, Prove, Cache and scope, CI gates, Differential
+and SBOM, and More detail. Its last group points at `help TOPIC` and `man`,
+which carry the detail; the CLI e2e checks the line count, each heading, and
+the pointer.
 
 - [x] R2, first slice: every option on the man page carries its own
  description, default, and related flag; the `See --help for details` stub is
@@ -110,7 +113,8 @@ detail lives, and keeps maintainer material out of the way of the task.
 ### R1 - A shorter `--help`, grouped, with `-h` and contextual help first
 
 - [x] Accept `-h` wherever `--help` works, including after a subcommand.
-- [ ] Group and shorten the base `--help` so it fits one screen.
+- [x] Group and shorten the base `--help` so it fits one screen, and point
+  its footer at contextual help and the man page.
 
 **Goal:** The base `--help` fits one screen and groups its flags by task. A
 user who wants detail reaches it through contextual help, not by scrolling.

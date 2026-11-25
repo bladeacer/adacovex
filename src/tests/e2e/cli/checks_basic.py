@@ -15,6 +15,20 @@ def check_help(r: Results) -> None:
     proc = run(["--help"])
     r.check(proc.returncode == 0, "--help exits 0")
     r.check("--target" in proc.stdout, "--help lists --target")
+    lines = proc.stdout.splitlines()
+    r.check(
+        len(lines) <= 55,
+        "--help fits one 50-line screen plus its wrapped tagline",
+    )
+    for group in ("Assess:", "Report:", "Prove:", "Cache and scope:",
+                  "CI gates:", "Differential and SBOM:", "More detail:"):
+        r.check(lines.count(group) == 1,
+                f"--help shows the {group} group heading once")
+    r.check(
+        "adacovex help TOPIC" in proc.stdout and "man" in proc.stdout,
+        "--help points to contextual help and the man page",
+    )
+    r.check(run(["-h"]).stdout == proc.stdout, "-h prints the same usage")
     r.check(run(["help"]).stdout == proc.stdout,
             "--help and help print the same usage")
     for topic, needle in HELP_TOPICS:
