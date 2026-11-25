@@ -192,6 +192,10 @@ begin
    end if;
    Root.Kind := Types.Root_Component;
    Root.Parent := 0;
+   --  The project itself is the base component, not a resolved dependency:
+   --  the default scope (transitive) would badge the root as transitive in
+   --  the dashboard and the /api/deps payload.
+   Root.Scope := Types.Scope_Base;
    Graph.Append (Root);
 
    --  Resolve alire.lock dependencies (solved crates).
