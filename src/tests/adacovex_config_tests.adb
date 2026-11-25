@@ -869,6 +869,31 @@ package body Adacovex_Config_Tests is
          R.Check (Cfg.Help_Requested, "--help sets Help_Requested");
       end;
 
+      --  -h is the same request, and a subcommand before it selects the
+      --  topic exactly as --help does (R1).
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "-h");
+         Testing.Parse_Args (A, Cfg);
+         R.Check (Cfg.Help_Requested, "-h sets Help_Requested");
+         R.Check (Cfg.Help_Topic_Len = 0, "-h alone selects the full usage");
+         R.Check (not Cfg.CLI_Error, "-h is not an unknown option");
+      end;
+
+      declare
+         Cfg : CLI_Config;
+         A   : Testing.Arg_Vectors.Vector;
+      begin
+         Add (A, "prove");
+         Add (A, "-h");
+         Testing.Parse_Args (A, Cfg);
+         R.Check
+           (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len) = "prove",
+            "prove -h selects the prove topic");
+      end;
+
       --  Unknown flags are rejected loudly instead of silently running an
       --  assessment, and a close flag is suggested ("did you mean").
       declare

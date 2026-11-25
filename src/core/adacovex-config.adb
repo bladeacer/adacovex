@@ -2341,12 +2341,13 @@ package body Adacovex.Config is
                      if not Cfg.CLI_Error then
                         Cfg.Require_Proof_Set := True;
                      end if;
-                  elsif A = "--help" then
+                  elsif A = "--help" or else A = "-h" then
                      --  Full usage is printed by the caller (main / tests) when
-                     --  Help_Requested is set, so `--help`, `help`, and
+                     --  Help_Requested is set, so `--help`, `-h`, `help`, and
                      --  `help TOPIC` share one printing path. A subcommand
                      --  before the flag selects that topic, so
-                     --  `adacovex prove --help` reads like `prove help`.
+                     --  `adacovex prove --help` and `adacovex prove -h` read
+                     --  like `prove help`.
                      Cfg.Help_Requested := True;
                      if I > 1
                        and then Ada.Strings.Fixed.Index
@@ -3405,7 +3406,7 @@ package body Adacovex.Config is
       Opt
         ("                        flag/subcommand (e.g. `adacovex help serve`);");
       Opt ("                        `adacovex --serve help` also works");
-      Opt ("  --help                Show this message and exit");
+      Opt ("  --help, -h            Show this message and exit");
       Opt ("");
       Opt ("Outputs: ANSI terminal report, SVG badges, Markdown reports,");
       Opt ("         HTML dashboard (--serve), JSON API (GET /api/metrics)");

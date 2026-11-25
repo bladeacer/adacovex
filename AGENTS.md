@@ -160,7 +160,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2494/2494 native tests passing
+- 2501/2501 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -305,7 +305,7 @@ src/
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (56)
     |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (28)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (408)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (412)
     |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (23)
     |-- adacovex_diff_tests.ads/.adb          -- Differential-report regression tests (36)
@@ -313,7 +313,7 @@ src/
     |-- adacovex_do178c_tests.ads/.adb        -- HLR/LLR parsing and line-reader tests (33)
     |-- adacovex_install_tests.ads/.adb       -- Installation-method tests (23)
     |-- adacovex_ir_tests.ads/.adb            -- IR synthesis tests (42)
-    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (30)
+    |-- adacovex_man_tests.ads/.adb           -- Man page renderer tests (33)
     |-- adacovex_opt_outs_tests.ads/.adb      -- Per-file opt-out marker tests (20)
     |-- adacovex_paths_tests.ads/.adb         -- Platform-agnostic path helper tests (54)
     |-- adacovex_prove_patch_tests.ads/.adb   -- Proof patch merge tests (35)
@@ -331,7 +331,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2494 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2501 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -374,9 +374,9 @@ adacovex help [TOPIC]
 
 Every flag has an explicit long spelling. The shorthands are `-t`
 (`--target`), `-m` (`--manifest`), `-s` (`--serve`), `-p` (`--port`), `-c`
-(`--cache`), `-b` (`--compare-base`), `-d` (`--coverage-delta`), `-l`
-(`--level`, the GNATprove proof level -- never a compliance tier), `-r`
-(`--require-proof`), and `-j` (`--jobs`). The bare words `serve`, `cache`,
+(`--cache`), `-b` (`--compare-base`), `-d` (`--coverage-delta`), `-l` (`--level`, the GNATprove proof level -- never a
+compliance tier), `-r` (`--require-proof`), `-j` (`--jobs`), and `-h`
+(`--help`, before or after a subcommand). The bare words `serve`, `cache`,
 and `relaxed` also select their flag. Long aliases: `--workers`
 (`--serve-workers`), `--svg-path` (`--emit-svg`), `--emit-md` / `--md-path`
 (`--emit-markdown`), `--no-md`, `--diff` / `--base` (`--compare-base`),
@@ -436,6 +436,9 @@ dependency management carries the release version).
 the first home-owned `$MANPATH` entry, otherwise the platform data root
 (`$XDG_DATA_HOME/man` on Linux and the BSDs, `~/Library/Application
 Support/man` on macOS, `%APPDATA%\man` on Windows); `--dir=PATH` overrides.
+Every option on the page carries its own description, default, and related
+flag, so the page is the complete offline reference and never points the
+reader back at `--help` (a test fails on a stub description).
 It refreshes the index with `mandb` (man-db) and falls back to `makewhatis`
 (mandoc). When neither is available (or both fail) adacovex prints a warning
 -- the page is still installed and readable via `man -l` -- and `adacovex
@@ -745,7 +748,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the docs-tree regeneration, the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the sync gates -- which **regenerate** the dynamic content (test counts and the AGENTS.md source tree, proof metrics and badges, the crate-description copies, `requirements.txt`) instead of failing a stale one. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2494-test native suite |
+| `test` | Build + run the 2501-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -874,7 +877,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2494/2494 passing |
+| Unit tests | `just test` | 2501/2501 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1060 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand always sends a level -- the requested one, else 4 -- so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -943,7 +946,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2494 tests across 30 categories).
+Native zero-dependency suite (`src/tests/`, 2501 tests across 30 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests). The Python end-to-end suites
 live under `src/tests/e2e/` in category directories (`cli/`, `prove/`,

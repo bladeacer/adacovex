@@ -30,9 +30,9 @@ adacovex help [TOPIC]
 Every flag has the explicit long spelling and, where it reads better, a
 shorthand. The shorthands are `-t` (`--target`), `-m` (`--manifest`), `-s`
 (`--serve`), `-p` (`--port`), `-c` (`--cache`), `-b` (`--compare-base`),
-`-d` (`--coverage-delta`), `-l` (`--level`), `-r` (`--require-proof`), and
-`-j` (`--jobs`). The bare words `serve`, `cache`, and `relaxed` also select
-their flag. Use the long forms in scripts and non-trivial cases; the
+`-d` (`--coverage-delta`), `-l` (`--level`), `-r` (`--require-proof`),
+`-j` (`--jobs`), and `-h` (`--help`). The bare words `serve`, `cache`, and
+`relaxed` also select their flag. Use the long forms in scripts and non-trivial cases; the
 shorthands are for interactive use.
 
 `-l` is **only** the GNATprove proof level. It is never a compliance tier.
@@ -41,10 +41,14 @@ Compliance selection stays on `--standard` and its level companions
 
 ## Contextual help
 
-`adacovex help TOPIC` and `adacovex TOPIC --help` print the same frame: the
-version banner, a `Usage:` fence, grouped `Options:`, and the footer. The
-topics are `prove`, `serve`, `status`, `sbom`, `complexity`,
+`adacovex help TOPIC`, `adacovex TOPIC --help`, and `adacovex TOPIC -h` print
+the same frame: the version banner, a `Usage:` fence, grouped `Options:`, and
+the footer. The topics are `prove`, `serve`, `status`, `sbom`, `complexity`,
 `spark-coverage`, `man`, `tldr`, `init`, `completion`, and `cache`.
+
+The man page carries the full reference: every option states its own
+effect, its default, and the flag it pairs with, so an offline reader never
+needs to return to `--help`.
 
 An unknown topic names itself, suggests the nearest known topic or flag, and
 lists the valid topics before the full usage. A mistyped flag gets the same
@@ -108,7 +112,7 @@ suggestion, for example `unknown option '--standrd=all' (did you mean
 | `tldr --force` | - | - | Rewrite the installed tldr page even when it already matches |
 | `init` | - | - | Write a sample `<target>/adacovex.toml` that states every key and links to the configuration guide |
 | `init --force` | - | - | Overwrite an existing `<target>/adacovex.toml` (without it the file is left alone and the command exits 1) |
-| `--help` | - | both | Print usage and exit |
+| `--help`, `-h` | - | both | Print usage and exit (a subcommand before it selects that topic) |
 
 `init` is local scaffolding: it reads no target and starts no assessment. It
 never replaces an existing file without `--force`, so a project's own settings
