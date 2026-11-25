@@ -8,22 +8,21 @@ navigation works. Using the served dashboard and its endpoint table is on
 
 ## What gets bundled
 
-The manual is the same Markdown source that powers the Read the Docs site
-(`docs/`, a Sphinx project with `docs/conf.py` + MyST); at build
-time `tools/gen-docs.py` runs `sphinx-build` and bundles the resulting site
-into the binary (`src/adacovex-docs_template.ads`) as a lookup table plus
-static string constants: every page, stylesheet, script, and badge, keyed
-by site-relative path (each constant stays small -- a single multi-megabyte
-blob would overflow the gnatprove frontend stack, so the search index is
-split into chunks and the server streams them).
+The manual is the same Markdown source that powers the Read the Docs site.
+Every page, stylesheet, script, and badge is bundled, and the search box works
+exactly as it does online because Sphinx's own search machinery travels with
+it. The PNG screenshots are dropped and show as notes. The header
+**Documentation (offline manual)** link and the API playground's `/docs`
+endpoint both open the manual.
 
-Sphinx's own search machinery (searchindex.js, searchtools.js, the
-stemmers) is bundled and the search box works exactly as on the online
-site. The PNG screenshots are dropped (they show as notes), the
-`_sources/` page-source links are stripped, and the bundled HTML stays pure
-ASCII (non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
-source). The header **Documentation (offline manual)** link and the API
-playground's `/docs` endpoint both open it.
+> **For contributors:** `docs/` is a Sphinx project (`docs/conf.py` + MyST),
+and `tools/gen-docs.py` runs `sphinx-build` and writes the site into
+`src/adacovex-docs_template.ads` as a path-keyed lookup table. Each constant
+stays small, because one multi-megabyte blob would overflow the gnatprove
+frontend stack, so the search index is split into chunks the server streams.
+The `_sources/` page-source links are stripped, and the bundled HTML stays
+pure ASCII: non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
+source.
 
 ## Reading the manual and the dashboard
 
@@ -35,25 +34,19 @@ the dashboard to see its metrics.
 
 ## Compression and encoding
 
-The manual is served **pre-compressed**: every asset is gzip-compressed at
-build time in `tools/gen-docs.py`, base85-encoded into the generated spec,
-and sent with `Content-Encoding: gzip`, so the browser inflates it and the
-binary carries no inflate routine. base85 (the quote-free Z85 alphabet)
-replaced base64 in 1.50.0: it packs 4 bytes into 5 characters instead of
-5.33, which took the encoded payload from 1.72 MB to 1.61 MB.
+The manual is served **pre-compressed**: every asset is compressed when the
+binary is built and sent with `Content-Encoding: gzip`, so the browser inflates
+it and the binary carries no inflate routine. A reader sees no difference: the
+pages arrive as normal HTML.
 
-LZ4 was measured again and rejected. On the self tree the bundled site is
-about 5.49 MB of source; gzip compresses it to about 1.29 MB (ratio 0.23)
-and `lz4 -9` to about 1.63 MB (ratio 0.31). LZ4 is therefore about 32%
-larger than gzip here, which would add about 0.5 MB to the embedded blob.
-
-Two further points settle it: the Ada runtime has no LZ4 decompressor (a
-roll-your-own decoder would add code and SPARK proof surface), and gzip
-needs no decoder at all in the binary because the browser inflates the
-stream. gzip stays.
-
-The result cache also stays uncompressed -- its blobs are tiny per-unit
-records where compression costs more than it saves.
+> **For contributors:** `tools/gen-docs.py` gzip-compresses each asset and
+base85-encodes it into the generated spec. base85 (the quote-free Z85
+alphabet) packs 4 bytes into 5 characters against base64's 5.33, which took
+the payload from 1.72 MB to 1.61 MB. LZ4 was measured again and rejected: on
+the self tree it produced 1.63 MB against gzip's 1.29 MB, about 32% larger.
+The Ada runtime has no LZ4 decompressor either, so gzip also needs no decoder
+in the binary. The result cache stays uncompressed, because its per-unit
+blobs are too small for compression to pay.
 
 ## Sidebar navigation
 

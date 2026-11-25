@@ -4,29 +4,22 @@ This page covers the dashboard document itself: the tab structure, the dependenc
 
 ## The HTML dashboard
 
-The page is a single self-contained document (no external assets), bundled
-into the binary from **modular resources** -- `resources/dashboard.html` is
-just the page skeleton. Author styles and scripts live in focused modules
-under `resources/css/` (`dashboard.css`, which also styles the hand-rolled
-donut rings and bar charts) and `resources/js/` (`theme.js`, `tabs.js`,
-`deps.js`, `details.js`, `nomnoml.js`, `search.js`, `api.js`). The vendored
-libraries (`graphre.js` / `nomnoml.js` / `flexsearch.js` / `yace.js`) sit at
-`resources/` apart from the authored `js/` modules, so a tree scan tells
-dependency JavaScript from dashboard JavaScript at a glance;
-`tools/gen-dashboard.py` inlines them into the template byte-for-byte at
-build time (so their tokenizer regexes stay intact) and **minifies** the
-author CSS/JS.
+The dashboard is one self-contained document: it has no external asset
+references, so it works offline inside the released binary. The styles,
+scripts, and navigation modules are authored separately and inlined at build
+time.
 
-One more authored module lives under `resources/js/`: `book-nav.js` is the
-offline manual's shared-sidebar injector, not a dashboard module.
-`tools/gen-docs.py` bundles it as `_static/adacovex-nav.js`, and its place
-under `js/` keeps the SBOM asset scan reading it as project code rather than
-a vendored library. The injector marks the open page's entry and scrolls it
-into the drawer, so a reader who clicks a late entry finds it in view.
-
-The resulting `adacovex` binary -- a GitHub release artifact or an Alire
-crate binary -- is completely self-contained: the dashboard has no external
-asset references and works offline.
+> **For contributors:** `resources/dashboard.html` is the page skeleton, and
+the author modules sit under `resources/css/` (`dashboard.css`, which also
+styles the hand-rolled donut rings and bar charts) and `resources/js/`
+(`theme.js`, `tabs.js`, `deps.js`, `details.js`, `nomnoml.js`, `search.js`,
+`api.js`). The vendored libraries (`graphre.js`, `nomnoml.js`,
+`flexsearch.js`, `yace.js`) sit at `resources/` apart from the author
+modules, so a tree scan tells dependency JavaScript from dashboard
+JavaScript. `tools/gen-dashboard.py` inlines them byte-for-byte, which keeps
+their tokenizer regexes intact, and minifies the author CSS and JS. The
+`book-nav.js` module is the manual's sidebar injector, not a dashboard
+module: `tools/gen-docs.py` bundles it as `_static/adacovex-nav.js`.
 
 Edit the individual `resources/` files, never the
 generated `src/adacovex-dashboard_template.ads` -- the template is regenerated

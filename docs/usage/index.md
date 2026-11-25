@@ -11,6 +11,14 @@ dictionary lives in
 terms used on the [site transparency](../site-transparency.md) page live in
 [web site terms](../contributing/ste100/web-terms.md).
 
+## How to read these pages
+
+Each page states the task first: install, run, and read a result. A blockquote
+that starts with **For contributors** holds detail you need only to build
+adacovex from source, change it, or work on its CI. Skip those blockquotes when
+you use the released tool. Every command in the main text is an `adacovex`
+subcommand or flag, so you can paste it as written.
+
 ## Install and run
 
 - [Installing adacovex](installation.md) -- the Alire crate, the release

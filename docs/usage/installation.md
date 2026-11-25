@@ -119,15 +119,15 @@ just build          # version + dashboard/manual generators, then alr build
 just test           # the native suite
 ```
 
-`just` is the task runner every recipe in this manual uses (`just --list`
-lists them). `just build` runs the version, dashboard, and offline-manual
-generators and then `alr build`; a plain `alr build` also builds the binary
-when `just` is not installed. Either route produces `bin/adacovex` (with a
-`bin/covex` alias). Add `--branch vX.Y.Z` to the clone for a released tag. A
-stock Alire toolchain (`gnat_native` + `gprbuild`) plus the standard GNAT
-runtime is all that is needed. No other dependencies. (Contributors use the
-same `just` tasks; see the
-[developer guide](../contributing/developer-guide.md).)
+Either route produces `bin/adacovex` (with a `bin/covex` alias). Add
+`--branch vX.Y.Z` to the clone for a released tag. A stock Alire toolchain
+(`gnat_native` + `gprbuild`) plus the standard GNAT runtime is all that is
+needed. No other dependencies.
+
+> **For contributors:** `just build` regenerates the version, dashboard, and
+offline-manual specs before it runs `alr build`, and `just --list` names every
+task. A plain `alr build` works when `just` is not installed. The
+[developer guide](../contributing/developer-guide.md) covers the rest.
 
 ## Version source per installation method
 

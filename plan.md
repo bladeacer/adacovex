@@ -20,7 +20,7 @@ against the post-fix baseline.
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.76.0 | in progress | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`), R2 (man page as full context), R3 (end-user documentation audience), R4 (bundled `adacovex.toml`), R5 (bare invocation and level 4) |
+| v1.76.0 | in progress | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`, done), R2 (man page as full context, done), R3 (end-user documentation audience, in progress), R4 (bundled `adacovex.toml`), R5 (bare invocation and level 4) |
 | v1.77.0 | planned | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI) |
 
 ## Status (2026-11-25)
@@ -50,6 +50,11 @@ gates, Differential and SBOM, and More detail. Its last group points at
 `help TOPIC` and `man`, which carry the detail; the CLI e2e checks the line
 count, each heading, and the pointer. The man page option list and the tldr
 page keep their flat order until R2 generates both from the same table.
+
+- [x] R3, first pass: `docs/usage/index.md` states the reading convention, and
+installation, platforms, performance, dashboard HTML, and the bundled manual
+move their build and CI detail into `> **For contributors:**` callouts. AGENTS
+carries the rule for later pages. The remaining usage pages get the same pass.
 
 - [x] R2: the option text lives in one table, `Adacovex.Cli_Help`, with a
 task group per option. The man page renders that table under the console
