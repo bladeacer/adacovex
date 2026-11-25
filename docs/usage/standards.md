@@ -60,7 +60,7 @@ correspondence.
 | Hazardous | DAL B | ASIL C | Class B | Silver | Yes | Yes |
 | Major | DAL C | ASIL B | Class A | Bronze | Yes | Yes |
 | Minor | DAL D | ASIL A | -- | Stone | Yes | Yes |
-| No safety effect | DAL E | QM | -- | -- | No | Yes |
+| No safety effect | DAL E | QM | -- | Stone | No | Yes |
 
 Use `--standard=NAME` to select the labelling standard, and `--dal=LEVEL`
 to pin the shared rigour tier.
@@ -72,9 +72,10 @@ The four checks are identical across standards. Only the level names change:
 1. **Requirement traceability** -- every HLR defined in
    `docs/compliance/HLR.md` is traced by a `-- HLR-XXXX` tag in source.
 2. **No orphan tags** -- every in-source HLR tag maps to a defined HLR.
-3. **Tests passing** -- zero failures, and the lowest tier does not enforce
-   this check.
-4. **Minimum SPARK level** -- the proof bar for the selected rigour tier.
+3. **Tests passing** -- zero failures, and the lowest tier (DAL E / QM) does
+   not enforce this check.
+4. **Minimum SPARK level** -- the proof bar for the selected rigour tier. The
+   lowest tier accepts any Spark subset, so `Stone` is met by every tree.
 
 The compliance artifacts are identical too. ISO 26262 and IEC 62304 require
 no different evidence or documents than DO-178C. The same inputs

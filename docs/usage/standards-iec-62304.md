@@ -62,15 +62,22 @@ adacovex --target=. --standard=iec62304 --dal=C
 adacovex --target=. --standard=all
 ```
 
-The report prints the class name in place of the DAL name:
+The console prints the level with its class name in place of the DAL name,
+and `docs/compliance/VERIFICATION.md` labels the table rows the same way:
 
 ```
-Target level: Class A
-Status: Achieved
-HLR traced:  24 /  24
-Orphan tags: No
-Tests passing: Yes
-Min SPARK level met: Yes
+  Class A: Achieved
+```
+
+```
+| Criterion | Status |
+|-----------|--------|
+| Target level | Class A |
+| Overall Status | Achieved |
+| HLR Traced |  61 /  61 |
+| Orphan Tags | No |
+| Tests Passing | Yes |
+| Min SPARK Level | Yes |
 ```
 
 ## See also

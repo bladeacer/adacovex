@@ -21,30 +21,32 @@ software with no safety effect at all.
 
 ## What adacovex checks at each level
 
-adacovex evaluates four criteria. Only the strictness changes with the level.
+adacovex evaluates four criteria. Only the strictness of the proof bar and
+the test gate changes with the level.
 
 ### Requirement traceability
 
 | DAL | Requirement |
 |-----|-------------|
-| A to C | Every high-level requirement (HLR) is traced by a `-- HLR-XXXX` tag in source |
-| D and E | Recommended, not enforced |
+| A to E | Every high-level requirement (HLR) is traced by a `-- HLR-XXXX` tag in source |
 
 ### No orphan tags
 
 | DAL | Requirement |
 |-----|-------------|
-| A to C | Every in-source tag maps to an HLR defined in `docs/compliance/HLR.md` |
-| D and E | Recommended, not enforced |
+| A to E | Every in-source tag maps to an HLR defined in `docs/compliance/HLR.md` |
 
 ### Passing tests
 
 | DAL | Requirement |
 |-----|-------------|
-| A and B | 100% tests passing, with MC/DC structural coverage analysis |
-| C | 100% tests passing, with statement coverage |
-| D | 100% tests passing |
+| A to D | Zero failing tests |
 | E | No requirement |
+
+Structural coverage (MC/DC or statement) is not assessed: adacovex reports
+the statement, subprogram, and VC coverage gnatprove measures, and the
+structural-coverage evidence a DAL A or DAL B campaign needs stays with
+the project.
 
 ### Minimum SPARK level
 
@@ -54,7 +56,7 @@ adacovex evaluates four criteria. Only the strictness changes with the level.
 | B | Silver | Partial proofs, all verification conditions attempted |
 | C | Bronze | Flow analysis passes |
 | D | Stone | The code is a valid SPARK subset |
-| E | None | No proof requirement |
+| E | Stone | Any SPARK subset meets it, so no proof requirement |
 
 The minimum levels match `Min_SPARK_For` in
 `src/compliance/adacovex-compliance-dal.adb`. Gold is the compliance
@@ -73,16 +75,22 @@ adacovex --target=. --dal=D
 adacovex --target=. --dal=E
 ```
 
-The report prints each criterion as met or unmet, then a final
-Achieved/Unmet status:
+The console prints one line for the assessed level, and the generated
+`docs/compliance/VERIFICATION.md` carries the criterion rows:
 
 ```
-Target DAL: C
-Status: Achieved
-HLR traced:  24 /  24
-Orphan tags: No
-Tests passing: Yes
-Min SPARK level met: Yes
+  DAL-C: Achieved
+```
+
+```
+| Criterion | Status |
+|-----------|--------|
+| Target level | DAL-C |
+| Overall Status | Achieved |
+| HLR Traced |  61 /  61 |
+| Orphan Tags | No |
+| Tests Passing | Yes |
+| Min SPARK Level | Yes |
 ```
 
 ## See also

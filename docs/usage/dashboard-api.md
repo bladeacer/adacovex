@@ -174,6 +174,8 @@ Every route the server dispatches on is listed as a clickable button,
 grouped by purpose:
 
 - **Metrics** -- `GET /api/metrics` (JSON).
+- **Proof** -- `GET /api/spark` (JSON), the SPARK coverage report: the three
+  metrics, the off classes, and the per-group rollups.
 - **Dependencies** -- `GET /api/deps` (JSON).
 - **Server** -- `GET /api/info` and `GET /health` (JSON), the running
   server's metadata, counters, and health probe.
@@ -202,8 +204,10 @@ previews the response:
   links to the live endpoints, and every endpoint button's path is itself a
   link that opens the raw URL in a new tab.
 - SVG badge endpoints show the live image above the raw markup.
-- The `/docs` endpoint shows the bundled offline manual (the same page the
-  footer **Manual** link opens).
+- The `/docs` endpoint shows the bundled offline manual, the same page the
+  footer **Documentation (offline manual)** link opens. The page polls
+  `/api/watch` itself every two seconds, so that route is not in the
+  playground list.
 
 A toolbar on the result offers **Copy** (clipboard) and **Download** (saves
 the raw response body to a file) for the JSON API response, so the

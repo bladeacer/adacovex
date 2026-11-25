@@ -33,10 +33,15 @@ document (no external assets) with hash-routed tabs; the theme dropdown and
 
 ![Preview of Overview tab](../media/dashboard_preview_overview.png)
 
-Start here. The **Robustness tier** (S / A / B / C / D) is a single letter
-summarising five quality axes: Docs, Proof, Tests, Compliance, and Deps.
-**S** means healthy across the board; **D** means an axis is below 50%.
-Below that:
+Start here. The **Status badges** row shows the same SVG badges the server
+serves at `/badge/*.svg`, so a reader sees what a README will. **Source
+Overview** counts the scanned packages, subprograms, and docstring coverage,
+and **Quick Stats** repeats the five headline figures: SPARK level, VCs
+proved, tests, compliance status, and dependency count.
+
+The **Robustness tier** (S / A / B / C / D) is a single letter summarising
+five quality axes: Docs, Proof, Tests, Comp, and Deps. **S** means healthy
+across the board; **D** means an axis is below 50%. Below that:
 
 - **SPARK radar** -- proved verification conditions per check category (flow,
   initialization, runtime, assertions, functional). A balanced polygon means
@@ -61,9 +66,14 @@ one, so relative proof effort is visible at a glance.
 
 ![Preview of Proof tab](../media/dashboard_preview_proof.png)
 
-Shows the SPARK level (Stone .. Platinum) and per-category VC counts. The
-mini **VCs proved / total** at the top is the headline number; a low category
-is where the proof effort must focus.
+Leads with a **Proof Achievement** gauge: the proved share, the VCs proved
+out of the total, and the assessed SPARK level (Stone .. Platinum). Below it,
+the **SPARK Proof Analysis** table repeats gnatprove's own check-type rows
+(flow, initialization, runtime, assertions, functional, termination) with
+total and proved counts. **Proof Guidance** states the next action, and
+**SPARK Proof Coverage** reads the coverage report by file: statements,
+subprograms, VCs, and the three off classes. The prover never runs while the
+page is served -- the numbers come from `obj/gnatprove/`.
 
 ### Tests tab
 
@@ -77,10 +87,12 @@ every tier except QM / DAL-E).
 
 ![Preview of Compliance tab](../media/dashboard_preview_compliance.png)
 
-Shows the target integrity level, overall `Achieved` / `Unmet`, HLRs traced,
-orphan-tag state, and every unmet criterion. Use this to verify that every HLR
-is tagged in source and that no tags are orphaned (tagged but not defined in
-`compliance/HLR.md`).
+A **Compliance Status** gauge per standard (DO-178C, ISO 26262, IEC 62304)
+with the target level and the achieved share, then one **Compliance** table:
+every standard's level and status, HLRs traced, orphan-tag state, tests, and
+one `Failure` row per unmet criterion. **HLR Traceability** lists the tags each
+package carries. Use this to verify that every HLR is tagged in source and
+that no tags are orphaned (tagged but not defined in `compliance/HLR.md`).
 
 ### Dependencies tab
 
@@ -111,6 +123,15 @@ An interactive REST API playground: every endpoint the server dispatches on
 as a searchable, clickable button, with a pretty-printed, syntax-highlighted
 JSON preview. The first endpoint (`/api/metrics`) runs automatically. See
 [The API playground](dashboard-api.md#api-playground) for the full detail.
+
+### Credits tab
+
+Lists the third-party libraries the dashboard bundles -- nomnoml, graphre,
+FlexSearch, yace, and Charts.css -- each with its version, licence, and the
+part it serves. Sphinx, MyST, and the Read the Docs hosting service appear
+too, marked as build-time tools rather than bundled code. The tab links the
+full legal text at [Third-Party Notices](../THIRD_PARTY_NOTICES.md), so the
+attribution travels inside the offline binary.
 
 ## Interpreting the charts
 
