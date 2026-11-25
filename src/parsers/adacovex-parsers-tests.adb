@@ -267,16 +267,19 @@ package body Adacovex.Parsers.Tests is
    end Cell_Count;
 
    --  Parse one markdown table row and append it to Summary.Categories
-   --  when it carries a positive test count. Two layouts are accepted:
+   --  when it carries a positive test count. Three layouts are accepted:
    --
    --    A: "| - | Category | N | PASS |" -- the AUnit-style report layout
-   --       with a leading index cell; the count is cell 3.
-   --    B: "| Category | N | PASS |"       -- plain table; count is cell 2.
+   --       with a leading index cell;
+   --    B: "| Category | N | PASS |"       -- plain table;
+   --    C: "| Category | N | S | PASS |"   -- plain table with a skips
+   --       column.
    --
-   --  In both layouts the count cell must be all digits (so header and
-   --  separator rows are skipped regardless of layout), the category name
-   --  is the cell before the count, and the status is the cell after it
-   --  (any non-"PASS" status counts as FAIL). Category rows ADD their
+   --  The count is the first all-digit cell, so a header or separator row
+   --  is skipped in every layout, in which the category name is the cell
+   --  before the count. A numeric cell right after the count is the skips
+   --  column, and the status follows it; otherwise the status follows the
+   --  count (any non-"PASS" status counts as FAIL). Category rows ADD their
    --  counts to the totals; a trailing "Passed:"/"Failed:" footer line
    --  overrides the totals (see Parse_Passed_Failed_Line).
    procedure Parse_Table_Row
@@ -327,29 +330,33 @@ package body Adacovex.Parsers.Tests is
             end if;
          end loop;
 
-         --  Locate the numeric count cell: layout A puts it at cell 3,
-         --  layout B at cell 2. A header/separator row has no numeric
-         --  cell and is skipped. (A row where BOTH cells 2 and 3 are
-         --  numeric is layout A -- a numeric index cell with a numeric
-         --  category name is not a realistic case.)
+         --  Locate the numeric count cell: the first all-digit cell. A
+         --  header or separator row has no numeric cell and is skipped.
          declare
             Count_Idx : Natural := 0;
          begin
-            if Part_Ct >= 3 and then Is_Number_Cell (Parts, Part_Len, 3) then
-               Count_Idx := 3;
-            elsif Part_Ct >= 2 and then Is_Number_Cell (Parts, Part_Len, 2)
-            then
-               Count_Idx := 2;
-            end if;
+            for C in 1 .. Part_Ct loop
+               if Is_Number_Cell (Parts, Part_Len, C) then
+                  Count_Idx := C;
+                  exit;
+               end if;
+            end loop;
 
-            if Count_Idx > 0 then
+            if Count_Idx > 1 then
                declare
                   TCount     : constant Natural :=
                     Cell_Count (Parts, Part_Len, Count_Idx);
-                  Name_Idx   : constant Natural :=
-                    (if Count_Idx = 3 then 2 else 1);
-                  Status_Idx : constant Natural := Count_Idx + 1;
+                  Name_Idx   : constant Natural := Count_Idx - 1;
+                  --  A skips column sits between the count and the status,
+                  --  so a numeric cell after the count moves the status one
+                  --  cell right.
+                  Status_Idx : Natural := Count_Idx + 1;
                begin
+                  if Status_Idx < Part_Ct
+                    and then Is_Number_Cell (Parts, Part_Len, Status_Idx)
+                  then
+                     Status_Idx := Status_Idx + 1;
+                  end if;
                   if TCount > 0 then
                      declare
                         Cat : Types.Test_Metrics :=

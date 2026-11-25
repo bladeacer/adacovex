@@ -35,4 +35,5 @@
 | adacovex-prove | PROVE |
 | adacovex-opt_outs | SCAN |
 | adacovex-timezones | TZ |
+| adacovex-cli_help | CLI |
 | adacovex-server-http | SERVER |

@@ -4,7 +4,7 @@
   | DAL compliance                           |  23 |  0 | PASS     |
   | Source scanner                           |  89 |  0 | PASS     |
   | GNATprove parser                         |  93 |  0 | PASS     |
-  | Test-result parser                       |  50 |  0 | PASS     |
+  | Test-result parser                       |  55 |  0 | PASS     |
   | CLI config                               |  412 |  0 | PASS     |
   | SVG renderer                             |  161 |  0 | PASS     |
   | HTML/Markdown renderers                  |  58 |  0 | PASS     |
@@ -32,4 +32,4 @@
   | Test support                             |  19 |  0 | PASS     |
   |-----------------------------------------|--------|-------|----------|
 
-  Passed: 2595  Failed: 0  Skipped: 0
+  Passed: 2600  Failed: 0  Skipped: 0

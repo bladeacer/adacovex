@@ -142,6 +142,48 @@ package body Adacovex_TestParser_Tests is
       end;
 
       --  Test 3: empty / zero results (no category rows)
+      --  Test 2c: plain table with a skips column between the count and
+      --  the status ("| Category | N | S | PASS |"), the layout the native
+      --  suite writes. The count stays the first numeric cell, and the
+      --  numeric skips cell moves the status one cell right.
+      begin
+         Create (F, Out_File, Tmp_Path);
+         Put_Line (F, "  | Category            | Tests | Skips | Status   |");
+         Put_Line (F, "  |---------------------|-------|-------|----------|");
+         Put_Line (F, "  | Types conversions   |  72 |  0 | PASS     |");
+         Put_Line (F, "  | Server routing      | 183 |  2 | PASS     |");
+         Put_Line (F, "  | DAL compliance      |  23 |  0 | FAIL     |");
+         New_Line (F);
+         Put_Line (F, "  Passed: 278  Failed: 0");
+         Close (F);
+      end;
+
+      Adacovex.Parsers.Tests.Parse_Test_Result (Tmp_Path, Summary, Success);
+      R.Check (Success, "Test 2c: parse succeeded");
+      R.Check
+        (Natural (Summary.Categories.Length) = 3,
+         "Test 2c: Category_Count = 3");
+      R.Check
+        (Summary.Categories (1).Test_Count = 72
+         and then Summary.Categories (1).Status = Pass
+         and then Summary.Categories (1).Category (1) = 'T',
+         "Test 2c: Cat 1 = Types conversions 72 PASS");
+      R.Check
+        (Summary.Categories (2).Test_Count = 183
+         and then Summary.Categories (2).Status = Pass,
+         "Test 2c: Cat 2 = Server routing 183 PASS (skips ignored)");
+      R.Check
+        (Summary.Categories (3).Test_Count = 23
+         and then Summary.Categories (3).Status = Fail,
+         "Test 2c: Cat 3 = DAL compliance 23 FAIL");
+
+      begin
+         Ada.Directories.Delete_File (Tmp_Path);
+      exception
+         when others =>
+            null;
+      end;
+
       begin
          Create (F, Out_File, Tmp_Path);
          Put_Line (F, "  Passed: 0  Failed: 0");
