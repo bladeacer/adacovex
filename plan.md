@@ -28,7 +28,7 @@ against the post-fix baseline.
 v1.75.0 is closed: the tree holds version `1.75.0` (manifests, generated
 version spec, SBOM), and its changelog is
 [`adacovex-1.75.0.md`](docs/changelogs/adacovex-1.75.0.md). The tree carries
-2494/2494 native tests across 30 categories, 213 CLI e2e checks, 274
+2501/2501 native tests across 30 categories, 223 CLI e2e checks, 274
 prove-e2e checks over 20 committed fixture projects, and 1060 VCs at Gold.
 
 The debt register holds no open row.
