@@ -70,6 +70,7 @@ dictionary means the sentence is not yet STE100-clean.
 - [Adacovex_Version_Info](adacovex_version_info.md)
 - [Adacovex.Ansi](adacovex-ansi.md)
 - [Adacovex.Cache](adacovex-cache.md)
+- [Adacovex.Cli_Help](adacovex-cli_help.md)
 - [Adacovex.Completion](adacovex-completion.md)
 - [Adacovex.Complexity](adacovex-complexity.md)
 - [Adacovex.Compliance](adacovex-compliance.md)

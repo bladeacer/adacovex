@@ -171,7 +171,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2501 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2595 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level
@@ -234,8 +234,8 @@ byte-identical, and `-h` works wherever `--help` does.
 
 The base `--help` is a summary: one phrase per flag, grouped by task (`Assess`,
 `Report`, `Prove`, `Cache and scope`, `CI gates`, `Differential and SBOM`,
-`More detail`) in about fifty lines. It ends by naming `adacovex help TOPIC`
-and `adacovex man`, which carry the detail.
+`More detail`) in about fifty lines, ending with `adacovex help TOPIC` and
+`adacovex man`. The man page prints those groups from the same table.
 
 Every topic closes the same way. An `Examples:` block gives one runnable
 command, a `See also:` line names the related topics and the page that

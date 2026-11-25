@@ -20,6 +20,9 @@
 - Print SPARK proof-coverage metrics and CI gates:
 `adacovex spark-coverage`
 
+- Generate an SBOM:
+`adacovex sbom`
+
 - Install the man page:
 `adacovex man`
 
@@ -31,9 +34,6 @@
 
 - Print shell auto-completion scripts:
 `adacovex completion bash`
-
-- Generate an SBOM:
-`adacovex sbom`
 
 - Print the version and exit:
 `adacovex --version`

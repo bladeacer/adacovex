@@ -48,6 +48,11 @@ package Adacovex.Tldr_Template is
   & "`adacovex spark-coverage`"
   & ASCII.LF
   & ASCII.LF
+  & "- Generate an SBOM:"
+  & ASCII.LF
+  & "`adacovex sbom`"
+  & ASCII.LF
+  & ASCII.LF
   & "- Install the man page:"
   & ASCII.LF
   & "`adacovex man`"
@@ -66,11 +71,6 @@ package Adacovex.Tldr_Template is
   & "- Print shell auto-completion scripts:"
   & ASCII.LF
   & "`adacovex completion bash`"
-  & ASCII.LF
-  & ASCII.LF
-  & "- Generate an SBOM:"
-  & ASCII.LF
-  & "`adacovex sbom`"
   & ASCII.LF
   & ASCII.LF
   & "- Print the version and exit:"

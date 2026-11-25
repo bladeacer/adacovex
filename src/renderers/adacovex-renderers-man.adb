@@ -2,6 +2,7 @@ with Ada.Directories;
 with Ada.Environment_Variables;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
+with Adacovex.Cli_Help;
 with Adacovex.Config;
 with Adacovex.CPUs;
 with Adacovex.Paths;
@@ -53,273 +54,6 @@ package body Adacovex.Renderers.Man is
       App (Buf, Len, ".B " & Name);
       App (Buf, Len, Desc);
    end App_Option;
-
-   --  The alias, proof-tool, and spark-coverage descriptions. They sit
-   --  in their own function so Desc_For stays under the cyclomatic
-   --  cap as flags are added (the LOC gate rejects one god
-   --  function).
-   --  @param Flag  Flag name without its leading dashes.
-   --  @return The description, or "" when this table does not own it.
-   function Desc_Extra (Flag : String) return String is
-   begin
-      if Flag = "workers" then
-         return "Alias for --serve-workers.";
-      elsif Flag = "args" then
-         return
-           "Pass one extra argument to gnatprove, repeatable "
-           & "(for example --args=--warnings=error).";
-      elsif Flag = "skip-path" then
-         return
-           "With complexity: skip every file whose path contains "
-           & "this fragment (repeatable, for example "
-           & "--skip-path=docs/api-docs).";
-      elsif Flag = "svg-path" then
-         return "Alias for --emit-svg=PATH.";
-      elsif Flag = "emit-md" then
-         return "Alias for --emit-markdown=PATH.";
-      elsif Flag = "md-path" then
-         return "Alias for --emit-markdown=PATH.";
-      elsif Flag = "no-md" then
-         return
-           "Suppress the Markdown report; it wins over " & "--emit-markdown.";
-      elsif Flag = "strict" then
-         return
-           "Strict docstring mode, the default; the inverse of "
-           & "--relaxed.";
-      elsif Flag = "diff" then
-         return "Alias for --compare-base.";
-      elsif Flag = "base" then
-         return "Alias for --compare-base.";
-      elsif Flag = "delta" then
-         return "Alias for --coverage-delta.";
-      elsif Flag = "spark" then
-         return "Alias for --require-spark.";
-      elsif Flag = "docstrs" then
-         return "Alias for --require-docstrings.";
-      elsif Flag = "tests" then
-         return "Alias for --require-tests.";
-      elsif Flag = "spark-coverage" then
-         return
-           "Subcommand: report SPARK statement, subprogram, and VC "
-           & "coverage from the gnatprove artefacts, and gate on it.";
-      elsif Flag = "group" then
-         return
-           "With spark-coverage: row grouping, file | folder | "
-           & "package (default: file).";
-      elsif Flag = "metric" then
-         return
-           "With spark-coverage: summary metric, statements | "
-           & "subprograms | vcs (default: statements).";
-      elsif Flag = "spark-format" then
-         return
-           "With spark-coverage: report shape, text | json "
-           & "(default: text).";
-      elsif Flag = "min-coverage" then
-         return
-           "With spark-coverage: hide rows whose verified percentage "
-           & "is below this value (default: 0, which shows all).";
-      elsif Flag = "require-coverage" then
-         return
-           "CI gate: fail when the --gate-metric percentage is below "
-           & "this value.";
-      elsif Flag = "gate-metric" then
-         return
-           "Metric the --require-coverage gate applies to, statements "
-           & "| subprograms | vcs (default: statements).";
-      elsif Flag = "diagnostics" then
-         return "Prove diagnostics shape, text | json (default: text).";
-      else
-         return "";
-      end if;
-   end Desc_Extra;
-
-   function Desc_For (Flag : String) return String is
-   begin
-      if Flag = "target" then
-         return "Target project root directory (default: current directory).";
-      elsif Flag = "manifest" then
-         return "Override the target project manifest file.";
-      elsif Flag = "dal" then
-         return
-           "DO-178C DAL level A|B|C|D|E (default: C; also the shared rigor tier).";
-      elsif Flag = "asil" then
-         return "ISO 26262 level A|B|C|D|QM (sets the standard and tier).";
-      elsif Flag = "class" then
-         return "IEC 62304 safety class A|B|C (sets the standard and tier).";
-      elsif Flag = "standard" then
-         return "do178c | iso26262 | iec62304 | all (default: do178c).";
-      elsif Flag = "serve" then
-         return
-           "Switch: run the pipeline, then spawn the HTTP dashboard "
-           & "server on the port (default 8080) and block.  Omit it to "
-           & "render and exit without a server.  Standard-aware: "
-           & "defaults to all standards.  Also see "
-           & "--port/--theme/--serve-workers/--watch.";
-      elsif Flag = "watch" or else Flag = "no-watch" then
-         return
-           "Refresh the served document metrics when the target's "
-           & "sources change.  On by default for --serve; --no-watch "
-           & "turns it off.  Only document and package metrics "
-           & "refresh; proof, test, and compliance results keep the "
-           & "values of the starting run.";
-      elsif Flag = "serve-workers" then
-         return
-           "HTTP server task-pool worker count for --serve "
-           & "(default 4, valid Positive, capped at 256).  Related "
-           & "flag of --serve.";
-      elsif Flag = "theme" then
-         return
-           "Dashboard theme: light | dark | system (default: system; only with --serve).";
-      elsif Flag = "port" then
-         return "HTTP server port for --serve (default: 8080).";
-      elsif Flag = "emit-svg" then
-         return
-           "Write SVG badges to a directory (default <target>/docs/badges).";
-      elsif Flag = "no-svg" then
-         return "Suppress SVG badge output (overrides --emit-svg).";
-      elsif Flag = "emit-markdown" then
-         return "Write VERIFICATION.md and TRACE.md into a directory.";
-      elsif Flag = "emit-metrics" then
-         return "Write a JSON metrics + dependency graph export to a file.";
-      elsif Flag = "skip-dir" then
-         return "Add a directory to the relaxed-mode skip list (repeatable).";
-      elsif Flag = "relaxed" then
-         return "Disable strict mode (skip dirs, no patches).";
-      elsif Flag = "cache" then
-         return "Enable the on-disk result cache (default: on).";
-      elsif Flag = "no-cache" then
-         return "Disable the on-disk result cache (always re-scan).";
-      elsif Flag = "cache-dir" then
-         return "Relocate the result cache directory.";
-      elsif Flag = "cache-max" then
-         return "Cap the result cache entry count (default: 4096).";
-      elsif Flag = "cache-expiry" then
-         return
-           "Cache entry lifetime in days (default: 7; 0 = never " & "expire).";
-      elsif Flag = "cache-clear" then
-         return
-           "Remove every cache entry, print the path and count, and "
-           & "exit.";
-      elsif Flag = "compare-base" then
-         return
-           "Differential mode: compare against a base "
-           & "revision (git/hg/svn/fossil/jj) and report the "
-           & "VC/DAL delta.";
-      elsif Flag = "coverage-delta" then
-         return
-           "Docstring-coverage gate: exit non-zero if current coverage is below the base revision.";
-      elsif Flag = "verbose" then
-         return "Verbose diagnostics on stderr.";
-      elsif Flag = "no-sbom" then
-         return
-           "Skip the automatic SBOM generated at the end of every assessment.";
-      elsif Flag = "sbom-format" or Flag = "format" then
-         return
-           "SBOM format for the automatic SBOM: cyclonedx-json | spdx-json | md (default: cyclonedx-json).";
-      elsif Flag = "out" then
-         return
-           "SBOM output path for the sbom subcommand (default: <target>/sbom.json).";
-      elsif Flag = "jobs" then
-         return "GNATprove parallelism -j N (default: auto).";
-      elsif Flag = "level" then
-         return
-           "GNATprove proof effort 0-4 (default: 4, the deepest" & " effort).";
-      elsif Flag = "timeout" then
-         return "Per-check prover timeout in seconds.";
-      elsif Flag = "steps" then
-         return "Max proof steps (default: 10000).";
-      elsif Flag = "memlimit" then
-         return "Prover memory limit in MB.";
-      elsif Flag = "force" then
-         return "Force full gnatprove reanalysis and man page reinstall.";
-      elsif Flag = "no-loop-unrolling" then
-         return
-           "Disable automatic loop unrolling (always on for prove; kept for compat).";
-      elsif Flag = "no-inlining" then
-         return "Disable contextual analysis inlining.";
-      elsif Flag = "counterexamples" then
-         return
-           "Ask the prover for a breaking input on every failed"
-           & " check (on by default; off skips the search).";
-      elsif Flag = "suppress-warnings" then
-         return
-           "Suppress GNATprove benign info messages (--suppress-warnings[=SETS]).";
-      elsif Flag = "quiet" then
-         return "Alias for --suppress-warnings (the default set).";
-      elsif Flag = "require-spark" then
-         return "CI gate: fail loudly if SPARK level < LVL (Stone..Platinum).";
-      elsif Flag = "require-docstrings" then
-         return "CI gate: fail loudly if docstring coverage < PCT% (0-100).";
-      elsif Flag = "require-tests" then
-         return "CI gate: fail loudly if passing test count < N.";
-      elsif Flag = "require-proof" then
-         return "CI gate: fail loudly if proved-VC coverage < PCT% (0-100).";
-      elsif Flag = "fail-on" then
-         return
-           "CI policy gate over spark, docstrings, proof, tests, or"
-           & " coverage (DIM[=VAL], comma-separated or repeatable).";
-      elsif Flag = "coverage" then
-         return
-           "Show the proof-coverage summary after a successful prove (on by default).";
-      elsif Flag = "no-coverage" then
-         return
-           "Hide the proof-coverage summary after prove (also [prove] coverage = false).";
-      elsif Flag = "help" then
-         return "Show help and exit (also 'adacovex help <topic>').";
-      elsif Flag = "version" then
-         return "Print the bundled version and exit.";
-      elsif Flag = "sbom" then
-         return
-           "Subcommand: generate a proof-aware SBOM (see also --sbom-format/--format/--out).";
-      elsif Flag = "prove" then
-         return
-           "Subcommand: run GNATprove then assess (see --jobs/--level/...).";
-      elsif Flag = "status" then
-         return "Subcommand: report toolkit + platform status.";
-      elsif Flag = "export" then
-         return
-           "With status: write the report as JSON to PATH "
-           & "(or stdout when no path is given).";
-      elsif Flag = "metrics" then
-         return
-           "With status: print compact key=value metrics "
-           & "lines for shell scripts.";
-      elsif Flag = "completion" then
-         return
-           "Subcommand: print shell completion script (bash/fish/zsh/pwsh).";
-      elsif Flag = "man" then
-         return
-           "Subcommand: install the man page into the local man database.";
-      elsif Flag = "tldr" then
-         return
-           "Subcommand: install the bundled tldr page into the local "
-           & "tldr client.";
-      elsif Flag = "check" then
-         return
-           "Man subcommand flag: --check exits 0 when installed page matches binary.";
-      elsif Flag = "dir" then
-         return "Man subcommand flag: --dir=PATH installs under PATH/man1.";
-      elsif Flag = "complexity" then
-         return
-           "Subcommand: cyclomatic-complexity and LOC gate across the "
-           & "target's source files.  Use --excludes to skip extensions.";
-      elsif Flag = "excludes" then
-         return
-           "Comma-separated file extensions to skip in --complexity "
-           & "scans (for example md,rst).";
-      elsif Flag = "tz" or Flag = "timezone" then
-         return
-           "Display timezone for reports: an IANA name (Europe/London) "
-           & "or a UTC/GMT offset (UTC+2, GMT-5).";
-      else
-         declare
-            Extra : constant String := Desc_Extra (Flag);
-         begin
-            return
-              (if Extra'Length > 0 then Extra else "See --help for details.");
-         end;
-      end if;
-   end Desc_For;
 
    function Render_Page (Version : String) return String is
       Buf : String (1 .. Max_Page) := (others => ' ');
@@ -434,23 +168,45 @@ package body Adacovex.Renderers.Man is
       --  (with a fallback generic line) even before a bespoke
       --  description is added.
       declare
+         use type Adacovex.Cli_Help.Option_Group;
          Flags : constant String := Adacovex.Config.Flag_List;
-         Start : Positive := Flags'First;
+         Start : Positive;
          Fin   : Natural;
-
       begin
-         while Start <= Flags'Last loop
-            Fin := Start;
-            while Fin <= Flags'Last and then Flags (Fin) /= ' ' loop
-               Fin := Fin + 1;
-            end loop;
+         --  One option table, one order: the groups are the console frame's
+         --  groups (Adacovex.Cli_Help), so a reader who knows `--help` finds
+         --  the same sections here (R2).
+         for G in Adacovex.Cli_Help.All_Groups'Range loop
             declare
-               Flag : constant String := Flags (Start .. Fin - 1);
+               Group   : constant Adacovex.Cli_Help.Option_Group :=
+                 Adacovex.Cli_Help.All_Groups (G);
+               Heading : constant String := Adacovex.Cli_Help.Heading (Group);
             begin
-               App_Option (Buf, Len, "--" & Flag, Desc_For (Flag));
+               App
+                 (Buf,
+                  Len,
+                  ".SS " & Heading (Heading'First .. Heading'Last - 1));
+               Start := Flags'First;
+               while Start <= Flags'Last loop
+                  Fin := Start;
+                  while Fin <= Flags'Last and then Flags (Fin) /= ' ' loop
+                     Fin := Fin + 1;
+                  end loop;
+                  declare
+                     Flag : constant String := Flags (Start .. Fin - 1);
+                  begin
+                     if Adacovex.Cli_Help.Group_Of (Flag) = Group then
+                        App_Option
+                          (Buf,
+                           Len,
+                           "--" & Flag,
+                           Adacovex.Cli_Help.Describe (Flag));
+                     end if;
+                  end;
+                  exit when Fin > Flags'Last;
+                  Start := Fin + 1;
+               end loop;
             end;
-            exit when Fin > Flags'Last;
-            Start := Fin + 1;
          end loop;
       end;
       App (Buf, Len, ".SH MODES");

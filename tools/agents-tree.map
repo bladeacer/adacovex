@@ -53,7 +53,7 @@ src/tests/adacovex_types_tests	Type conversion tests (72)
 src/tests/adacovex_scanner_tests	Source scanner tests (89)
 src/tests/adacovex_cache_tests	Result-cache tests (56)
 src/tests/adacovex_ir_tests	IR synthesis tests (42)
-src/tests/adacovex_man_tests	Man page renderer tests (33)
+src/tests/adacovex_man_tests	Man page renderer tests (127)
 src/tests/adacovex_vcs_tests	VCS support tests (37)
 src/tests/adacovex_server_tests	Server routing tests (183)
 src/tests/adacovex_prove_patch_tests	Proof patch merge tests (35)
@@ -78,7 +78,7 @@ src/tests/adacovex_install_tests	Installation-method tests (23)
 src/tests/adacovex_renderer_svg_tests	SVG renderer tests (161)
 src/tests/adacovex_renderer_tests	HTML/Markdown renderer tests (58)
 src/tests/adacovex_sbom_tests	SBOM / manifest graph tests (580)
-src/tests/test_runner	Test suite entry point (2501 tests)
+src/tests/test_runner	Test suite entry point (2595 tests)
 src/parsers/adacovex-parsers-manifest-req_entry	Parse the first requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-collect_req_entries	Collect every requirement (name/version) from a requirements*.txt
 src/parsers/adacovex-parsers-manifest-register_root_python_deps	Register root requirements*.txt entries as dev-scope pypi components
@@ -151,3 +151,4 @@ src/parsers/adacovex-parsers-manifest-graph_key	Combined content hash of everyth
 src/parsers/adacovex-parsers-manifest-build_dependency_graph	Build the dependency graph for a project root
 src/parsers/adacovex-parsers-manifest-read_lockfiles	Resolve the transitive set from the project's lockfiles
 src/parsers/adacovex-parsers-manifest-discover_workflow_actions	Register GitHub Actions workflow actions as dev-scope components
+src/core/adacovex-cli_help	One option table shared by the console frame, the man page, and the tldr page (descriptions + task groups)

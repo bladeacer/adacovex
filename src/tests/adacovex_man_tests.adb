@@ -2,6 +2,8 @@ with Ada.Directories;
 with Ada.Strings.Fixed;
 with GNAT.OS_Lib;
 with Adacovex.Test_Support;
+with Adacovex.Cli_Help;
+with Adacovex.Config;
 with Adacovex.Renderers.Man;
 with Adacovex.CPUs;
 
@@ -54,6 +56,40 @@ package body Adacovex_Man_Tests is
       R.Check
         (Index (Page, "skip every file whose path contains") > 0,
          "man page describes --skip-path");
+
+      --  One option table: every flag Known_Flags names carries its own text
+      --  and appears once, and the page is grouped the way `--help` is (R2).
+      declare
+         Flags : constant String := Adacovex.Config.Flag_List;
+         Start : Positive := Flags'First;
+         Fin   : Natural;
+      begin
+         loop
+            Fin := Start;
+            while Fin <= Flags'Last and then Flags (Fin) /= ' ' loop
+               Fin := Fin + 1;
+            end loop;
+            declare
+               Flag : constant String := Flags (Start .. Fin - 1);
+            begin
+               R.Check
+                 (Adacovex.Cli_Help.Describe (Flag)'Length > 0,
+                  "the option table describes --" & Flag);
+            end;
+            exit when Fin > Flags'Last;
+            Start := Fin + 1;
+         end loop;
+      end;
+      for G in Adacovex.Cli_Help.All_Groups'Range loop
+         declare
+            H : constant String :=
+              Adacovex.Cli_Help.Heading (Adacovex.Cli_Help.All_Groups (G));
+         begin
+            R.Check
+              (Index (Page, ".SS " & H (H'First .. H'Last - 1)) > 0,
+               "man page carries the " & H & " group");
+         end;
+      end loop;
       R.Check (Index (Page, "--version") > 0, "man page documents --version");
       R.Check (Index (Page, "mercurial") > 0, "man page mentions VCS support");
       --  Platform support: both indexers and the man path are documented.

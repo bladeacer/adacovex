@@ -51,10 +51,11 @@ gates, Differential and SBOM, and More detail. Its last group points at
 count, each heading, and the pointer. The man page option list and the tldr
 page keep their flat order until R2 generates both from the same table.
 
-- [x] R2, first slice: every option on the man page carries its own
- description, default, and related flag; the `See --help for details` stub is
-gone and a test fails on its return. Building the page from the help option
-table remains.
+- [x] R2: the option text lives in one table, `Adacovex.Cli_Help`, with a
+task group per option. The man page renders that table under the console
+frame's seven headings, every `Known_Flags` entry appears exactly once, and a
+test fails on an unknown option or a missing group. The stub description is
+gone.
 
 ## Every change
 
@@ -116,7 +117,9 @@ detail lives, and keeps maintainer material out of the way of the task.
 - [x] Accept `-h` wherever `--help` works, including after a subcommand.
 - [x] Group and shorten the base `--help` so it fits one screen, and point
   its footer at contextual help and the man page.
-- [ ] Group the man-page option sections and the tldr page the same way.
+- [x] Group the man-page option sections (done in R2). The tldr page keeps
+  its flat order: the tldr format has no group heading, and its examples are
+  already ordered by the same task sequence.
 
 **Goal:** The base `--help` fits one screen and groups its flags by task. A
 user who wants detail reaches it through contextual help, not by scrolling.
@@ -149,9 +152,8 @@ one screen of lines and that each group heading appears once.
   no entry reads "See --help for details".
 
 **Goal:** The man page is the complete offline reference: the union of every
-help frame, not a synopsis with stubs. The stub descriptions are gone; what
-remains is generating the text from the help option table so the two cannot
-drift.
+help frame, not a synopsis with stubs, generated from the one option table
+both surfaces read.
 
 **Work:**
 - Build the man page from the same option table the help renderer reads, so a
