@@ -207,7 +207,7 @@ adacovex init -t path/to/project --force
 |Variable|Effect|
 |--------|------|
 |`ADACOVEX_STATE_HOME`|Replaces the configuration, cache, and data directories with `DIR`, `DIR/cache`, and `DIR/data`.|
-|`ADACOVEX_OFFLINE`|Set to `1` to skip every package-registry probe (`alr show`, `npm view`, `pnpm show`, `cargo search`, `go list`): the SBOM carries only offline-known versions and licences. The native suite and the CLI e2e checks set it, so `make check` runs without the network.|
+|`ADACOVEX_OFFLINE`|Set to `1` to skip every package-registry probe (`alr show`, `npm view`, `pnpm show`, `cargo search`, `go list`): the SBOM carries only offline-known versions and licences. The native suite and the CLI e2e checks set it, so local verification runs without the network.|
 |`ADACOVEX_GNATPROVE_VERSION`|Global gnatprove pin; overrides the config file.|
 |`ADACOVEX_TOOLKIT_URL`|URL of the last-resort gnatprove toolchain bundle.|
 |`ADACOVEX_VERSION`|Build-time version override; the release builds use it.|

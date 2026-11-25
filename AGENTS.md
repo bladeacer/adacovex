@@ -110,9 +110,10 @@ and the release that owns the fix. A change that moves a figure re-runs
 `just perf-report` and folds its version into the open phase of
 `docs/contributing/perf/prove-timing.md`, with the complete set re-measured
 when the representative moves. Compare two versions with a paired run on one
-box, never with two columns from different sessions. The v1.75.0 tree fails
-this check by 35 times in stat count (D16); the rule reads against the post-fix
-baseline, and no change may widen the gap.
+box, never with two columns from different sessions. D16 (the 35-times stat
+regression) closed in v1.76.0, so the baseline is the post-fix shape: 18 904
+`newfstatat` calls and 378 ms pipeline warm on an idle host, recorded in
+`docs/stats/`. No change may widen that gap.
 
 Before finishing, re-verify that the user-facing docs still cover the
 codebase's current surface: every `Known_Flags` entry is documented in

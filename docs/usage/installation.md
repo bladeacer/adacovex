@@ -115,8 +115,7 @@ Bundles are attested with [`actions/attest`](https://github.com/actions/attest).
 ```bash
 git clone --depth 1 https://github.com/bladeacer/adacovex.git
 cd adacovex
-just build          # version + dashboard/manual generators, then alr build
-just test           # the native suite
+alr build && ./bin/adacovex --version
 ```
 
 Either route produces `bin/adacovex` (with a `bin/covex` alias). Add
@@ -125,8 +124,8 @@ Either route produces `bin/adacovex` (with a `bin/covex` alias). Add
 needed. No other dependencies.
 
 > **For contributors:** `just build` regenerates the version, dashboard, and
-offline-manual specs before it runs `alr build`, and `just --list` names every
-task. A plain `alr build` works when `just` is not installed. The
+offline-manual specs before it runs `alr build`, and `just test` runs the
+native suite. `just --list` names every task. The
 [developer guide](../contributing/developer-guide.md) covers the rest.
 
 ## Version source per installation method

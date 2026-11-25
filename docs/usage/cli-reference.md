@@ -51,7 +51,7 @@ effect, its default, and the flag it pairs with, so an offline reader never
 needs to return to `--help`.
 
 An unknown topic names itself, suggests the nearest known topic or flag, and
-lists the valid topics before the full usage. A mistyped flag gets the same
+lists the valid topics before the usage summary. A mistyped flag gets the same
 suggestion, for example `unknown option '--standrd=all' (did you mean
 --standard?)`.
 

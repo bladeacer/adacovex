@@ -8,26 +8,28 @@ syft is never a dependency of adacovex: the comparison runs offline, and
 
 ## How the comparison was made
 
-The numbers below come from one run on 2026-11-14 on the development machine.
+The syft column comes from one run on 2026-11-14 on the development machine:
 syft was built from a source checkout (`go build ./cmd/syft`) and run as
-`syft dir:<path> -o json`. adacovex was run as
-`adacovex sbom --format=cyclonedx-json`, and both JSON documents were counted
-by one script. A component counts as **versioned** when it carries a version
-and as **licensed** when it carries at least one licence entry.
+`syft dir:<path> -o json`. The adacovex column was re-measured on 2026-11-25
+with `adacovex sbom --format=cyclonedx-json`, because the workflow-action
+cataloguer landed between the two runs. One script counted both JSON
+documents. A component counts as **versioned** when it carries a version and
+as **licensed** when it carries at least one licence entry.
 
 The machine had `.venv` installed for the offline manual and the `obj/` test
 fixtures present, which matters for the result (see the findings below).
 
 | Project | syft components | Versioned | Licensed | adacovex components | Versioned | Licensed |
 |---------|-----------------|-----------|----------|---------------------|-----------|----------|
-| adacovex self | 63 | 56 | 23 | 25 | 22 | 5 |
-| yams (C, Meson) | 0 | 0 | 0 | 2 | 2 | 0 |
-| Ada_CRDT (Ada) | 18 | 18 | 0 | 16 | 12 | 4 |
+| adacovex self | 63 | 56 | 23 | 30 | 27 | 5 |
+| yams (C, Meson) | 0 | 0 | 0 | 3 | 3 | 0 |
+| Ada_CRDT (Ada) | 18 | 18 | 0 | 19 | 15 | 4 |
 
 syft's 63 components on the adacovex tree split by type: 33 python, 12
 github-action, 7 go-module, 5 npm, 4 java-archive, and 2 rust-crate.
-adacovex's 25 split by PURL type: 18 `pkg:generic` (system tools), 3
-`pkg:alire`, 3 `pkg:pypi`, and 1 `pkg:npm`.
+adacovex's 30 split by PURL type: 17 `pkg:generic` (system tools), 6
+`pkg:github` (workflow actions), 3 `pkg:alire`, 3 `pkg:pypi`, and 1
+`pkg:npm`.
 
 ## Findings
 
@@ -42,11 +44,13 @@ Where the difference comes from, in order of size:
   `Cargo.lock`, and `pom.xml` files that adacovex's own test suite writes
   there: 13 components of the 63. adacovex skips `obj` by design, because
   generated output is not a project input.
-- **Workflow action usage.** syft's `github-action` cataloger lists the 12
-  `uses:` actions across `.github/workflows`. adacovex has no action
-  cataloger, so a workflow action is not a component.
-- **System tools.** Only adacovex reports them: 18 on the self tree, 8 on
-  Ada_CRDT, and 2 on yams. syft has no concept of a system-tool dependency
+- **Workflow action usage.** Both tools read the `uses:` lines, so this group
+  is no longer a gap: adacovex reports 6 dev-scope `pkg:github` components on
+  the self tree and syft listed 12 at its run. An action that the workflows
+  reference more than once appears once, because the graph keeps one node per
+  name.
+- **System tools.** Only adacovex reports them: 17 on the self tree, 7 on
+  Ada_CRDT, and 3 on yams. syft has no concept of a system-tool dependency
   for a directory scan, so `make`, `ninja`, and `git` never appear.
 - **The Ada ecosystem.** syft has no Alire or GPR cataloger. Ada_CRDT's 18
   components are all workflow actions, and its `alire.lock` crate graph is

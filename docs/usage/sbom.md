@@ -206,9 +206,10 @@ A vendored manifest maps directly onto its language and PURL type:
 The set is the union of the ecosystems adacovex reads and the languages
 syft catalogues, plus Ada. Six ecosystems name their manifest after the
 package rather than the ecosystem (`*.csproj`, `*.gemspec`, `*.podspec`,
-`*.rockspec`, `*.opam`, `*.cabal`), so a row may carry a suffix. Every row
-has a committed mini project under `src/tests/fixtures/ecosystems/`, so the
-test suite checks the language list against a real manifest.
+`*.rockspec`, `*.opam`, `*.cabal`), so a row may carry a suffix.
+
+> **For contributors:** each row has a committed mini project under
+`src/tests/fixtures/ecosystems/`, so the suite checks it against a manifest.
 
 `pkg:maven` covers a Gradle build too. A Gradle build states a group id
 rather than an artefact name, so the component keeps the directory name
