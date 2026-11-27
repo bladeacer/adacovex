@@ -1,31 +1,35 @@
 bin/
 obj/
-.alire/
 config/
-docs/api/
 dist/
-adacovex-*.tar.gz
-*.tmp
-*.TMP
-GNAT-TEMP-*
-.headroom
-alire.toml.bak
 gnatprove
-.lccst
+
+alire/*
+!alire/description.txt
+!alire/long-description.txt
+
 b__*
 *.o
 *.ali
+
+adacovex-*.tar.gz
+alire.toml.bak
+
+*.tmp
+*.TMP
+GNAT-TEMP-*
+
+.headroom
+.lccst
 
 __pycache__/
 *.pyc
 .venv/
 .venv
-alire
-!alire/releases
+
 node_modules
 src/tests/e2e/dashboard/test-results
 src/tests/e2e/dashboard/playwright-report
-
 
 # Sphinx build output: regenerated locally by `just book` (gitignored so the
 # generated _sources/ copies and .doctrees/ side-car files never pollute git).
