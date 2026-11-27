@@ -15,4 +15,4 @@ Measured on adacovex `1.75.0` on 2026-11-25.
 | `total` | 29326 |
 <!-- perf-report:end -->
 
-The `newfstatat` count is the directory-walk cost. The figure fell from 282 020 to 18 904 when the debt D16 fix made every walker share one directory snapshot, so the count is now the tree's own size rather than a repeat of it. The cache design is on [Global configuration and state](../usage/configuration.md), and the fix is on [the debt register](../contributing/debt.md).
+The `newfstatat` count is the directory-walk cost. The figure fell from 282 020 to 18 904 when the debt D16 fix made every walker share one directory snapshot, so the count is now the tree's own size rather than a repeat of it. The cache design is on [Configuration state and environment](../usage/configuration-state.md), and the fix is on [the debt register](../contributing/debt.md).

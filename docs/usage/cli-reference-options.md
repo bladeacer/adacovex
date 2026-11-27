@@ -171,7 +171,7 @@ criteria. They are off by default. When set, the assessment fails loudly
 target does not meet the required level:
 
 ```bash
-adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2600 -r 100
+adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2606 -r 100
 ```
 
 - `require-spark` (alias `--spark`) compares the honest assessed SPARK level
@@ -183,9 +183,9 @@ adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2600 -r 100
 CI that pins a gnatprove version (manifest or global `adacovex.toml` pin)
 must set these to the values that version actually achieves. A stricter
 prover can legitimately leave more VCs unproved. As a result, gate on the
-results of the prover you pin. The global pin and the other environment
-variables are documented on
-[Global configuration and state](configuration.md).
+results of the prover you pin. The global pin is documented on
+[Global configuration and state](configuration.md); the other environment
+variables on [Configuration state and environment](configuration-state.md).
 
 ### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max` / `--cache-expiry` / `--cache-clear`)
 

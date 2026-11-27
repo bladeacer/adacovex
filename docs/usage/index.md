@@ -71,8 +71,10 @@ subcommand or flag, so you can paste it as written.
 
 ## Manage the toolkit
 
-- [Global configuration and state](configuration.md) --  the optional global configuration file, the environment variables, and the
-  cache and toolkit directories.
+- [Global configuration and state](configuration.md) -- the optional project
+  and global configuration files, every key, and the sample configuration.
+- [Configuration state and environment](configuration-state.md) -- the state
+  directories, the environment variables, and how to reset state.
 - [Platform support](platforms.md) -- supported platforms and the toolkit
   state of each.
 

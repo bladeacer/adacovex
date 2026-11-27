@@ -113,7 +113,7 @@ To keep the tool free of 32/64-bit and endian surprises, adacovex:
   configuration, cache, and data directories follow the XDG specification on
   Linux and the BSDs, `~/Library` on macOS, and `%APPDATA%` /
   `%LOCALAPPDATA%` on Windows, with `ADACOVEX_STATE_HOME` as the one
-  override (see [Global configuration and state](configuration.md));
+  override (see [Configuration state and environment](configuration-state.md));
 - keeps a cache entry name a legal file name on every platform: a
   namespaced key (`scan:<sha256>`, `prove:<sha256>`, `tools-<sha256>`) writes
   its `:` as `-`, because Windows rejects `:` in a file name;

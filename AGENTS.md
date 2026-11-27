@@ -101,9 +101,9 @@ figure loses the reason it moved.
 **Perf check on every change.**  A warm run is a fixed shape (scan, SBOM walk,
 renderers, proof-cache hit), and a functional test cannot see it move. After any
 change to `src/`, `tools/`, the bundled docs or dashboard, or a gate, run
-`./bin/covex` twice on the warm tree and read the wall and
-`strace -f -c ./bin/covex | grep newfstatat` against the latest figures in
-`docs/stats/timings.md` and `docs/stats/syscalls.md`. Treat 2x the recorded warm
+`./bin/covex --target=.` twice on the warm tree and read the wall and
+`strace -f -c ./bin/covex --target=. | grep newfstatat` against the latest
+figures in `docs/stats/timings.md` and `docs/stats/syscalls.md`. Treat 2x the recorded warm
 wall or 2x the recorded `newfstatat` count as a regression: fix it, or add a
 `docs/contributing/debt.md` row in the same change with the measured evidence
 and the release that owns the fix. A change that moves a figure re-runs
@@ -161,7 +161,7 @@ Self-assessment (`just run-self`) must always show:
   (see `docs/proof/16.1.0-ledger.md`). Platinum additionally requires full
   proof coverage, which the SPARK coverage report does not show (subprograms
   in `SPARK_Mode (Off)` units stay outside the proof)
-- 2600/2600 native tests passing
+- 2606/2606 native tests passing
 - DAL-C Achieved (and, via `--standard=all`, ASIL B + Class A Achieved;
   `run-self` emits `do178c.svg` / `iso26262.svg` / `iec62304.svg` badges)
 
@@ -307,7 +307,7 @@ src/
     |-- adacovex_cache_tests.ads/.adb         -- Result-cache tests (56)
     |-- adacovex_completion_tests.ads/.adb    -- Shell completion script tests (24)
     |-- adacovex_complexity_tests.ads/.adb    -- Complexity check tests (28)
-    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (412)
+    |-- adacovex_config_tests.ads/.adb        -- CLI config tests (418)
     |-- adacovex_cpus_tests.ads/.adb          -- Host CPU and job-resolution tests (24)
     |-- adacovex_dal_tests.ads/.adb           -- DAL compliance tests (23)
     |-- adacovex_diff_tests.ads/.adb          -- Differential-report regression tests (36)
@@ -333,7 +333,7 @@ src/
     |-- adacovex_types_tests.ads/.adb         -- Type conversion tests (72)
     |-- adacovex_tz_ansi_tests.ads/.adb       -- Timezone + ANSI tests (73)
     |-- adacovex_vcs_tests.ads/.adb           -- VCS support tests (37)
-    `-- test_runner.adb                       -- Test suite entry point (2600 tests)
+    `-- test_runner.adb                       -- Test suite entry point (2606 tests)
 ```
 <!-- agents-tree:end -->
 
@@ -388,7 +388,10 @@ selection stays on `--standard` (which also accepts a combined tier token
 such as `dal-B`, `asil-b`, or `class-c`) plus `--dal` / `--asil` /
 `--class`. The alias set is expanded by `Normalize_Aliases` in
 `src/core/adacovex-config.adb`; `Known_Flags` carries every alias so
-completion and the typo suggestion know them.
+completion and the typo suggestion know them. A bare `adacovex` prints the
+usage summary and exits 0 with a hint that names `--target=.`: every run
+names its target or a subcommand (the bare form assessed the current
+directory before 1.76.0).
 
 `--fail-on=DIM[=VAL]` states the same thresholds as one CI policy flag
 (`spark`, `docstrings`, `proof`, `tests`, `coverage`; comma-separated or
@@ -750,7 +753,7 @@ compatibility shim. The table names the canonical target for each task.
 | `check` | **The single verification entry point.** Run it after any change. `fmt` and `build` run first and alone, then the docs-tree regeneration, the manual, API-docs, SBOM, proof, and tools gates, then one parallel phase for the independent read-only gates, then the sync gates -- which **regenerate** the dynamic content (test counts and the AGENTS.md source tree, proof metrics and badges, the crate-description copies, `requirements.txt`) instead of failing a stale one. Build, docs bundle, proof, formatting, and gnatdoc are memoised or content-stamped, so a warm tree runs in about 39 s. A missing host tool SKIPs its gate with the reason; the summary is PASS/FAIL/SKIP. Order, timings, and the preflight rule: [The `just check` pipeline](docs/contributing/perf/check-pipeline.md). `just prove` is the SPARK sub-gate if you only changed proof-affecting code |
 | `build` | Regenerate `src/adacovex_version_info.ads` from alire-dev.toml (or `ADACOVEX_VERSION`), then `alr build` (adacovex + test_runner, covex alias) |
 | `man` | Install the man page into the local man database + refresh mandb (warns when mandb is missing) |
-| `test` | Build + run the 2600-test native suite |
+| `test` | Build + run the 2606-test native suite |
 | `prove` | SPARK proof at gnatprove `--level=4` (full-proof gate) + regenerates SVG badges in `docs/badges/` |
 | `doc` / `api-docs` | Generate API docs (gnatdoc + rst2md) |
 | `book` | Build the offline manual from the Sphinx docs and regenerate `src/adacovex-docs_template.ads` (tools/gen-docs.py; incremental + verified Sphinx build, `--fresh` forces a clean one; safe to run without sphinx) |
@@ -879,7 +882,7 @@ a runner needs neither `make` nor `just`; the Ubuntu runner images ship
 
 | Check | Command | Requirement |
 |-------|---------|-------------|
-| Unit tests | `just test` | 2600/2600 passing |
+| Unit tests | `just test` | 2606/2606 passing |
 | Self-assessment | `just run-self` | 100% docs, Gold, DAL-C Achieved |
 | SPARK proof | `just prove` | Gold (1060 VCs, 0 unproved, 0 justified under gnatprove 16.1.0), verified at `--level=4` (the deepest effort; the prove subcommand always sends a level -- the requested one, else 4 -- so the overhead is gnatprove's own) |
 | Ada_CRDT regression | `just run-ada-crdt` | Stable against CRDT library (strict mode) |
@@ -948,7 +951,7 @@ rules: [CONTRIBUTING.md](CONTRIBUTING.md#changelog-format).
 
 ## Unit tests
 
-Native zero-dependency suite (`src/tests/`, 2600 tests across 30 categories).
+Native zero-dependency suite (`src/tests/`, 2606 tests across 30 categories).
 Per-category counts and framework details:
 [CONTRIBUTING.md](CONTRIBUTING.md#unit-tests). The Python end-to-end suites
 live under `src/tests/e2e/` in category directories (`cli/`, `prove/`,
@@ -980,7 +983,7 @@ that describes it in the same change. Route by the kind of change:
 | Dashboard route, metric, tab, or API payload | `docs/usage/dashboard*.md` |
 | SBOM parser, scope, licence, or resolution rule | `docs/usage/sbom*.md` |
 | Proof runner, contract support, diagnostics, counterexample | `docs/contributing/proving*.md`, `docs/proof/`, and the Ada docstrings `just doc` renders |
-| Cache, configuration key, or state directory | `docs/usage/configuration.md`, `docs/usage/cli-reference-options.md` |
+| Cache, configuration key, or state directory | `docs/usage/configuration.md`, `docs/usage/configuration-state.md`, `docs/usage/cli-reference-options.md` |
 | Pipeline, gate, or measured performance | `docs/contributing/perf/*.md` and `plan.md` |
 | Platform, installation, or packaging | `docs/usage/platforms.md`, `docs/usage/installation.md` |
 | Compliance standard, DAL/ASIL/class, or badge | `docs/usage/standards*.md`, `docs/compliance/`, `docs/badges/` |
@@ -1012,6 +1015,7 @@ docs/
 |   |-- cli-reference-flags.md -- CLI flag details: assessment flags and subcommands
 |   |-- cli-reference-options.md -- CLI flag details: serving, CI, and tool options
 |   |-- cli-reference.md -- adacovex CLI Reference
+|   |-- configuration-state.md -- Configuration state and environment
 |   |-- configuration.md -- Global configuration and state
 |   |-- dashboard-api.md -- The dashboard JSON API, playground, and themes
 |   |-- dashboard-charts.md -- Dashboard metric charts and the robustness tier

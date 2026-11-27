@@ -26,6 +26,11 @@ paragraphs are outside the four-sentence cap, and the comment text of every
 Ada line is only ever read from its `--` marker on, so code alignment, string
 literals, and the `--  ` prefix itself are outside the rule.
 
+The embedded sample configuration on `docs/usage/configuration.md` is also
+checked: the fenced `adacovex.toml` block between the `config-sample` markers
+must match the committed `adacovex.toml`, so the copy in the manual cannot
+drift from the file the repository ships.
+
 The 250-line cap is a hard gate: an overrun fails the check.  A page may opt
 out of the line cap with a `no-covex-docs-loc` marker in an HTML comment near
 the top of the file (the same opt-out convention the complexity checker uses).
@@ -67,6 +72,35 @@ _MAX_SENTENCES = 4
 # a sentence end.  The `--  ` Ada comment prefix is safe because `--` is not
 # sentence punctuation.
 _DOUBLE_SPACE = re.compile(r"(?<=[.!?]) {2,}(?=\S)")
+
+
+#  The full sample configuration is embedded in the configuration page under
+#  these markers; the check fails when the copy differs from the file.
+CONFIG_SAMPLE_BEGIN = "<!-- config-sample:begin -->"
+CONFIG_SAMPLE_END = "<!-- config-sample:end -->"
+
+
+def config_sample_errors(root: Path = ROOT) -> List[str]:
+    """Compare the embedded sample configuration with the committed file."""
+    page = root / "docs" / "usage" / "configuration.md"
+    sample_file = root / "adacovex.toml"
+    rel = page.relative_to(root)
+    text = page.read_text(encoding="utf-8")
+    begin = text.find(CONFIG_SAMPLE_BEGIN)
+    end = text.find(CONFIG_SAMPLE_END)
+    if begin < 0 or end < begin:
+        return [
+            f"{rel}: the sample configuration block needs the"
+            f" {CONFIG_SAMPLE_BEGIN} and {CONFIG_SAMPLE_END} markers"]
+    block = text[begin + len(CONFIG_SAMPLE_BEGIN):end].strip("\n").splitlines()
+    if len(block) < 2 or block[0] != "```toml" or block[-1] != "```":
+        return [f"{rel}: the sample configuration block is not a toml fence"]
+    expected = sample_file.read_text(encoding="utf-8").rstrip("\n").splitlines()
+    if block[1:-1] != expected:
+        return [
+            f"{rel}: the embedded adacovex.toml differs from the committed"
+            " file; copy the file into the block again"]
+    return []
 
 
 def doc_files() -> List[Path]:
@@ -341,6 +375,7 @@ def main(argv: List[str]) -> int:
     for path in sources:
         lines = path.read_text(encoding="utf-8").splitlines()
         errors.extend(source_spacing_errors(path.relative_to(ROOT), lines))
+    errors.extend(config_sample_errors())
     if errors:
         print("\n".join(errors))
         return 1

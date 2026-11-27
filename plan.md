@@ -20,7 +20,7 @@ against the post-fix baseline.
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.76.0 | in progress | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`, done), R2 (man page as full context, done), R3 (end-user documentation audience, done), R4 (bundled `adacovex.toml`), R5 (bare invocation and level 4) |
+| v1.76.0 | in progress | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`, done), R2 (man page as full context, done), R3 (end-user documentation audience, done), R4 (bundled `adacovex.toml`, done), R5 (bare invocation and level 4, done) |
 | v1.77.0 | planned | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI) |
 
 ## Status (2026-11-25)
@@ -63,6 +63,22 @@ task group per option. The man page renders that table under the console
 frame's seven headings, every `Known_Flags` entry appears exactly once, and a
 test fails on an unknown option or a missing group. The stub description is
 gone.
+
+- [x] R4: `docs/usage/configuration.md` embeds the repository's full
+`adacovex.toml` between `config-sample` markers, with the ledger of state
+directories, environment variables, and reset moved to
+`docs/usage/configuration-state.md` so the page stays under the line cap.
+`tools/check-docs.py` fails when the block differs from the file, and
+`adacovex init` now writes the level, timeout, steps, and memlimit keys too,
+so the scaffold states every supported key.
+
+- [x] R5: a bare `adacovex` prints the grouped usage and exits 0 with a hint
+that names `--target=.`, the exact replacement for the old bare assessment.
+`Parse_All` marks the empty line `Bare_Invocation`, the unit suite covers the
+bare and `--target=.` forms, and `cli-e2e` checks the frame, the hint, and the
+level-4 default in `prove --help`. The sample configuration, the
+configuration page, the tldr page, the CLI reference, and AGENTS.md say the
+same thing.
 
 ## Every change
 
@@ -155,7 +171,7 @@ one screen of lines and that each group heading appears once.
 
 ### R2 - The man page carries the full context
 
-- [ ] Generate each option's man-page description from its `--help` text, so
+- [x] Generate each option's man-page description from its `--help` text, so
   no entry reads "See --help for details".
 
 **Goal:** The man page is the complete offline reference: the union of every
@@ -203,7 +219,7 @@ first. A contributor still finds every detail, one level down.
 
 ### R4 - The sample configuration ships inside the manual
 
-- [ ] Show the full `adacovex.toml` as a code block on the configuration page.
+- [x] Show the full `adacovex.toml` as a code block on the configuration page.
 
 **Goal:** A reader of the bundled manual copies the complete configuration for
 the version they run, without opening the repository.
@@ -223,7 +239,7 @@ manual link check covers the page.
 
 ### R5 - A bare invocation prints help, and `just prove` is level 4
 
-- [ ] `adacovex` with no arguments prints the help frame and exits 0.
+- [x] `adacovex` with no arguments prints the help frame and exits 0.
 
 **Goal:** The CLI behaves like a Unix tool: flags select work, and a bare
 invocation asks for one. Proof targets agree on level 4.

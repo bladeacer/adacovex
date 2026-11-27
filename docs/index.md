@@ -58,8 +58,9 @@ a technical word in any doc, docstring, or changelog.
   [system dependencies](usage/sbom-system.md), and the
   [syft comparison](usage/sbom-syft.md).
 - [Global configuration and state](usage/configuration.md) -- the optional
-  the global configuration file file, the environment variables, and the cache
-  and toolkit directories.
+  project and global configuration files, every key, and the sample
+  configuration. The [state directories, environment variables, and
+  reset](usage/configuration-state.md) are on the next page.
 - [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
   levels. The per-standard detail is on
   [DO-178C and the DAL levels](usage/standards-do-178c.md),
@@ -175,6 +176,7 @@ usage/sbom-transitive
 usage/sbom-system
 usage/sbom-syft
 usage/configuration
+usage/configuration-state
 usage/platforms
 usage/vcs
 usage/ci-cd

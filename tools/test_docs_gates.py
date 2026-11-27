@@ -151,6 +151,30 @@ class CssSpacingTests(unittest.TestCase):
         self.assertEqual(csslint.conform_value(
             csslint.conform_value("7px 12px")), "8px 12px")
 
+class ConfigSampleTests(unittest.TestCase):
+    """The embedded sample adacovex.toml on the configuration page."""
+
+    def test_repo_block_matches_the_file(self) -> None:
+        self.assertEqual(check_docs.config_sample_errors(), [])
+
+    def test_drift_and_missing_markers_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            page = root / "docs" / "usage" / "configuration.md"
+            page.parent.mkdir(parents=True)
+            (root / "adacovex.toml").write_text("a = 1\n", encoding="utf-8")
+            begin = check_docs.CONFIG_SAMPLE_BEGIN
+            end = check_docs.CONFIG_SAMPLE_END
+            page.write_text(
+                f"{begin}\n```toml\na = 1\n```\n{end}\n", encoding="utf-8")
+            self.assertEqual(check_docs.config_sample_errors(root), [])
+            page.write_text(
+                f"{begin}\n```toml\na = 2\n```\n{end}\n", encoding="utf-8")
+            self.assertTrue(check_docs.config_sample_errors(root))
+            page.write_text("```toml\na = 1\n```\n", encoding="utf-8")
+            self.assertTrue(check_docs.config_sample_errors(root))
+
+
 class TestCheckDocs(unittest.TestCase):
     """Pure-logic tests for tools/check-docs.py (docs gate + loc opt-out)."""
 

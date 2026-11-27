@@ -97,8 +97,8 @@ you ask for it. It reaches the Alire and AdaCore toolchain servers, and it
 downloads Alire itself from GitHub when Alire is missing, because the `prove`
 subcommand resolves the toolkit through Alire. The cache directory holds the
 downloaded archives under the state directories, and the
-[global configuration page](usage/configuration.md) describes the paths and
-the environment variables.
+[configuration state page](usage/configuration-state.md) describes the paths
+and the environment variables.
 
 ## How to examine the manual
 
