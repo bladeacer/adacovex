@@ -25,7 +25,7 @@ jobs:
           standard: all          # DO-178C + ISO 26262 + IEC 62304
           require-spark: Gold
           require-docstrings: 100
-          require-tests: 2600
+          require-tests: 2606
           run-tests: true
           generate-sbom: true
 ```
@@ -95,7 +95,8 @@ run `bash` and install Alire:
 
 1. Install Alire + GNAT (`alr toolchain --install gnat_native`).
 2. Download the release bundle or build from source.
-3. Run `adacovex` with the same flags as the GitHub Action inputs.
+3. Run `adacovex --target=.` with the same flags as the GitHub Action
+   inputs.
 
 The JSON API (`/api/metrics` when using `--serve`, or `--emit-metrics`) lets
 you parse results in any language.

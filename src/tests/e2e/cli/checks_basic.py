@@ -55,6 +55,19 @@ def check_help(r: Results) -> None:
         )
     r.check(run(["help", "serve"]).stdout == run(["--serve", "help"]).stdout,
             "--serve help equals help serve")
+
+    #  A bare invocation asks for a flag: it prints the usage, names the
+    #  exact replacement for the old bare form, and exits 0 (R5).
+    bare = run([])
+    r.check(
+        bare.returncode == 0 and bare.stdout.startswith("adacovex v"),
+        "a bare invocation prints the usage and exits 0",
+    )
+    r.check(
+        "No arguments given" in bare.stdout
+        and "adacovex --target=." in bare.stdout,
+        "a bare invocation hints at --target=.",
+    )
     prove_help = run(["prove", "help"]).stdout
     r.check(prove_help == run(["prove", "--help"]).stdout,
             "prove --help equals prove help")
@@ -62,6 +75,8 @@ def check_help(r: Results) -> None:
                 for flag in ("-j", "-l", "--args", "--suppress-warnings",
                              "--counterexamples")),
             "prove help lists the prove flags")
+    r.check("default: 4" in prove_help,
+            "prove help states that level 4 is the default")
     near = run(["help", "statu"])
     r.check(
         "unknown help topic 'statu'" in near.stdout

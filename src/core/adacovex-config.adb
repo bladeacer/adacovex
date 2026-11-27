@@ -2414,6 +2414,16 @@ package body Adacovex.Config is
       function Parse_All (Args : Arg_Vectors.Vector) return CLI_Config is
          Cfg : CLI_Config;
       begin
+         --  A bare invocation asks for a flag instead of running an
+         --  assessment on the current directory. The main program prints
+         --  the usage frame and the hint that names --target=., so the
+         --  caller exits 0 without touching the target tree.
+         if Arg_Vectors.Is_Empty (Args) then
+            Cfg.Help_Requested := True;
+            Cfg.Bare_Invocation := True;
+            return Cfg;
+         end if;
+
          Parse_Args (Args, Cfg);
 
          -- Default skip dirs (used in relaxed mode; .git/obj always skipped)
@@ -3084,6 +3094,24 @@ package body Adacovex.Config is
             "# gnatprove parallelism. 0 = all cores, N = pin N processes,"
             & " omit = auto.");
          Put_Line (F, "# jobs = 4");
+         Put_Line (F, "");
+         Put_Line
+           (F,
+            "# Proof effort 0-4. Omit to use the prove subcommand's"
+            & " default (4).");
+         Put_Line (F, "# level = 2");
+         Put_Line (F, "");
+         Put_Line (F, "# Per-check prover timeout in seconds.");
+         Put_Line (F, "# timeout = 60");
+         Put_Line (F, "");
+         Put_Line
+           (F,
+            "# Maximum proof steps. Omit to use the prove subcommand's"
+            & " reproducible 10000-step budget.");
+         Put_Line (F, "# steps = 10000");
+         Put_Line (F, "");
+         Put_Line (F, "# Prover memory limit in MB.");
+         Put_Line (F, "# memlimit = 4096");
          Put_Line (F, "");
          Put_Line (F, "[complexity]");
          Put_Line

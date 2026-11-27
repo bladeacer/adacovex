@@ -61,6 +61,7 @@ Help_Topic        : String (1 .. Types.Max_Path);
 Help_Topic_Len    : Natural := 0;
 Version_Requested : Boolean := False;
 Man_Mode          : Boolean := False;
+Bare_Invocation : Boolean := False;
 Init_Mode : Boolean := False;
 Tldr_Mode : Boolean := False;
 Man_Check : Boolean := False;

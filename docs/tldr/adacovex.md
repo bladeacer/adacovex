@@ -3,7 +3,7 @@
 > More information: <https://github.com/bladeacer/adacovex>.
 
 - Assess the current project:
-`adacovex`
+`adacovex --target=.`
 
 - Assess a project at another path:
 `adacovex --target={{path/to/project}}`

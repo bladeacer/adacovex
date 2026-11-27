@@ -894,6 +894,34 @@ package body Adacovex_Config_Tests is
             "prove -h selects the prove topic");
       end;
 
+      --  A bare invocation asks for a flag: an empty command line sets
+      --  Help_Requested and Bare_Invocation, and is not an error (R5).
+      declare
+         Cfg : constant CLI_Config :=
+           Testing.Parse_All (Testing.Arg_Vectors.Empty_Vector);
+      begin
+         R.Check (Cfg.Help_Requested, "a bare invocation requests help");
+         R.Check
+           (Cfg.Bare_Invocation,
+            "a bare invocation is marked as bare (the hint names --target=.)");
+         R.Check (not Cfg.CLI_Error, "a bare invocation is not an error");
+         R.Check
+           (Cfg.Help_Topic_Len = 0,
+            "a bare invocation selects the full usage");
+      end;
+
+      declare
+         A   : Testing.Arg_Vectors.Vector;
+         Cfg : CLI_Config;
+      begin
+         Add (A, "--target=.");
+         Cfg := Testing.Parse_All (A);
+         R.Check
+           (not Cfg.Bare_Invocation,
+            "--target=. is a run, not a bare invocation");
+         R.Check (not Cfg.Help_Requested, "--target=. does not request help");
+      end;
+
       --  Unknown flags are rejected loudly instead of silently running an
       --  assessment, and a close flag is suggested ("did you mean").
       declare
@@ -1761,7 +1789,11 @@ package body Adacovex_Config_Tests is
       declare
          A, C : Testing.Arg_Vectors.Vector;
       begin
+         --  A bare command line now asks for help, so the no-op run both
+         --  sides compare is an explicit --target=.
          Add (A, "--strict");
+         Add (A, "--target=.");
+         Add (C, "--target=.");
          Check_Equivalent (A, C, R, "--strict == the strict default");
       end;
 

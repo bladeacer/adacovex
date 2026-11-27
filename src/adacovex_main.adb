@@ -459,6 +459,16 @@ begin
            (Cfg.Help_Topic (1 .. Cfg.Help_Topic_Len));
       else
          Adacovex.Config.Print_Usage;
+         if Cfg.Bare_Invocation then
+            --  A bare invocation used to assess the current directory. It
+            --  now asks for a flag, and the hint names the exact
+            --  replacement so the old habit keeps working.
+            Ada.Text_IO.Put_Line ("");
+            Ada.Text_IO.Put_Line
+              ("No arguments given. Run 'adacovex --target=.' to assess the"
+               & " current directory, or pass a subcommand such as"
+               & " 'adacovex prove'.");
+         end if;
       end if;
       Ada.Command_Line.Set_Exit_Status (0);
       return;

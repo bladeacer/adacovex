@@ -20,7 +20,7 @@ package Adacovex.Tldr_Template is
   & ASCII.LF
   & "- Assess the current project:"
   & ASCII.LF
-  & "`adacovex`"
+  & "`adacovex --target=.`"
   & ASCII.LF
   & ASCII.LF
   & "- Assess a project at another path:"

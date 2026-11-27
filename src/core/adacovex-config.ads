@@ -124,6 +124,13 @@ package Adacovex.Config is
       Version_Requested : Boolean := False;
       Man_Mode          : Boolean := False;
 
+      --  True when the command line is empty. A bare invocation asks for a
+      --  flag: Help_Requested is set as well, and the main program prints
+      --  the usage plus a hint that names --target=. The old bare form ran
+      --  an assessment on the current directory; --target=. is its exact
+      --  replacement.
+      Bare_Invocation : Boolean := False;
+
       --  True when the `init` subcommand is given. It writes the sample
       --  project configuration into the target directory and exits. It
       --  shares --force with man and tldr to overwrite an existing file.

@@ -27,6 +27,10 @@ adacovex completion [bash|fish|zsh|pwsh]
 adacovex help [TOPIC]
 ```
 
+A bare `adacovex` prints this usage summary and exits 0: a run names its
+target. Use `adacovex --target=.` to assess the current directory, which is
+what the bare form did before 1.76.0.
+
 Every flag has the explicit long spelling and, where it reads better, a
 shorthand. The shorthands are `-t` (`--target`), `-m` (`--manifest`), `-s`
 (`--serve`), `-p` (`--port`), `-c` (`--cache`), `-b` (`--compare-base`),
