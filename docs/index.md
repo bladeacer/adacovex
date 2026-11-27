@@ -22,6 +22,8 @@ the flyout menu.
 Each directory has one job:
 
 - `usage/` -- user guides: install, run, read results, publish in CI.
+- `glossary/` -- the reader-facing Technical Names glossary, split into
+  seven lexicons.
 - `contributing/` -- contributor method: architecture, proving, tools, and
   the benchmark how-to. The per-phase proof timings live under `perf/`.
 - `api-docs/` -- generated package reference from the Ada docstrings.
@@ -29,8 +31,8 @@ Each directory has one job:
   proof ledgers, compliance outputs, and badge previews.
 
 All documentation uses British English and ASD-STE100 Simplified Technical
-English. The controlled Technical Names dictionary lives in
-[STE100 Technical Names](contributing/ste100/index.md); use it before you use
+English. The controlled Technical Names glossary lives in
+[STE100 Technical Names](glossary/ste100/index.md); use it before you use
 a technical word in any doc, docstring, or changelog.
 
 ## Getting started
@@ -83,6 +85,14 @@ a technical word in any doc, docstring, or changelog.
   [Release bundling, tags, and consumer manifests](usage/ci-cd-release.md).
 - [Changelog](changelogs/index.md) -- release history.
 
+## Glossary
+
+- [STE100 Technical Names](glossary/ste100/index.md) -- the controlled
+  dictionary of rules and entries, split into seven lexicons: the Ada
+  language, proof and compliance, tooling, hardware, the tools and files, the
+  reports and concepts, and the web site terms. Link the first mention of a
+  term on a page to its glossary heading.
+
 ## Contributing to adacovex
 
 - [Developer guide](contributing/developer-guide.md) -- the contributor
@@ -110,10 +120,6 @@ a technical word in any doc, docstring, or changelog.
   [optimisation history](contributing/perf/optimisation-history.md).
 - [gnatprove-friendly IR](contributing/ir.md) -- the design exploration for
   synthesising bounded, contract-carrying code.
-- [STE100 Technical Names](contributing/ste100/index.md) -- the controlled
-  dictionary of rules and entries, split into seven lexicons: the Ada
-  language, proof and compliance, tooling, hardware, the tools and files, the
-  reports and concepts, and the web site terms.
 - [LLM usage](contributing/llm-usage.md) -- guidance for AI agents.
 
 ## Maintainer references
@@ -200,6 +206,21 @@ usage/standards-selection
 ```
 
 ```{toctree}
+:caption: Glossary
+:maxdepth: 1
+:hidden:
+
+glossary/ste100/index
+glossary/ste100/ada-terms
+glossary/ste100/proof-terms
+glossary/ste100/tooling-terms
+glossary/ste100/entities
+glossary/ste100/identifiers
+glossary/ste100/concepts
+glossary/ste100/web-terms
+```
+
+```{toctree}
 :caption: Contributing to adacovex
 :maxdepth: 1
 :hidden:
@@ -263,21 +284,6 @@ stats/syscalls
 stats/cache
 stats/bundle
 stats/tests
-```
-
-```{toctree}
-:caption: STE100 technical names
-:maxdepth: 1
-:hidden:
-
-contributing/ste100/index
-contributing/ste100/ada-terms
-contributing/ste100/proof-terms
-contributing/ste100/tooling-terms
-contributing/ste100/entities
-contributing/ste100/identifiers
-contributing/ste100/concepts
-contributing/ste100/web-terms
 ```
 
 ```{toctree}

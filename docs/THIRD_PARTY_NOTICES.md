@@ -22,7 +22,7 @@ reader of the tree, not only the built binary.
 Two project overrides apply on top of the skill. British English spelling
 replaces the American spelling that rule 1.14 names, and a paragraph holds at
 most four sentences, not the six that rule 6.6 names. `AGENTS.md` states both
-under Technical writing, and `docs/contributing/ste100/index.md` holds the
+under Technical writing, and `docs/glossary/ste100/index.md` holds the
 controlled list of Technical Names that the standard requires.
 
 The skill governs prose only. It is not linked into the binary, it runs no code

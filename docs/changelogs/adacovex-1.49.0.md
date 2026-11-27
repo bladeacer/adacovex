@@ -48,12 +48,12 @@ page](../contributing/perf/prove-timing.md).
 page in the tree. It is now a hub with the categories, the required fields,
 the key rules, and the entry template, and six lexicon pages carry the
 entries: the [Ada language
-constructs](../contributing/ste100/ada-terms.md), the [proof and compliance
-terms](../contributing/ste100/proof-terms.md), the [tooling and workflow
-terms](../contributing/ste100/tooling-terms.md), the [hardware and system
-entities](../contributing/ste100/entities.md), the [tools and
-files](../contributing/ste100/identifiers.md), and the [reports and
-concepts](../contributing/ste100/concepts.md). Every entry keeps its exact
+constructs](../glossary/ste100/ada-terms.md), the [proof and compliance
+terms](../glossary/ste100/proof-terms.md), the [tooling and workflow
+terms](../glossary/ste100/tooling-terms.md), the [hardware and system
+entities](../glossary/ste100/entities.md), the [tools and
+files](../glossary/ste100/identifiers.md), and the [reports and
+concepts](../glossary/ste100/concepts.md). Every entry keeps its exact
 text and field order; only the heading level changed.
 
 ### C5: Proof ledger split into the ledger and the audit

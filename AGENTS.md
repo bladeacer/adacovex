@@ -74,15 +74,15 @@ tools, or output must also update, in the same change:
   release;
 - `docs/contributing/perf/prove-timing.md` when a new version is added or
   its `just prove` figures change (see the phase rule below);
-- `docs/contributing/ste100/index.md` when a new Technical Name enters the docs
+- `docs/glossary/ste100/index.md` when a new Technical Name enters the docs
   or docstrings.
 
 **Proof-timing phases.**  `docs/contributing/perf/prove-timing.md` keeps the
 `just prove` timing table as one column per **phase**, never one per release.
 A phase is a range of versions whose implementation methodology is largely
 similar (so far 1.55.0-1.56.0 (closed, rep 1.55.0), 1.57.0-1.60.0 (closed,
-rep 1.58.0), 1.61.0-1.62.0 (closed, rep 1.62.0), 1.63.0-1.75.0 (open, rep
-1.75.0)).
+rep 1.58.0), 1.61.0-1.62.0 (closed, rep 1.62.0), 1.63.0-1.76.0 (open, rep
+1.76.0)).
 Fold each new version into the open phase while the methodology holds; close
 the phase and open a new one on a methodology shift. From 1.75.0 the open
 column is re-measured at each version, so its representative is the latest
@@ -111,9 +111,12 @@ and the release that owns the fix. A change that moves a figure re-runs
 `docs/contributing/perf/prove-timing.md`, with the complete set re-measured
 when the representative moves. Compare two versions with a paired run on one
 box, never with two columns from different sessions. D16 (the 35-times stat
-regression) closed in v1.76.0, so the baseline is the post-fix shape: 18 904
-`newfstatat` calls and 378 ms pipeline warm on an idle host, recorded in
-`docs/stats/`. No change may widen that gap.
+regression) closed in v1.76.0, so the baseline is the post-fix shape: about
+19 000 `newfstatat` calls, recorded in `docs/stats/`. The pipeline warm wall
+is host-bound: the 1.76.0 session read 682 ms at load 2.85 against 378 ms at
+load 0.7, and the no-op build and the Sphinx build inflated by the same
+factor, so read the wall beside its load and treat the stat count as the
+comparable figure. No change may widen the stat gap.
 
 Before finishing, re-verify that the user-facing docs still cover the
 codebase's current surface: every `Known_Flags` entry is documented in
@@ -942,6 +945,14 @@ chain before the next component is staged. Keep the footer rules above at the
 end of every message in the chain. Never run the one-liner unless the user
 asks for it.
 
+**Stage every path before you suggest the chain.** Before the commit
+suggestions, run `git status --short` and read every unstaged modification,
+staged entry, and untracked file. Put every path the change produced into
+exactly one commit's `git add` set, including the regenerated artifacts, so a
+shell run of the one-liner leaves no work behind. A path that predates the
+change and is unrelated stays out of the chain, and the answer names it as
+left alone. This rule applies to every LLM session that changes the tree.
+
 ## Changelog format
 
 Releases get a `docs/changelogs/adacovex-<version>.md` file using `### C#:` /
@@ -1038,6 +1049,16 @@ docs/
 |   |-- standards.md -- Compliance standards (DO-178C / ISO 26262 / IEC 62304)
 |   |-- target-projects.md -- Target project requirements
 |   `-- vcs.md -- VCS support and differential assessment
+|-- glossary/
+|   `-- ste100/
+|       |-- ada-terms.md -- STE100 Technical Names: Ada language constructs
+|       |-- concepts.md -- STE100 Technical Names: reports and concepts
+|       |-- entities.md -- STE100 Technical Names: hardware and system entities
+|       |-- identifiers.md -- STE100 Technical Names: tools and files
+|       |-- index.md -- STE100 Technical Names glossary
+|       |-- proof-terms.md -- STE100 Technical Names: proof and compliance terms
+|       |-- tooling-terms.md -- STE100 Technical Names: tooling and workflow terms
+|       `-- web-terms.md -- STE100 Technical Names: web site terms
 |-- contributing/
 |   |-- architecture-dependencies.md -- Architecture: dependency management and the toolkit
 |   |-- architecture-outputs.md -- Architecture: outputs and formats
@@ -1054,25 +1075,16 @@ docs/
 |   |-- proving-patches.md -- Proof patches: SPARK contracts over vendored code
 |   |-- proving.md -- Proving and writing SPARK proofs
 |   |-- requirements.md -- Dependencies
-|   |-- perf/
-|   |   |-- benchmarks-binary-size.md -- Binary size and the bundled manual
-|   |   |-- benchmarks-server.md -- Server throughput and latency
-|   |   |-- benchmarks-timings.md -- Pipeline and prove timings
-|   |   |-- benchmarks.md -- Benchmarking adacovex
-|   |   |-- check-pipeline.md -- The `just check` pipeline
-|   |   |-- index.md -- Performance
-|   |   |-- optimisation-history.md -- Performance optimisation history
-|   |   |-- prove-rebaseline.md -- The 1.55.0 timing re-baseline
-|   |   `-- prove-timing.md -- Prove timing and the optimisation review
-|   `-- ste100/
-|       |-- ada-terms.md -- STE100 Technical Names: Ada language constructs
-|       |-- concepts.md -- STE100 Technical Names: reports and concepts
-|       |-- entities.md -- STE100 Technical Names: hardware and system entities
-|       |-- identifiers.md -- STE100 Technical Names: tools and files
-|       |-- index.md -- STE100 Technical Names for adacovex
-|       |-- proof-terms.md -- STE100 Technical Names: proof and compliance terms
-|       |-- tooling-terms.md -- STE100 Technical Names: tooling and workflow terms
-|       `-- web-terms.md -- STE100 Technical Names: web site terms
+|   `-- perf/
+|       |-- benchmarks-binary-size.md -- Binary size and the bundled manual
+|       |-- benchmarks-server.md -- Server throughput and latency
+|       |-- benchmarks-timings.md -- Pipeline and prove timings
+|       |-- benchmarks.md -- Benchmarking adacovex
+|       |-- check-pipeline.md -- The `just check` pipeline
+|       |-- index.md -- Performance
+|       |-- optimisation-history.md -- Performance optimisation history
+|       |-- prove-rebaseline.md -- The 1.55.0 timing re-baseline
+|       `-- prove-timing.md -- Prove timing and the optimisation review
 |-- proof/
 |   |-- 16.1.0-ledger.md -- adacovex proof debt ledger -- gnatprove 16.1.0
 |   `-- index.md -- Proof Records
@@ -1114,9 +1126,11 @@ to apply ASD-STE100 rules. Load it from that path.
 
 The controlled list of Technical Names (non-STE words approved for the
 adacovex domain, with part of speech, definition, and banned synonyms) lives
-in [docs/contributing/ste100/index.md](docs/contributing/ste100/index.md). Add any
+in [docs/glossary/ste100/index.md](docs/glossary/ste100/index.md). Add any
 new Technical Name to that list before you use it in documentation,
-docstrings, or changelogs.
+docstrings, or changelogs. Link the first mention of a term on a page to its
+glossary entry heading, as a plain Markdown link with the anchor, so the Read
+the Docs preview works offline and online.
 
 The skill enforces short sentences, active voice, one instruction per
 sentence, consistent terminology, and no AI-slop hedging.

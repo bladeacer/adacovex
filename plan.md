@@ -1,84 +1,48 @@
 # adacovex release plan: v1.76.0 - v1.77.0
 
-Current version: `1.75.0`. Work ahead is scoped across **two minor releases**:
-`v1.76.0` (CLI help ergonomics and documentation audience) and `v1.77.0`
-(glossary, diagnostics depth, and the developer configuration).
-Closed releases are recorded in their changelogs, not repeated here.
+Current version: `1.76.0`. `v1.76.0` is closed and recorded in its changelog.
+The work ahead is **`v1.77.0`** (glossary, diagnostics depth, and the developer
+configuration). Closed releases are recorded in their changelogs, not repeated
+here.
 
 ## Proof-timing phase note
 
-All of this work lands in the **open `v1.63.0 - v1.75.0` phase**, represented
-by `1.75.0`, in `docs/contributing/perf/prove-timing.md`. No item changes how
-gnatprove runs or how the proof cache is keyed, so no phase boundary is
-required. From `1.75.0` the open column is re-measured at each version, so a
-release that moves a figure re-runs `just perf-report`, takes the complete
-metric set again, and moves the representative. The v1.75.0 tree fails the
-warm-run perf check by 35 times in stat count (debt D16), and the rule reads
-against the post-fix baseline.
+v1.76.0 folds into the **open `v1.63.0 - v1.76.0` phase**, represented by
+`1.76.0`, in `docs/contributing/perf/prove-timing.md`. The D16 fix closed the
+warm-walk regression, so the column reads 18 972 `newfstatat` calls against
+282 020 in the 1.75.0 column. The walls were measured at load 2.85 and read
+about 1.8 times the idle session, while the no-op build and the Sphinx build
+inflated by the same factor; the stat count is the comparable figure. R10
+re-measures the walls on a quiet host in v1.77.0.
 
 ## How work is distributed
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
-| v1.76.0 | in progress | CLI help ergonomics and documentation audience | R1 (help restructure and `-h`, done), R2 (man page as full context, done), R3 (end-user documentation audience, done), R4 (bundled `adacovex.toml`, done), R5 (bare invocation and level 4, done) |
-| v1.77.0 | planned | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI) |
+| v1.76.0 | closed | CLI help ergonomics and documentation audience | [`adacovex-1.76.0.md`](docs/changelogs/adacovex-1.76.0.md) |
+| v1.77.0 | in progress | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation, in progress; term-link sweep remains), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI), R10 (quiet-host re-measure) |
 
-## Status (2026-11-25)
+## Status (2026-11-27)
 
-v1.75.0 is closed: the tree holds version `1.75.0` (manifests, generated
+v1.76.0 is closed: the tree holds version `1.76.0` (manifests, generated
 version spec, SBOM), and its changelog is
-[`adacovex-1.75.0.md`](docs/changelogs/adacovex-1.75.0.md). The tree carries
-2501/2501 native tests across 30 categories, 223 CLI e2e checks, 274
+[`adacovex-1.76.0.md`](docs/changelogs/adacovex-1.76.0.md). The tree carries
+2606/2606 native tests across 30 categories, 226 CLI e2e checks, 274
 prove-e2e checks over 20 committed fixture projects, and 1060 VCs at Gold.
 
-The debt register holds no open row.
+The debt register holds no open row, and the 1.76.0 session wrote the
+measured figures to `docs/stats/`.
 
-### Delivered so far in v1.76.0
+### Started in v1.77.0
 
-- [x] D16 (warm stat regression): the SPARK coverage walker uses the shared
-skip predicate and the directory memo, so it no longer enters `.venv`; the
-coverage summary line reuses the rollup the level assessment measured instead
-of walking the tree a second time; and the vendor-hash discovery walk takes
-the memo. A warm run reads 18 904 `newfstatat` and 378 ms, against 282 020 on
-the 1.75.0 binary for the same tree. `Skip_Walk_Dir` is now in the
-`Adacovex.Parsers.Manifest` spec, so a walker cannot keep a private copy.
-
-- [x] R1, first slice: `-h` equals `--help` in every position, including
-`prove -h` and `help`/`-h` topic selection, and the base `--help` is now a
-50-line summary grouped under Assess, Report, Prove, Cache and scope, CI
-gates, Differential and SBOM, and More detail. Its last group points at
-`help TOPIC` and `man`, which carry the detail; the CLI e2e checks the line
-count, each heading, and the pointer. The man page option list and the tldr
-page keep their flat order until R2 generates both from the same table.
-
-- [x] R3: `docs/usage/index.md` states the reading convention, and installation,
-platforms, performance, dashboard HTML, the bundled manual, and the SBOM
-ecosystem table move their build, CI, and fixture detail into
-`> **For contributors:**` callouts. AGENTS.md carries the rule for later pages.
-The audit found the help footer still calling `--help` the full option list and
-the syft comparison still claiming no action cataloguer, with stale counts.
-
-- [x] R2: the option text lives in one table, `Adacovex.Cli_Help`, with a
-task group per option. The man page renders that table under the console
-frame's seven headings, every `Known_Flags` entry appears exactly once, and a
-test fails on an unknown option or a missing group. The stub description is
-gone.
-
-- [x] R4: `docs/usage/configuration.md` embeds the repository's full
-`adacovex.toml` between `config-sample` markers, with the ledger of state
-directories, environment variables, and reset moved to
-`docs/usage/configuration-state.md` so the page stays under the line cap.
-`tools/check-docs.py` fails when the block differs from the file, and
-`adacovex init` now writes the level, timeout, steps, and memlimit keys too,
-so the scaffold states every supported key.
-
-- [x] R5: a bare `adacovex` prints the grouped usage and exits 0 with a hint
-that names `--target=.`, the exact replacement for the old bare assessment.
-`Parse_All` marks the empty line `Bare_Invocation`, the unit suite covers the
-bare and `--target=.` forms, and `cli-e2e` checks the frame, the hint, and the
-level-4 default in `prove --help`. The sample configuration, the
-configuration page, the tldr page, the CLI reference, and AGENTS.md say the
-same thing.
+- [x] R6 first slice: the seven Technical Name lexicons and their index moved
+from `docs/contributing/ste100/` to `docs/glossary/ste100/`, with a Glossary
+section in `docs/index.md` before the contributing section, a new toctree
+caption, every inbound link updated (the docs pages, the changelogs, AGENTS.md,
+`tools/rst2md.py`, and the docs-gate test), and the first-mention link rule
+stated in the glossary index and AGENTS.md. The reader-facing pages now link
+their first mention of SBOM, result cache, badge, and DAL to the entry heading.
+The remaining term-link sweep across every page is open.
 
 ## Every change
 
@@ -126,143 +90,14 @@ the changelog is the durable record of what shipped and why.
 | v1.73.0 | One test root and real fixture projects, platform-agnostic suite | [`adacovex-1.73.0.md`](docs/changelogs/adacovex-1.73.0.md) |
 | v1.74.0 | Resolved cache identity, per-unit proof entries, contract-error fixtures, toolkit terminology, docs accuracy audit, modular tool scripts | [`adacovex-1.74.0.md`](docs/changelogs/adacovex-1.74.0.md) |
 | v1.75.0 | Counterexamples switch, default proof level, proof-cache identity, help-topic frames, `all` suppression, `docs/stats/` and `just perf-report`, one phase column | [`adacovex-1.75.0.md`](docs/changelogs/adacovex-1.75.0.md) |
+| v1.76.0 | Warm-walk stat fix, grouped one-screen help and `-h`, one option table for the man page, user-first usage docs, embedded sample configuration, bare invocation asks for a target | [`adacovex-1.76.0.md`](docs/changelogs/adacovex-1.76.0.md) |
 
 ---
 
-## v1.76.0 - CLI help ergonomics and documentation audience
+## v1.76.0 - closed
 
-The theme is one question: what does a user see in the first ten seconds. The
-tool should read like a Unix program that expects flags, tells a user where the
-detail lives, and keeps maintainer material out of the way of the task.
-
-### R1 - A shorter `--help`, grouped, with `-h` and contextual help first
-
-- [x] Accept `-h` wherever `--help` works, including after a subcommand.
-- [x] Group and shorten the base `--help` so it fits one screen, and point
-  its footer at contextual help and the man page.
-- [x] Group the man-page option sections (done in R2). The tldr page keeps
-  its flat order: the tldr format has no group heading, and its examples are
-  already ordered by the same task sequence.
-
-**Goal:** The base `--help` fits one screen and groups its flags by task. A
-user who wants detail reaches it through contextual help, not by scrolling.
-
-**Work:**
-- Group the base `--help` flags by intent (assessment, output, cache, serve,
-  CI gates, subcommands) with a one-line heading per group, and keep the
-  per-flag text to a phrase.
-- Point to the detail: the base footer names `adacovex help <topic>`,
-  `adacovex <subcommand> --help`, and the man page.
-- Apply the same grouping to the man page option sections and to the tldr
-  page, keeping the tldr page shorter than the base `--help`.
-- Audit `prove --help` first: it is the frame with the most options, so it
-  sets the grouping and the wording every other topic copies.
-- Keep `help <topic>` and `<subcommand> --help` byte-identical, and keep the
-  exit code of a help request at 0.
-- Update the CLI reference, the tldr page, and the completion subcommand lists
-  in the same change, because `surface-parity-check` reads all of them.
-
-**Tests:** `adacovex_config_tests.adb` snapshots the group order and asserts
-`-h` equals `--help` in every position; `cli-e2e` asserts the base frame holds
-one screen of lines and that each group heading appears once.
-
-**Verify:** `just test`, `just cli-e2e`, `just surface-parity-check`,
-`just docs-coverage-check`.
-
-### R2 - The man page carries the full context
-
-- [x] Generate each option's man-page description from its `--help` text, so
-  no entry reads "See --help for details".
-
-**Goal:** The man page is the complete offline reference: the union of every
-help frame, not a synopsis with stubs, generated from the one option table
-both surfaces read.
-
-**Work:**
-- Build the man page from the same option table the help renderer reads, so a
-  description has one source and the man page cannot drift.
-- For each option: the summary sentence, the default, an example where the
-  flag needs one, and the related flag it is often paired with.
-- Order the man sections as the help groups are ordered, and keep the
-  SYNOPSIS and the DESCRIPTION tagline that `surface-parity-check` requires.
-- Fail the build when an option in the table has no description.
-
-**Tests:** `adacovex_man_tests.adb` asserts that every `Known_Flags` entry has
-a non-empty description, that no description contains "See --help", and that
-the section order matches the help groups.
-
-**Verify:** `just test`, `just man`, `just surface-parity-check`.
-
-### R3 - The documentation speaks to end users first
-
-- [x] Move maintainer-only detail into blockquotes and callouts.
-
-**Goal:** A user who installs the tool and reads the docs meets the task
-first. A contributor still finds every detail, one level down.
-
-**Work:**
-- Read `docs/usage/` as an end user and move `just` targets, `alr` recipes,
-  fixture layout, gate internals, and CI job wiring into a callout at the
-  point they are needed, or into `docs/contributing/`.
-- Keep the detail, never delete it: a callout keeps the text and the reason.
-- State the user-facing command for every operation a user can perform
-  (`adacovex prove`, `adacovex sbom`, `adacovex status`), and leave the
-  developer command inside the callout.
-- Apply the rule to the dashboard prose too, which must keep naming the
-  user-facing subcommands only.
-- Use the glossary (R6) for the first mention of a term on a page.
-
-**Tests:** `just docs-check`, `just docs-coverage-check`,
-`just docs-tree`.
-
-**Verify:** `just book`, `just check`.
-
-### R4 - The sample configuration ships inside the manual
-
-- [x] Show the full `adacovex.toml` as a code block on the configuration page.
-
-**Goal:** A reader of the bundled manual copies the complete configuration for
-the version they run, without opening the repository.
-
-**Work:**
-- Embed the repository's `adacovex.toml` on
-  `docs/usage/configuration.md` as a copyable code block, generated from the
-  file so the two cannot drift.
-- State which version the block belongs to and that every key shows its
-  default.
-- Add a check that fails when the block differs from the committed file.
-
-**Tests:** the new check joins `just docs-check` or `just tools-check`; the
-manual link check covers the page.
-
-**Verify:** `just book`, `just docs-check`.
-
-### R5 - A bare invocation prints help, and `just prove` is level 4
-
-- [x] `adacovex` with no arguments prints the help frame and exits 0.
-
-**Goal:** The CLI behaves like a Unix tool: flags select work, and a bare
-invocation asks for one. Proof targets agree on level 4.
-
-**Work:**
-- Make a bare `adacovex` print the main usage and exit 0. A run needs a flag
-  (`--target`, `--serve`, or a subcommand). Print a hint that names the flag.
-- Record the change as breaking in the changelog, because the old bare form
-  ran an assessment on the current directory. Keep `--target=.` the exact
-  replacement and say so in the hint.
-- Confirm `just prove` and `./bin/adacovex prove` both send level 4, and add a
-  check that fails when the task passes another level.
-- Update the README quick start, the tldr page, the CLI reference, and the
-  action docs.
-
-**Tests:** `adacovex_config_tests.adb` covers the bare form, the hint, and the
-exit code; `cli-e2e` asserts the bare form prints the usage and that
-`./bin/adacovex prove` reports level 4.
-
-**Verify:** `just test`, `just cli-e2e`, `just surface-parity-check`,
-`just action-parity-check`.
-
----
+Delivered: CLI help ergonomics and documentation audience. The release record
+is [adacovex-1.76.0.md](docs/changelogs/adacovex-1.76.0.md).
 
 ## v1.77.0 - Glossary, diagnostics depth, and developer configuration
 
@@ -272,7 +107,7 @@ contributor use the sibling projects they actually have.
 
 ### R6 - A glossary at `docs/glossary/`, linked from the prose
 
-- [ ] Move `docs/contributing/ste100/` to `docs/glossary/ste100/`.
+- [x] Move `docs/contributing/ste100/` to `docs/glossary/ste100/`.
 
 **Goal:** The technical names live where a reader looks for them. A reader can
 reach a term from the page that uses it.
@@ -365,6 +200,32 @@ a drift fails CI instead of waiting for a reader to find it.
 **Tests:** the new gate plus its tools unit test.
 
 **Verify:** `just config-parity-check`, `just check`.
+
+---
+
+### R10 - The 1.76.0 walls are re-measured on a quiet host
+
+- [ ] Repeat `just perf-report` at load under 1.0 and compare the walls.
+
+**Goal:** The 1.76.0 session read pipeline warm at 682 ms and prove warm at
+1.27 s, about 1.8 times the load-0.7 reading, while every unrelated build and
+docs shape inflated by the same factor. The syscall count says the code shape
+did not change, so the walls need one quiet session before anyone calls them
+a regression.
+
+**Work:**
+- Run `just perf-report` when the 1-minute load is under 1.0 and fold the
+  complete metric set into the open phase of
+  `docs/contributing/perf/prove-timing.md`.
+- Compare the result with the 378 ms pipeline warm and 680 ms prove warm that
+  the D16 fix measured at load 0.7. A wall still above twice the idle reading
+  is a real regression, and it opens a debt row with the paired evidence.
+- Take the prove-cold row if the session budget allows it; it is the one
+  "not measured" cell in the phase.
+
+**Tests:** none; the report itself is the measurement.
+
+**Verify:** `just perf-report`, `just docs-check`, `just check`.
 
 ---
 

@@ -18,7 +18,7 @@ project overrides, and both are stated in `AGENTS.md` under Technical writing.
 British English spelling replaces the American spelling that rule 1.14 names,
 and a paragraph holds at most four sentences, not the six that rule 6.6 names.
 The controlled list of Technical Names that the standard requires sits in
-[the STE100 technical names](contributing/ste100/index.md), and a writer adds a
+[the STE100 technical names](glossary/ste100/index.md), and a writer adds a
 new name to that list before using it.
 
 The skill governs prose: user documentation, Ada docstrings, and the changelogs.

@@ -1,4 +1,4 @@
-# STE100 Technical Names for adacovex
+# STE100 Technical Names glossary
 
 ASD-STE100 Simplified Technical English (Section 1, "Words") defines a
 controlled vocabulary. Most words in that vocabulary are standard STE words.
@@ -10,10 +10,18 @@ project approves it because no standard STE word describes the concept with
 the same precision. A TN has a single mandatory part of speech and a defined
 scope. The scope is restricted to the software domain of adacovex.
 
-This page is the controlled list of Technical Names for adacovex. Writers of
-user documentation, API documentation, docstrings, and changelogs must use
-these terms as defined here. If you need a term that is not in this list,
-add it to the list first, then use it.
+This glossary is the reader-facing home of the controlled list of Technical
+Names for adacovex. Writers of user documentation, API documentation,
+docstrings, and changelogs must use these terms as defined here. If you need a
+term that is not in this list, add it to the list first, then use it.
+
+## How to link a term
+
+Link the first mention of a Technical Name on a page to its entry heading, for
+example [fixture](tooling-terms.md#technical-name-fixture). Use a plain
+Markdown link with the heading anchor, so the Read the Docs link preview works
+both offline and online. Link the first mention only; a later mention on the
+same page stays plain text.
 
 ## Categories for Ada Technical Names
 

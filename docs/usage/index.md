@@ -6,10 +6,10 @@ You can read one page without the others, and every page links to the
 
 All pages use British English and ASD-STE100 Simplified Technical English.
 Paragraphs hold at most four sentences. The controlled Technical Names
-dictionary lives in
-[STE100 Technical Names](../contributing/ste100/index.md), and the web-site
+glossary lives in
+[STE100 Technical Names](../glossary/ste100/index.md), and the web-site
 terms used on the [site transparency](../site-transparency.md) page live in
-[web site terms](../contributing/ste100/web-terms.md).
+[web site terms](../glossary/ste100/web-terms.md).
 
 ## How to read these pages
 

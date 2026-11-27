@@ -2,8 +2,8 @@
 
 DO-178C is the airborne-software standard. It defines how a team designs,
 implements, verifies, and certifies software that flies an aircraft. Every
-item of flight software is assessed at one of five Development Assurance
-Levels (DAL A to DAL E).
+item of flight software is assessed at one of five
+[Design Assurance Levels (DAL A to DAL E)](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal).
 
 The DAL follows the severity of the failure condition. DAL-A covers a
 catastrophic failure that prevents continued safe flight, and DAL-E covers

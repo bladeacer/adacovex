@@ -28,7 +28,7 @@ environment still has a writable state directory.
 |Path|Contents|
 |----|--------|
 |`<config>/adacovex.toml`|The optional global configuration file.|
-|`<cache>/<version>/<schema>/`|The content-addressed result cache.|
+|`<cache>/<version>/<schema>/`|The content-addressed [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache).|
 |`<cache>/stamps/index.bin`|The persistent stat-stamp index that makes re-runs fast.|
 |`<cache>/probes/`|Cached tool-version probes, with a 7-day expiry.|
 |`<data>/toolkit/`|gnatprove versions deployed by the `prove` subcommand.|

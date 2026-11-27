@@ -45,6 +45,7 @@ GENERATED_DIRS: Dict[str, str] = {
 #  appended alphabetically, so a new section is never hidden.
 DIR_ORDER: List[str] = [
     "usage",
+    "glossary",
     "contributing",
     "proof",
     "compliance",
@@ -109,6 +110,15 @@ def collect() -> Tuple[Dict[str, List[Tuple[str, str]]], List[str]]:
             untitled.append(rel)
         parent = page.parent.relative_to(ROOT).as_posix()
         files.setdefault(parent, []).append((page.name, title))
+
+    #  An intermediate directory with no page of its own (for example
+    #  docs/glossary/ holding docs/glossary/ste100/) still appears in the
+    #  tree, so its children nest under it instead of vanishing.
+    for dir_rel in list(files):
+        parent = dir_rel.rsplit("/", 1)[0] if "/" in dir_rel else ""
+        while parent:
+            files.setdefault(parent, [])
+            parent = parent.rsplit("/", 1)[0] if "/" in parent else ""
 
     return files, untitled
 

@@ -433,8 +433,8 @@ class TestCheckDocsCoverage(unittest.TestCase):
                         "contributing/architecture-pipeline",
                         "contributing/proving",
                         "contributing/proving-patches",
-                        "contributing/ste100/index",
-                        "contributing/ste100/concepts"):
+                        "glossary/ste100/index",
+                        "glossary/ste100/concepts"):
             self.assertIn(docname, entries)
 
     def test_index_toctree_entries_all_resolve(self) -> None:
@@ -675,13 +675,20 @@ class TerminologyTests(unittest.TestCase):
 
     def test_the_style_guide_names_both_terms(self) -> None:
         root = Path(__file__).resolve().parent.parent
-        text = (root / "docs/contributing/ste100/tooling-terms.md").read_text(
+        text = (root / "docs/glossary/ste100/tooling-terms.md").read_text(
             encoding="utf-8")
         self.assertIn("## Technical Name: Toolchain", text)
         self.assertIn("## Technical Name: Toolkit", text)
 
 class DocsTreeTests(unittest.TestCase):
     """The AGENTS.md docs tree is generated from the pages' headings."""
+
+    def test_intermediate_directory_appears_in_the_tree(self) -> None:
+        #  docs/glossary/ holds only docs/glossary/ste100/, so the tree must
+        #  still name the parent directory and nest the lexicons under it.
+        files, _ = gen_docs_tree.collect()
+        self.assertIn("docs/glossary", files)
+        self.assertIn("docs/glossary/ste100", files)
 
     def test_title_reads_a_heading_after_badges(self) -> None:
         root = Path(__file__).resolve().parent.parent

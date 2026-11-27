@@ -19,11 +19,11 @@ It is generated from the source docstrings by `just doc`.
   verified-VC history and the [changelogs](../changelogs/index.md)
   for the release history.
 
-Technical terms follow the controlled dictionary in
-[STE100 Technical Names](../contributing/ste100/index.md).  All
+Technical terms follow the controlled glossary in
+[STE100 Technical Names](../glossary/ste100/index.md).  All
 documentation, including these pages, uses British English and
 ASD-STE100 Simplified Technical English.  A word not in the
-dictionary means the sentence is not yet STE100-clean.
+glossary means the sentence is not yet STE100-clean.
 
 ## Guides
 

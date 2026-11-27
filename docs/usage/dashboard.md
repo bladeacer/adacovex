@@ -3,7 +3,7 @@
 `adacovex --target=. --serve --port=8080` runs the full assessment and then
 starts a built-in HTTP/1.1 server (no external web stack) serving a
 **viewable HTML dashboard**, a machine-readable JSON API, and the SVG
-badges. The server blocks until interrupted -- run it in its own terminal
+[badges](../glossary/ste100/tooling-terms.md#technical-name-badge). The server blocks until interrupted -- run it in its own terminal
 (or as a background process when scripting).
 
 ```bash

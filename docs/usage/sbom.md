@@ -2,7 +2,7 @@
 
 ## When and why to generate an SBOM
 
-A Software Bill of Materials (SBOM) is a structured inventory of every
+A [Software Bill of Materials (SBOM)](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) is a structured inventory of every
 component in your project, plus its provenance, licence, and (in adacovex's
 case) its SPARK proof level and compliance context. Generate one in these
 cases:
