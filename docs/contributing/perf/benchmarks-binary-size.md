@@ -7,16 +7,16 @@ the generator's own pipeline. The machine and the harness are on
 
 ## Binary size
 
-Before 1.58.0 the release profile kept GNAT's default `-g`, so the build was
+Before 1.58.0 the release profile kept [GNAT](../../glossary/ste100/identifiers.md#technical-name-gnat)'s default `-g`, so the build was
 ~14.0 MiB at `-O2` on the 1.50.0 tree and ~5.3 MiB after `strip bin/adacovex`.
 Since 1.58.0 the release profile compiles adacovex's own units at `-O2` without
 `-g`, and keeps `-g` on the development profile, where debuggability is the
-point. The 3.6 MiB that a strip pass still removes at 1.76.0 belongs to the
-toolchain runtime.
+point. The 3.7 MiB that a strip pass still removes at 1.76.0 belongs to the
+[toolchain](../../glossary/ste100/tooling-terms.md#technical-name-toolchain) runtime.
 
-The open phase's representative (1.76.0) links at 11 303 624 bytes (10.8 MiB)
-and strips to 7 474 832 bytes (7.1 MiB). The stripped figure is 0.9 MiB above
-1.63.0's 6 552 528 bytes (6.2 MiB), which the larger manual and the SPARK
+The open phase's representative (1.76.0) links at 11 315 912 bytes (10.8 MiB)
+and strips to 7 487 120 bytes (7.1 MiB). The stripped figure is 0.9 MiB above
+1.63.0's 6 552 528 bytes (6.2 MiB), which the larger manual and the [SPARK](../../glossary/ste100/ada-terms.md#technical-name-spark)
 coverage paths account for. All figures here are release-profile (`-O2 -gnatn`),
 a development build (`-O1`, with debug info) is larger by design, and `just
 bench` reports both sizes so a regression is visible beside the timings.
@@ -28,7 +28,7 @@ below is a 1.50.0 measurement through the generator's own pipeline;
 it is kept as the record of the encoding change, not as today's asset count.
 
 The bundled site holds 226 assets over 191 pages (about 5.49 MB of source);
-gzip compresses it to about 1.29 MB, base85 spreads that to about 1.61 MB of
+gzip compresses it to about 1.29 MB, [base85](../../glossary/ste100/identifiers.md#technical-name-base85) spreads that to about 1.61 MB of
 Ada text, and the generated spec is 1.93 MB. That is 17.3% smaller than the
 2.34 MB spec of 1.49.0, for a saving of about 0.41 MB in the stripped
 binary (the spec is about 34% of it). No two assets share their content, so
@@ -79,7 +79,7 @@ Two further shrink options were measured and rejected.
   zero-dependency tooling rule, and brotli output varies by version, so the
   committed spec would stop being byte-reproducible.
 - **Dropping the changelog history (29.9%) or the generated API reference
-  (25.0%)**: the only large reductions available, but Sphinx's search index
+  (25.0%)**: the only large reductions available, but Sphinx's [search index](../../glossary/ste100/web-terms.md#technical-name-search-index)
   covers every page, so a removed page leaves a clickable search result that
   leads nowhere offline. Stale cross-links would also need rewriting to an
   absolute site URL.

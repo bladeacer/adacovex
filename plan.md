@@ -9,18 +9,17 @@ here.
 
 v1.76.0 folds into the **open `v1.63.0 - v1.76.0` phase**, represented by
 `1.76.0`, in `docs/contributing/perf/prove-timing.md`. The D16 fix closed the
-warm-walk regression, so the column reads 18 972 `newfstatat` calls against
-282 020 in the 1.75.0 column. The walls were measured at load 2.85 and read
-about 1.8 times the idle session, while the no-op build and the Sphinx build
-inflated by the same factor; the stat count is the comparable figure. R10
-re-measures the walls on a quiet host in v1.77.0.
+warm-walk regression, so the column reads 19 014 `newfstatat` calls against
+282 020 in the 1.75.0 column. The quiet-host re-measure (R10) returned
+pipeline warm 354.6 ms and prove warm 655.5 ms, so the earlier 682 ms and
+1.27 s at load 2.85 were host-bound. The column now records the idle set.
 
 ## How work is distributed
 
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
 | v1.76.0 | closed | CLI help ergonomics and documentation audience | [`adacovex-1.76.0.md`](docs/changelogs/adacovex-1.76.0.md) |
-| v1.77.0 | in progress | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation, in progress; term-link sweep remains), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI), R10 (quiet-host re-measure) |
+| v1.77.0 | in progress | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links, done), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI), R10 (quiet-host re-measure, done) |
 
 ## Status (2026-11-27)
 
@@ -30,19 +29,22 @@ version spec, SBOM), and its changelog is
 2606/2606 native tests across 30 categories, 226 CLI e2e checks, 274
 prove-e2e checks over 20 committed fixture projects, and 1060 VCs at Gold.
 
-The debt register holds no open row, and the 1.76.0 session wrote the
-measured figures to `docs/stats/`.
+The debt register holds no open row, and the quiet 1.76.0 re-measure wrote the
+idle figures to `docs/stats/`.
 
 ### Started in v1.77.0
 
-- [x] R6 first slice: the seven Technical Name lexicons and their index moved
+- [x] R6, the glossary: the seven Technical Name lexicons and their index moved
 from `docs/contributing/ste100/` to `docs/glossary/ste100/`, with a Glossary
 section in `docs/index.md` before the contributing section, a new toctree
 caption, every inbound link updated (the docs pages, the changelogs, AGENTS.md,
 `tools/rst2md.py`, and the docs-gate test), and the first-mention link rule
-stated in the glossary index and AGENTS.md. The reader-facing pages now link
-their first mention of SBOM, result cache, badge, and DAL to the entry heading.
-The remaining term-link sweep across every page is open.
+stated in the glossary index and AGENTS.md. The sweep links the first prose
+mention of each distinctive term (a proper name, an acronym, or a defined
+multiword concept) across `docs/usage/`, `docs/contributing/`, and
+`docs/proof/`, the manual landing page, and the site-transparency page: 466
+links over 57 pages. Ordinary English stays plain, and `SPARK_Mode` stays
+plain because GitHub and Sphinx generate different anchors for its underscore.
 
 ## Every change
 
@@ -108,6 +110,7 @@ contributor use the sibling projects they actually have.
 ### R6 - A glossary at `docs/glossary/`, linked from the prose
 
 - [x] Move `docs/contributing/ste100/` to `docs/glossary/ste100/`.
+- [x] Link the first prose mention of each distinctive term across the docs.
 
 **Goal:** The technical names live where a reader looks for them. A reader can
 reach a term from the page that uses it.
@@ -116,9 +119,10 @@ reach a term from the page that uses it.
 - Move the seven term pages under `docs/glossary/ste100/`, add the new
   toctree entry, and update every inbound link (`AGENTS.md`, the contributing
   pages, and the `GUIDE_PAGES` table in `tools/rst2md.py`).
-- Link the first mention of a term on a page to its glossary heading, as a
-  plain Markdown link with the anchor, so the Read the Docs link preview works
-  offline and online.
+- Link the first mention of a distinctive term (a proper name, an acronym, or
+  a defined multiword concept) on a page to its glossary heading, as a plain
+  Markdown link with the anchor, so the Read the Docs link preview works
+  offline and online. Leave ordinary English plain.
 - Keep the glossary a documentation-only surface: a term entry still needs
   part of speech, definition, and banned synonyms.
 - Add the glossary to `docs/index.md` in the reader-facing order, before the
@@ -205,7 +209,7 @@ a drift fails CI instead of waiting for a reader to find it.
 
 ### R10 - The 1.76.0 walls are re-measured on a quiet host
 
-- [ ] Repeat `just perf-report` at load under 1.0 and compare the walls.
+- [x] Repeat `just perf-report` at load under 1.0 and compare the walls.
 
 **Goal:** The 1.76.0 session read pipeline warm at 682 ms and prove warm at
 1.27 s, about 1.8 times the load-0.7 reading, while every unrelated build and
@@ -220,8 +224,14 @@ a regression.
 - Compare the result with the 378 ms pipeline warm and 680 ms prove warm that
   the D16 fix measured at load 0.7. A wall still above twice the idle reading
   is a real regression, and it opens a debt row with the paired evidence.
-- Take the prove-cold row if the session budget allows it; it is the one
-  "not measured" cell in the phase.
+- [x] Take the prove-cold row, the one "not measured" cell in the phase.
+
+**Result:** the session started at load 0.5 and its release build lifted the
+report's own reading to 2.23. Pipeline warm read 354.6 ms, pipeline cold
+378.3 ms, prove warm 655.5 ms, the no-op build 556.0 ms, a fresh Sphinx build
+11.9 s, and the warm run 19 014 `newfstatat` calls. Prove cold read 129.7 s
++/- 4.6 s over 3 runs at 1060 VCs, from a later quiet take at load 0.97. Every
+shape is back at its idle value, so there is no regression and no debt row.
 
 **Tests:** none; the report itself is the measurement.
 

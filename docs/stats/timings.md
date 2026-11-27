@@ -7,12 +7,12 @@ Measured on adacovex `1.76.0` on 2026-11-27.
 
 | Scenario | Mean | Std. dev. | Runs | Command |
 |----------|------|-----------|------|---------|
-| pipeline cold | 721.5 ms | 6.6 ms | 5 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-t5fw98en` |
-| pipeline warm | 682.5 ms | 22.2 ms | 10 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-t5fw98en` |
-| prove warm | 1.27 s | 54.7 ms | 5 | `./bin/adacovex prove --cache-dir=/tmp/adacovex-perf-report-prove-klr23z6u` |
-| build warm | 1.22 s | 77.4 ms | 3 | `/usr/bin/python3 tools/build.py --release` |
-| docs cold tree | 158.5 ms | 42.3 ms | 2 | `/usr/bin/python3 tools/gen-docs.py` |
-| docs fresh | 21.8 s | 124.4 ms | 2 | `/usr/bin/python3 tools/gen-docs.py --fresh` |
+| pipeline cold | 378.3 ms | 10.6 ms | 5 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-cl9vilih` |
+| pipeline warm | 354.6 ms | 14.4 ms | 10 | `./bin/adacovex --cache-dir=/tmp/adacovex-perf-report-cl9vilih` |
+| prove warm | 655.5 ms | 13.4 ms | 5 | `./bin/adacovex prove --cache-dir=/tmp/adacovex-perf-report-prove-wc02_4br` |
+| build warm | 556.0 ms | 21.7 ms | 3 | `/usr/bin/python3 tools/build.py --release` |
+| docs cold tree | 65.3 ms | 3.8 ms | 2 | `/usr/bin/python3 tools/gen-docs.py` |
+| docs fresh | 11.9 s | 127.8 ms | 2 | `/usr/bin/python3 tools/gen-docs.py --fresh` |
 
 Measured with: hyperfine.
 <!-- perf-report:end -->

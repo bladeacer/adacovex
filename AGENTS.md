@@ -111,11 +111,11 @@ and the release that owns the fix. A change that moves a figure re-runs
 `docs/contributing/perf/prove-timing.md`, with the complete set re-measured
 when the representative moves. Compare two versions with a paired run on one
 box, never with two columns from different sessions. D16 (the 35-times stat
-regression) closed in v1.76.0, so the baseline is the post-fix shape: about
-19 000 `newfstatat` calls, recorded in `docs/stats/`. The pipeline warm wall
-is host-bound: the 1.76.0 session read 682 ms at load 2.85 against 378 ms at
-load 0.7, and the no-op build and the Sphinx build inflated by the same
-factor, so read the wall beside its load and treat the stat count as the
+regression) closed in v1.76.0, so the baseline is the post-fix shape: 19 014
+`newfstatat` calls and 354.6 ms pipeline warm on an idle host, recorded in
+`docs/stats/`. A 1.76.0 session at load 2.85 read 682 ms, and the no-op build
+and the Sphinx build inflated by the same factor; a quiet re-measure returned
+354.6 ms, so read the wall beside its load and treat the stat count as the
 comparable figure. No change may widen the stat gap.
 
 Before finishing, re-verify that the user-facing docs still cover the
@@ -1128,9 +1128,14 @@ The controlled list of Technical Names (non-STE words approved for the
 adacovex domain, with part of speech, definition, and banned synonyms) lives
 in [docs/glossary/ste100/index.md](docs/glossary/ste100/index.md). Add any
 new Technical Name to that list before you use it in documentation,
-docstrings, or changelogs. Link the first mention of a term on a page to its
+docstrings, or changelogs. Link the first mention of a distinctive term (a
+proper name, an acronym, or a defined multiword concept) on a page to its
 glossary entry heading, as a plain Markdown link with the anchor, so the Read
-the Docs preview works offline and online.
+the Docs preview works offline and online. Leave ordinary English plain.
+The hand-written pages under `docs/usage/`, `docs/contributing/`, and
+`docs/proof/`, plus the manual's landing page and site-transparency page,
+follow the rule; the glossary, the generated API reference, the compliance
+reports, the changelogs, the stats tables, and the tldr page are exempt.
 
 The skill enforces short sentences, active voice, one instruction per
 sentence, consistent terminology, and no AI-slop hedging.

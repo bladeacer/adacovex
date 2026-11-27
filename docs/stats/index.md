@@ -11,12 +11,12 @@ Measured on adacovex `1.76.0` on 2026-11-27.
 
 | Metric family | Current value | Detail |
 |---------------|---------------|--------|
-| Pipeline warm | 682.5 ms | [Timings](timings.md) |
-| Pipeline cold | 721.5 ms | [Timings](timings.md) |
-| Prove warm | 1.27 s | [Timings](timings.md) |
-| Build warm (no-op) | 1.22 s | [Timings](timings.md) |
-| Binary size | 10.8 MiB (11303624 bytes) | [Binary size](binary-size.md) |
-| Bundled manual spec | 2.6 MiB (2762735 bytes) | [Docs bundle](bundle.md) |
+| Pipeline warm | 354.6 ms | [Timings](timings.md) |
+| Pipeline cold | 378.3 ms | [Timings](timings.md) |
+| Prove warm | 655.5 ms | [Timings](timings.md) |
+| Build warm (no-op) | 556.0 ms | [Timings](timings.md) |
+| Binary size | 10.8 MiB (11315912 bytes) | [Binary size](binary-size.md) |
+| Bundled manual spec | 2.6 MiB (2777328 bytes) | [Docs bundle](bundle.md) |
 | Cache hits (warm run) | 50 | [Cache](cache.md) |
 | Native tests | 2606 passed | [Tests](tests.md) |
 
@@ -34,7 +34,7 @@ Measured on adacovex `1.76.0` on 2026-11-27.
 | Build profile | `release (-O2 -gnatn; tools/build.py --release)` |
 | hyperfine | `hyperfine 2.0.0` |
 | strace | `strace -- version 7.3` |
-| Load average (1 min) | `2.85` |
+| Load average (1 min) | `2.23` |
 <!-- perf-report:end -->
 
 ## What the numbers mean

@@ -1,6 +1,6 @@
 # Prove timing and the optimisation review
 
-The `prove` subcommand sets the proof performance, so this page measures that
+The `prove` [subcommand](../../glossary/ste100/tooling-terms.md#technical-name-subcommand) sets the proof performance, so this page measures that
 subcommand at the binary level (`./bin/covex prove`). The method is on
 [Benchmarking adacovex](benchmarks.md), the work behind each figure is on
 [Performance optimisation history](optimisation-history.md), the 1.55.0 detail
@@ -37,11 +37,12 @@ from an older version never fills the gap.
 - **1.61.0-1.62.0** (closed, representative 1.62.0): every figure records
   `/proc/loadavg`, because this shared box moves the cold rows by more than 50
   percent on one binary.
-- **1.63.0-1.76.0** (open, representative 1.76.0): the packed directory memo,
+- **1.63.0-1.76.0** (open, representative 1.76.0): the packed [directory memo](../../glossary/ste100/tooling-terms.md#technical-name-directory-memo),
   the concurrent pre-build bundle, and the `just bench` step breakdown opened
-  the phase. 1.69.0-1.75.0 fold in: the campaign grew to 1060 VCs and the
+  the phase. 1.69.0-1.75.0 fold in: the campaign grew to 1060 [VCs](../../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) and the
   tooling moved, but the prove path and the measurement did not. 1.76.0 folds
-  in with the D16 fix, so its column is the post-fix shape.
+  in with the D16 fix and a quiet-host re-measure of every row, prove cold
+  included, so its column is the post-fix shape.
 
 ## Pipeline timing by phase
 
@@ -50,7 +51,7 @@ from an older version never fills the gap.
 | 1.55.0-1.56.0 | 1.55.0 | 41 ms | 66 ms |
 | 1.57.0-1.60.0 | 1.58.0 | 35.5 ms +/- 1.8 ms | 62.3 ms +/- 0.8 ms |
 | 1.61.0-1.62.0 | 1.62.0 | 41.7 ms | about 72 ms |
-| 1.63.0-1.76.0 | 1.76.0 | 682.5 ms +/- 22.2 ms | 721.5 ms +/- 6.6 ms |
+| 1.63.0-1.76.0 | 1.76.0 | 354.6 ms +/- 14.4 ms | 378.3 ms +/- 10.6 ms |
 
 ## Prove timing by phase
 
@@ -59,7 +60,7 @@ from an older version never fills the gap.
 | 1.55.0-1.56.0 | 1.55.0 | 50 ms | 72-82 s / 878 VCs |
 | 1.57.0-1.60.0 | 1.58.0 | 45.8 ms +/- 3.9 ms | 63.8 s / 1047 VCs |
 | 1.61.0-1.62.0 | 1.62.0 | 54.1 ms +/- 3.2 ms | 64.5 s +/- 4.2 s / 1054 VCs |
-| 1.63.0-1.76.0 | 1.76.0 | 1.27 s +/- 54.7 ms | not measured (see the 1.76.0 notes) |
+| 1.63.0-1.76.0 | 1.76.0 | 655.5 ms +/- 13.4 ms | 129.7 s +/- 4.6 s / 1060 VCs |
 
 ## Warm-run syscalls by phase
 
@@ -68,31 +69,31 @@ from an older version never fills the gap.
 | 1.55.0-1.56.0 | 1.55.0 | ~7.3k |
 | 1.57.0-1.60.0 | 1.58.0 | 7 508 |
 | 1.61.0-1.62.0 | 1.62.0 | 14 106 |
-| 1.63.0-1.76.0 | 1.76.0 | 18 972 |
+| 1.63.0-1.76.0 | 1.76.0 | 19 014 |
 
 ## Reading the numbers
 
 ### 1.76.0 (open phase)
 
 - The column is one session on 2026-11-27 on the release profile and the same
-  12-core i7-1255U, at load 2.85: pipeline warm 682.5 ms (10 runs), pipeline
-  cold 721.5 ms (5 runs), and prove warm 1.27 s (5 runs). The tree is 1060 VCs
-  with 0 unproved, the warm run makes 18 972 `newfstatat` calls, and the suite
-  is 2606 tests.
-- **The stat count is the fixed shape, and a stat count does not follow the
-  load.** D16's shared snapshot holds: the walk reads 18 972 calls, 0.4 percent
-  above the 18 904 post-fix reading and 15 times below the 282 020 in the
-  1.75.0 column.
-- The walls are about 1.8 times the 378 ms and 680 ms read at load 0.7, and
-  every unrelated shape inflated by the same factor in this session: the
-  no-op release build read 1.22 s against 313 ms, and a fresh Sphinx build
-  21.8 s against 11.9 s. The host was busy, so the column records the session.
-  Do not read the walls as a code regression; the syscall count is the
-  comparable figure.
-- Prove cold is not measured. The session spent its budget on the complete
-  warm, pipeline, build, docs, and syscall set, and another version's number
-  would not describe 1.76.0. The row stays a gap until the next session takes
-  it.
+  12-core i7-1255U. The 1-minute load was 0.5 when the session started, and the
+  report's own release build raised its recorded reading to 2.23. Pipeline warm
+  reads 354.6 ms (10 runs), pipeline cold 378.3 ms (5 runs), and prove warm
+  655.5 ms (5 runs). The tree is 1060 VCs with 0 unproved, the warm run makes
+  19 014 `newfstatat` calls, and the suite is 2606 tests.
+- **The earlier 1.76.0 session was host-bound.** It read pipeline warm at
+  682.5 ms and prove warm at 1.27 s at load 2.85, while the no-op release build
+  read 1.22 s and a fresh Sphinx build 21.8 s. This quiet session reads
+  354.6 ms, 655.5 ms, 556.0 ms, and 11.9 s: every shape returns to its idle
+  value, so the code did not regress and no debt row is needed.
+- **The stat count is the fixed shape.** D16's shared snapshot holds: the walk
+  reads 19 014 calls, 0.6 percent above the 18 904 post-fix reading and 15
+  times below the 282 020 in the 1.75.0 column.
+- Prove cold reads 129.7 s +/- 4.6 s over 3 runs (124.7 s to 133.9 s) at
+  1060 VCs, from a session that started at load 0.97 before the solver filled
+  the cores. The 1.62.0 row is not a peer: the `prove` subcommand has sent
+  `--level=4` since 1.75.0 and the proof surface grew, so compare cold rows
+  inside a phase, never across the level change.
 - The phase opened at 1.63.0 with the packed memo, which cut one tree from
   13 428 to 7 924 stats and read 5 ms faster warm against the v1.62.0 binary.
   The 1.75.0 column recorded the D16 regression (282 020 stats) and the fix
@@ -116,8 +117,8 @@ from an older version never fills the gap.
 
 ### Across every phase
 
-- The prove-cold row is gnatprove's own cost and tracks the VC count. It is paid
-  once per session: with the result cache wiped but the session intact, a run
+- The prove-cold row is [gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove)'s own cost and tracks the VC count. It is paid
+  once per session: with the [result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache) wiped but the session intact, a run
   takes about 1.1 s.
 - The warm syscall floor is the directory walk. The 1.63.0 memo took it from
   14 597 to 7 924 by memoising the directories the old 64-entry cap rejected.

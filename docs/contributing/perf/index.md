@@ -1,8 +1,8 @@
 # Performance
 
 adacovex is a zero-dependency CLI. Its hot path is the assessment pipeline
-(scan -> patch -> doc metrics -> proof parse -> test parse -> DAL assess ->
-render, plus the SBOM). This page defines the benchmark categories and the
+(scan -> patch -> doc metrics -> proof parse -> test parse -> [DAL](../../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) assess ->
+render, plus the [SBOM](../../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom)). This page defines the benchmark categories and the
 expected numbers on a typical machine.
 
 The user-facing results summary is on [Performance and benchmarks](../../usage/performance.md).
@@ -22,9 +22,9 @@ layout are on [The `just check` pipeline](check-pipeline.md).
 adacovex has two *caches* and one *build step*; every benchmark category is
 defined by which of them are populated:
 
-- the **result cache** (`<cache>/<version>/`, or `--cache-dir`):
+- the **[result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache)** (`<cache>/<version>/`, or `--cache-dir`):
   adacovex's own content-addressed store of scan, graph, and prove results;
-- the **gnatprove session store** (`<target>/obj/gnatprove/`):
+- the **[gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove) session store** (`<target>/obj/gnatprove/`):
   gnatprove's internal per-unit session, which re-analyses only changed
   units;
 - the **build** (`alr build`, run by every `make` recipe that proves): a
@@ -71,7 +71,7 @@ shift with the machine and the codebase; what matters is the shape:
   SHA-256 (a file unchanged in size is not re-hashed) and the tools-set
   cache skipping the SBOM dev-dependency word scan and the tool probes.
   The remaining time is process startup, directory walks, and blob
-  deserialization. The directory memo is what keeps the warm `newfstatat`
+  deserialization. The [directory memo](../../glossary/ste100/tooling-terms.md#technical-name-directory-memo) is what keeps the warm `newfstatat`
   count down, and [Syscall profile](../../stats/syscalls.md) records it.
 - **Cold build** is a release-profile build on a fresh checkout: a
   concurrent bundle of generators, the workspace sync inside a no-op `alr
@@ -109,8 +109,9 @@ The 1.48.0-1.54.0 phase is retired to the notes, and the 1.55.0-1.56.0,
 1.76.0: 1.63.0 packed the directory memo again, moved the five pre-build steps
 into one concurrent bundle, and gave `just bench` a per-step build-phase
 breakdown, while 1.69.0-1.75.0 changed the proof surface and the tooling
-without a methodology shift. 1.76.0 folds in with the D16 fix, so its column
-is the post-fix shape. From 1.75.0 the open column is re-measured at each
+without a methodology shift. 1.76.0 folds in with the D16 fix and a quiet-host
+re-measure of the complete set, so its column is the post-fix shape at the
+idle load. From 1.75.0 the open column is re-measured at each
 version, so its representative is the latest measured version. The 1.55.0
 detail is on [The 1.55.0 timing re-baseline](prove-rebaseline.md); the whole
 table is on [Prove timing and the optimisation review](prove-timing.md).
