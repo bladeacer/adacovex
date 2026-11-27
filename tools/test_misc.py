@@ -216,6 +216,22 @@ class TestRun(unittest.TestCase):
         # The test gate is derived from docs/test_result.md, never hardcoded.
         self.assertIn(f"--require-tests={run.native_test_count()}", flags)
 
+    def test_every_prove_target_sends_level_4(self) -> None:
+        calls = []
+
+        def fake_adacovex(target, args):
+            calls.append(list(args))
+            return 0
+
+        with mock.patch.object(run, "adacovex", fake_adacovex):
+            for command in ("prove", "self", "ada-crdt"):
+                self.assertEqual(run.run(command), 0)
+        self.assertEqual(len(calls), 3)
+        for args in calls:
+            self.assertTrue(
+                "-l=4" in args or "--level=4" in args,
+                f"a prove target skipped level 4: {args}")
+
     def test_native_test_count_reads_the_result_file(self) -> None:
         self.assertGreater(run.native_test_count(), 0)
         self.assertIn(

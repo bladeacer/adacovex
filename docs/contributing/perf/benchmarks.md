@@ -36,7 +36,7 @@ solver run; the warm paths stay warm anywhere.
 `just bench` benchmarks the build phases, the assessment pipeline, the
 `prove` subcommand, and reports binary size:
 
-- It builds the project, then times `./bin/adacovex` and
+- It builds the project, then times `./bin/adacovex --target=.` and
   `./bin/adacovex prove` against the repo itself.
 - **The build phases run first.** An strace syscall profile of the no-op
   build and of the cold-tree docs run, then a per-step breakdown: each

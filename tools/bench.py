@@ -138,11 +138,14 @@ def hyperfine_available() -> bool:
 
 def run_cold_hyperfine(cache: str, target_args: List[str] = None,
                        label: str = "Pipeline cold (fresh result cache)") -> None:
+    #  A bare invocation prints the usage since 1.76.0, so the pipeline
+    #  shapes name the target explicitly.
+    args = target_args if target_args is not None else ["--target=."]
     announce(label)
     cmd = [
         "hyperfine", "--runs", str(COLD_RUNS),
         "--prepare", f"rm -rf {cache}",
-        "./bin/adacovex " + " ".join(target_args or []) + f" --cache-dir={cache}",
+        "./bin/adacovex " + " ".join(args) + f" --cache-dir={cache}",
         "--export-markdown", "/tmp/adacovex-bench-cold.md",
     ]
     subprocess.run(cmd, cwd=str(ROOT), check=True)
@@ -150,9 +153,12 @@ def run_cold_hyperfine(cache: str, target_args: List[str] = None,
 
 def run_warm_hyperfine(cache: str, target_args: List[str] = None,
                        label: str = "Pipeline warm (populated caches)") -> None:
+    #  A bare invocation prints the usage since 1.76.0, so the pipeline
+    #  shapes name the target explicitly.
+    args = target_args if target_args is not None else ["--target=."]
     # One warm-up run populates the result + probe caches.
     subprocess.run(
-        [str(ROOT / "bin" / "adacovex")] + (target_args or [])
+        [str(ROOT / "bin" / "adacovex")] + args
         + [f"--cache-dir={cache}"],
         cwd=str(ROOT),
         stdout=subprocess.DEVNULL,
@@ -161,7 +167,7 @@ def run_warm_hyperfine(cache: str, target_args: List[str] = None,
     announce(label)
     cmd = [
         "hyperfine", "--warmup", "2", "--runs", str(WARM_RUNS),
-        "./bin/adacovex " + " ".join(target_args or []) + f" --cache-dir={cache}",
+        "./bin/adacovex " + " ".join(args) + f" --cache-dir={cache}",
         "--export-markdown", "/tmp/adacovex-bench-warm.md",
     ]
     subprocess.run(cmd, cwd=str(ROOT), check=True)
@@ -530,7 +536,10 @@ def time_runs(cache: str, label: str, count: int, reset: bool,
     print(f"== hyperfine not found; using bash time "
           f"({label}, load {load_avg()}) ==")
     binary = str(ROOT / "bin" / "adacovex")
-    args = [binary] + (extra_args or []) + [f"--cache-dir={cache}"]
+    #  A bare invocation prints the usage since 1.76.0; the pipeline shape
+    #  names the target unless the caller passes a subcommand.
+    args = [binary] + (extra_args if extra_args is not None
+                       else ["--target=."]) + [f"--cache-dir={cache}"]
     for i in range(1, count + 1):
         if reset:
             shutil.rmtree(cache, ignore_errors=True)
@@ -712,7 +721,7 @@ def host_profile() -> dict:
     }
 
 
-def cache_readings(extra_args: Sequence[str] = ()) -> dict:
+def cache_readings(extra_args: Sequence[str] = ("--target=.",)) -> dict:
     """Run the pipeline once and report its cache hit, miss, and evicted counts.
 
     The warm-up run of the timing scenarios already pays this work; this run
@@ -739,7 +748,7 @@ def cache_readings(extra_args: Sequence[str] = ()) -> dict:
         shutil.rmtree(cache, ignore_errors=True)
 
 
-def syscall_readings(extra_args: Sequence[str] = ()) -> List[dict]:
+def syscall_readings(extra_args: Sequence[str] = ("--target=.",)) -> List[dict]:
     """The strace -c counts of one pipeline run, for the report table.
 
     strace serialises the workload, so these are syscall counts, never wall
