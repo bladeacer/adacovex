@@ -25,9 +25,9 @@ tree by its conventional name (`build`, `builddir`, `target`, `dist`,
 (`build.ninja`, `meson-info`, `CMakeCache.txt`, `compile_commands.json`).
 
 The table is deny-by-default and grouped by category (build drivers,
-language implementations and package managers, VCS, documentation
+language implementations and package managers, [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs), documentation
 tooling, CI and container plumbing, performance engineering). A tool
-lands in the SBOM only when (a) its exact lowercase name appears as a
+lands in the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) only when (a) its exact lowercase name appears as a
 whole word in one of the scanned build files, and (b) it is installed on
 `PATH`; whole-word matching keeps "makefile" from registering "make".
 Comment text is never scanned, so a tool that a build file names only in
@@ -42,7 +42,7 @@ build tool is missing; the fixture projects pin every build tool the
 list must cover.
 The table stores only the name and category: the version-probe flag is
 inferred at run time by trying `--version`, then `-v`, then the
-`version` subcommand, and taking the first flag that yields a version
+`version` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand), and taking the first flag that yields a version
 token -- so a subcommand-only tool (go, fossil, git-lfs) needs no
 special-cased column and a misconfigured entry cannot exist.
 
@@ -58,12 +58,12 @@ installed outside a project is `system`.
 ## Version probes and caching
 
 Resolved versions are never hardcoded. Each probe result is cached per
-machine (outside the result cache) together with the identity of the
+machine (outside the [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache)) together with the identity of the
 binary it was probed from: the PATH-resolved executable path plus its
 size and mtime. A cached version is served only after adacovex re-resolves
 the tool on `PATH` and compares that identity, so an upgraded, replaced,
 or PATH-shadowed binary re-probes on the next run while an unchanged
-toolkit serves from cache with no subprocess spawn. Every version in
+[toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) serves from cache with no subprocess spawn. Every version in
 the SBOM describes the binary that is installed now.
 
 ## Scope and language
@@ -74,8 +74,8 @@ filter checkbox, badge colour, and legend entry, and the SBOM lists it
 under `system` scope.
 
 The language shows up in the dashboard Dependency tab (per-dependency
-detail popup) and in every SBOM renderer: CycloneDX
-`components[].language`, SPDX/JSON `adacovex:language` property, and the
+detail popup) and in every SBOM renderer: [CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx)
+`components[].language`, [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx)/JSON `adacovex:language` property, and the
 Markdown table's `Language` column.
 
 Tools that are really **language packages** are never registered as

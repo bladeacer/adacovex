@@ -1,6 +1,6 @@
 # SBOM comparison with syft
 
-[syft](https://github.com/anchore/syft) is an Anchore SBOM generator
+[syft](https://github.com/anchore/syft) is an Anchore [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) generator
 (Apache-2.0) that catalogues software from a container image, a directory, or
 an archive. It is the reference point this page measures adacovex against.
 syft is never a dependency of adacovex: the comparison runs offline, and
@@ -52,7 +52,7 @@ Where the difference comes from, in order of size:
 - **System tools.** Only adacovex reports them: 17 on the self tree, 7 on
   Ada_CRDT, and 3 on yams. syft has no concept of a system-tool dependency
   for a directory scan, so `make`, `ninja`, and `git` never appear.
-- **The Ada ecosystem.** syft has no Alire or GPR cataloger. Ada_CRDT's 18
+- **The Ada ecosystem.** syft has no [Alire](../glossary/ste100/identifiers.md#technical-name-alire) or GPR cataloger. Ada_CRDT's 18
   components are all workflow actions, and its `alire.lock` crate graph is
   invisible to syft. adacovex resolves 4 `pkg:alire` and 1 `pkg:gpr`
   component there.

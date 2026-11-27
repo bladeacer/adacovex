@@ -11,16 +11,16 @@ result caching. The companion pages cover
 
 adacovex follows the Unix philosophy of doing one thing well:
 
-- **Single-purpose pipeline**: Each step (scanning, proof parsing, test parsing, DAL assessment, rendering) is a focused, composable unit.
-- **Text-based interfaces**: Input and output are plain text (Ada source, `.out` files, Markdown reports, ANSI terminal output).
-- **No library dependencies**: Only the GNAT runtime is used -- no external
-  libraries or frameworks. Alire is the packaging and delivery mechanism and
-  adds no runtime dependency (gnatprove is resolved at run time by the
-  `prove` subcommand).
+- **Single-purpose pipeline**: Each step (scanning, proof parsing, test parsing, [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) assessment, rendering) is a focused, composable unit.
+- **Text-based interfaces**: Input and output are plain text (Ada source, `.out` files, Markdown reports, [ANSI](../glossary/ste100/identifiers.md#technical-name-ansi) terminal output).
+- **No library dependencies**: Only the [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) runtime is used -- no external
+  libraries or frameworks. [Alire](../glossary/ste100/identifiers.md#technical-name-alire) is the packaging and delivery mechanism and
+  adds no runtime dependency ([gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) is resolved at run time by the
+  `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand)).
 - **Composable tools**: `prove` runs GNATprove, then falls through to the
   standard assessment pipeline; `sbom` generates a proof-aware SBOM
   independently.
-- **Exit codes**: `0` for success (DAL achieved), `1` for compliance failure, for straightforward CI integration.
+- **[Exit codes](../glossary/ste100/tooling-terms.md#technical-name-exit-code)**: `0` for success (DAL achieved), `1` for compliance failure, for straightforward CI integration.
 - **Minimal user code**: users write as little code as possible while getting
 maximum value. The tool accepts third-party and generated code as it is. It recognises common docstring conventions (Ada `--  @param`, Google `Args:`/`Returns:`, Sphinx `:param:`/`:returns:`) and common test-result formats (TAP, Automake, Surefire, Unity).
 
@@ -41,7 +41,7 @@ storage-size dependent and remain fixed.
 
 `Max_Line` is deliberately generous (256 KiB on 64-bit) so single-line declarations from heavily code-generated projects parse cleanly. A physical line that *does* exceed the buffer is **never truncated and then processed** -- truncation can silently produce a partial (and wrong) result -- so the parser drains the remainder, reports file and line to standard error, and fails that parse explicitly.
 
-The source scanner counts the skipped file in `Skipped_Ct`, which forces the DAL assessment to `Unmet` and the exit code to `1` (no compliance claim can be made for unread code). The same explicit-failure contract applies to every parser: HLR/LLR markdown, GNATprove output (text and JSON), test results, and Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length line is not an overflow (it parses normally), and the reader consumes its line terminator, so the next line is never a spurious empty one. Paths exceeding `Max_Path` are reported and skipped rather than crashing.
+The source scanner counts the skipped file in `Skipped_Ct`, which forces the DAL assessment to `Unmet` and the exit code to `1` (no compliance claim can be made for unread code). The same explicit-failure contract applies to every parser: [HLR](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr)/[LLR](../glossary/ste100/proof-terms.md#technical-name-low-level-requirement-llr) markdown, GNATprove output (text and JSON), test results, and Alire manifest / lockfile / GPR dependency graphs. An exact buffer-length line is not an overflow (it parses normally), and the reader consumes its line terminator, so the next line is never a spurious empty one. Paths exceeding `Max_Path` are reported and skipped rather than crashing.
 
 **Overflow contract (two tiers).** Every fixed width in the tree is one of
 the five `Max_*` constants, and each constant has exactly one tier:
@@ -73,7 +73,7 @@ it against `Max_Path`, so no second name bound can disagree with the path
 bound.
 
 **Why no chunking / LEB128.** adacovex audits in memory: counts (packages,
-subprograms, HLR tags, tests, SBOM components) are unbounded vectors, and
+subprograms, [HLR tags](../glossary/ste100/identifiers.md#technical-name-hlr-tag), tests, [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) components) are unbounded vectors, and
 each scanned unit is processed line-at-a-time into fixed per-item buffers. A
 single Ada declaration does not admit streaming/chunked parsing, and
 truncating a declaration is worse than a loud failure.
@@ -84,14 +84,14 @@ The bounded-buffer constants are tabulated in
 `docs/api-docs/adacovex-types.md` (`Max_Line`, `Max_Path`, `Max_Desc_Str`,
 `Max_Filename`, `Max_Id_Str`).
 
-So adacovex can be built and run on any system with a GNAT toolchain,
+So adacovex can be built and run on any system with a GNAT [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain),
 with Alire only for toolchain management.
 
 ## SPARK Formal Verification
 
-adacovex itself is SPARK-proven: all of its VCs are proved and the code is
+adacovex itself is [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark)-proven: all of its [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) are proved and the code is
 AoRTE-free. Its assessed level is **Gold**, not Platinum, because Platinum also
-requires full proof coverage -- every subprogram the SPARK coverage report
+requires full [proof coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage) -- every subprogram the SPARK coverage report
 assesses proved -- and the project keeps deliberately `SPARK_Mode (Off)` units
 outside the proof. The tool analyses GNATprove output (`gnatprove.out`) to
 assess SPARK assurance levels (Stone through Platinum) for target projects.
@@ -112,7 +112,7 @@ the Unix philosophy of composing specialised tools.
   `Justified` count (GNATprove `pragma Annotate` justifications for decidedly
   unprovable checks, such as non-functional foreign-language calls) is counted
   neither as proved nor as unproved: `Proved = Total - Justified - Unproved`.
-  Justified VCs do **not** downgrade the SPARK level; only unproved VCs
+  Justified VCs do **not** downgrade the [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level); only unproved VCs
   do, and unit tests pin this.
 - **Gold is the minimum compliance baseline. Platinum is the ideal.**
   `Min_SPARK_For` thresholds (A=Gold, B=Silver, C=Bronze, D/E=Stone) are the
@@ -129,7 +129,7 @@ the Unix philosophy of composing specialised tools.
 
 adacovex persists parsed analysis results on disk so unchanged inputs are not re-scanned, re-parsed, or re-proved. Source scans, GNATprove summaries, test summaries, `compliance/HLR.md`/`compliance/LLR.md` requirement parses, the resolved SBOM dependency graph, and the differential-mode scans are each keyed by a namespace prefix plus the SHA-256 of the artifact(s) they were derived from. For example: `"scan:" | "prove:" | "tests:" | "hlr:" | "llr:" | "graph:" + digest`. Re-parsing a byte-identical artifact yields a hit regardless of the target directory or command line.
 
-An unchanged manifest/lockfile/.gpr set serves the cached dependency graph,
+An unchanged manifest/lockfile/[.gpr](../glossary/ste100/identifiers.md#technical-name-gnat-project-file-gpr) set serves the cached dependency graph,
 unchanged `compliance/HLR.md`/`compliance/LLR.md` serve the cached
 requirement parses, and `--compare-base` / `--coverage-delta` reuse cached
 source scans for the current tree.
@@ -139,7 +139,7 @@ source scans for the current tree.
   `src/core/adacovex-cache.ads`) is bumped whenever the serialized layout of a
   cached record or the scanner/parser semantics change, so blobs written by an
   incompatible build are never served as if valid. System-tool version probes
-  are *not* under the result cache: they live in `<cache>/probes/` (a
+  are *not* under the [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache): they live in `<cache>/probes/` (a
   stable machine-level store; wiping the result cache must not re-probe every
   tool).
 - **Graph key**: the dependency-graph key hashes the Alire manifests, the
@@ -154,7 +154,7 @@ source scans for the current tree.
   `*.opam` / `*.cabal`), so an edit to a test-labelled section, a lockfile,
   or a declared dependency invalidates the cached graph and the graph is
   rebuilt from the new content.
-- **Per-unit proof entries**: `Adacovex.Prove_Units` gives every proof unit
+- **[Per-unit proof entries](../glossary/ste100/tooling-terms.md#technical-name-per-unit-proof-entry)**: `Adacovex.Prove_Units` gives every proof unit
   its own entry under the `proveunit:` namespace. A unit key covers its
   resolved path, its content, the content of the units its `with` closure
   names, the gnatprove options, and the prover identity. A one-unit edit

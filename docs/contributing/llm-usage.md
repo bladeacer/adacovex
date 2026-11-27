@@ -7,9 +7,9 @@ machine-generated code.
 
 ## AI Assistance Disclosure
 
-AI tools were used during development for boilerplate generation, contract drafting, and docstring formatting. This is stated plainly rather than hidden. The project's own dogfood target is a zero-dependency, fully documented, SPARK-proven Ada codebase. AI-generated contributions must meet the same bar as hand-written ones.
+AI tools were used during development for boilerplate generation, contract drafting, and docstring formatting. This is stated plainly rather than hidden. The project's own dogfood target is a zero-dependency, fully documented, [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark)-proven Ada codebase. AI-generated contributions must meet the same bar as hand-written ones.
 
-That bar is 100% docstring coverage, a full proof (zero unproved VCs), zero justified VCs, and the full `just check` gate before they count.
+That bar is 100% docstring coverage, a full proof (zero unproved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc)), zero justified VCs, and the full `just check` gate before they count.
 
 ## Why trust this code?
 
@@ -41,7 +41,7 @@ on the tree must read it first. It must follow it. In particular:
 
 - **Match existing conventions** and prefer editing existing files. Verify
   non-trivial changes with the project's typecheck and tests.
-- **Zero library dependency** is a hard constraint. Use only the GNAT runtime.
+- **Zero library dependency** is a hard constraint. Use only the [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) runtime.
   Keep `tools/*.py` pure-stdlib, `typing`-annotated Python.
 - **SPARK proof discipline** (enforced by `just prove` and the
   `spark-off-check` gate): zero unproved VCs, zero justified VCs, no
@@ -64,7 +64,7 @@ They keep their release-time numbers.
 Every number in this repository's documentation is anchored to a generated
 artifact, not to a human- or AI-written claim:
 
-- VC counts and the SPARK level come from `obj/gnatprove/gnatprove.out` (via
+- VC counts and the [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level) come from `obj/gnatprove/gnatprove.out` (via
   `just proof-status`).
 - Test counts come from [docs/test_result.md](../test_result.md) (via
   `just test-count`).
@@ -87,7 +87,7 @@ just check                   # full gate: format, build, products, parallel
                              # checks, then tree-wide count-sync checks
 ```
 
-`just check` runs `fmt` and `build` first, then the serial product gates (manual, API docs, SBOM, proof) and the tools suite, then every independent static and test gate in one parallel phase. A formatting problem fails before the expensive SPARK proof. The count-sync checks (`test-count --check`, `proof-status --check`, `description --check`) run last. A stale metric anywhere in the tree fails loudly.
+`just check` runs `fmt` and `build` first, then the serial product gates (manual, API docs, [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom), proof) and the tools suite, then every independent static and test gate in one parallel phase. A formatting problem fails before the expensive SPARK proof. The count-sync checks (`test-count --check`, `proof-status --check`, `description --check`) run last. A stale metric anywhere in the tree fails loudly.
 
 A missing proof summary is a skip, not a failure. The cheap CI gate job only checks out the sources, so `obj/gnatprove/gnatprove.out` does not exist there, and `proof-status --check` prints the reason and exits 0. A summary that exists but cannot be read is still an error.
 
@@ -109,7 +109,7 @@ AI assistance raises the pace of contribution but does not change the bar:
 - Generated code must still pass the SPARK proof. A `pragma Assume` or a
   `SPARK_Mode (Off)` outside the two allowed container packages is rejected
   by the gates.
-- The changelog, the traceability tags, and the HLRs are written by people.
+- The changelog, the traceability tags, and the [HLRs](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) are written by people.
   They are also written by agents following AGENTS.md. The `changelog-check`
   validator enforces the canonical format. A machine-generated changelog that
   does not conform is caught before release.

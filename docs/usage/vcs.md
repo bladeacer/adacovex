@@ -2,9 +2,9 @@
 
 **A version control system is not required for base adacovex functionality.**
 
-This covers scanning, proof analysis, test parsing, compliance assessment, SBOM generation, dashboards, and caching.
+This covers scanning, proof analysis, test parsing, compliance assessment, [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) generation, dashboards, and caching.
 
-A VCS is only needed for the differential modes below. They snapshot a base revision to compare against the current tree.
+A [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs) is only needed for the differential modes below. They snapshot a base revision to compare against the current tree.
 
 We assume that the audited project lives in a VCS. The base tool never requires one.
 
@@ -15,7 +15,7 @@ The differential modes run on **Linux, the BSDs, macOS, WSL, and native Windows*
 Differential modes are useful when you want to enforce that changes do not regress quality gates:
 
 - **PR checks** -- `--coverage-delta` makes sure that docstring coverage does not drop between the base branch and the PR head. This is the lightest check. It works even when the base does not commit proof or test artifacts.
-- **Release gates** -- `adacovex --compare-base=v1.2.0` compares the current tree against the last release tag. It fails if a metric regressed. These metrics are packages, docstrings, HLR tags, SPARK level, tests, and DAL status.
+- **Release gates** -- `adacovex --compare-base=v1.2.0` compares the current tree against the last release tag. It fails if a metric regressed. These metrics are packages, docstrings, [HLR tags](../glossary/ste100/identifiers.md#technical-name-hlr-tag), [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level), tests, and [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) status.
 - **Audit trails** -- a side-by-side report shows exactly what changed between two revisions. This is useful for compliance audits that need a narrative diff.
 
 ## Supported VCS
@@ -45,7 +45,7 @@ See [Platforms](platforms.md#status-subcommand).
 
 ## `--compare-base=REF`
 
-Differential mode: adacovex snapshots a base revision in a temporary directory (`/tmp/adacovex-diff-<pid>`). It prints a side-by-side comparison against the current tree. The comparison shows packages, subprograms, docstring percentage, traced HLR, orphan tags, SPARK level, proved VCs, tests, and DAL status.
+Differential mode: adacovex snapshots a base revision in a temporary directory (`/tmp/adacovex-diff-<pid>`). It prints a side-by-side comparison against the current tree. The comparison shows packages, subprograms, docstring percentage, traced [HLR](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr), orphan tags, [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) level, proved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc), tests, and DAL status.
 
 The `--target` directory must be a supported VCS repository. The VCS command-line tool must be on `PATH`.
 
@@ -53,7 +53,7 @@ Exit `0` only if there are no regressions and the current DAL is Achieved. Other
 
 ## `--coverage-delta=REF`
 
-Lightweight docstring-coverage gate for PR-style CI checks. It scans sources, patches, and computes docstring metrics on a base revision and the current tree. It does not use GNATprove, tests, or DAL. Thus it works when the base does not commit build artifacts.
+Lightweight docstring-coverage gate for PR-style CI checks. It scans sources, patches, and computes docstring metrics on a base revision and the current tree. It does not use [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove), tests, or DAL. Thus it works when the base does not commit build artifacts.
 
 It prints a compact coverage table and a machine-parseable `coverage_delta:` line. Then it cleans up the snapshot.
 

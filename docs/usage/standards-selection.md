@@ -2,7 +2,7 @@
 
 adacovex computes one safety case and re-labels it per standard. This page
 covers the flags that select a standard, and the labels the reports and the
-SBOM carry. The per-standard pages are
+[SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) carry. The per-standard pages are
 [DO-178C](standards-do-178c.md), [ISO 26262](standards-iso-26262.md), and
 [IEC 62304](standards-iec-62304.md).
 
@@ -25,7 +25,7 @@ adacovex --target=. --asil=B
 adacovex --target=. --standard=iso26262 --dal=C
 ```
 
-The dedicated flags exist so that a reader of the command line sees "ASIL B"
+The dedicated flags exist so that a reader of the command line sees "[ASIL](../glossary/ste100/proof-terms.md#technical-name-asil) B"
 or "Class A" without decoding the shared tier. The full flag reference is in
 the [CLI reference](cli-reference.md).
 
@@ -37,14 +37,14 @@ reports for every standard: `do178c.svg`, `iso26262.svg`, and
 
 The evidence is identical across standards, so the three badges always agree
 on Achieved or Unmet. Only the level label inside them changes. Like the
-[SBOM](sbom.md) subcommand, `--serve` defaults to all standards when no
+[SBOM](sbom.md) [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand), `--serve` defaults to all standards when no
 standard flag is given.
 
 ## Dashboard and SBOM standard-awareness
 
 The served [dashboard](dashboard.md) and the proof-aware [SBOM](sbom.md)
 record the assessment standard and its native level label. A browser or a
-CycloneDX, SPDX, or Markdown consumer therefore sees the correct name.
+[CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx), [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx), or Markdown consumer therefore sees the correct name.
 
 The SBOM carries the standard and the level in two properties:
 

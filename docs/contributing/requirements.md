@@ -1,6 +1,6 @@
 # Dependencies
 
-This table groups adacovex dependencies by category. Alire-managed
+This table groups adacovex dependencies by category. [Alire](../glossary/ste100/identifiers.md#technical-name-alire)-managed
 dependencies are listed under their Alire crate names.
 
 ## Core

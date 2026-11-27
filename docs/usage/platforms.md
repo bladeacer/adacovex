@@ -3,13 +3,13 @@
 <!-- no-covex-docs-loc: platform and reader reference, the line cap does not apply -->
 
 adacovex supports any platform that can run alire: packaging and delivery go
-through Alire, so adacovex runs wherever Alire itself builds. The tool targets
-Ada 2012 and later together with SPARK 2014, and uses only the GNAT runtime, so
+through [Alire](../glossary/ste100/identifiers.md#technical-name-alire), so adacovex runs wherever Alire itself builds. The tool targets
+Ada 2012 and later together with [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) 2014, and uses only the [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) runtime, so
 nothing in adacovex itself is platform-specific.
 
 adacovex runs on any host that satisfies these requirements:
 
-- the GNAT toolchain to build it (the GNAT runtime is linked into the binary;
+- the GNAT [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain) to build it (the GNAT runtime is linked into the binary;
   a prebuilt binary needs only the GNAT runtime), and
 - `GNAT.OS_Lib` from the GNAT runtime - adacovex uses it for path separation,
   temp files, environment variables, and locating executables on `PATH`
@@ -17,7 +17,7 @@ adacovex runs on any host that satisfies these requirements:
 
 No target manifest is required to run an assessment: the pipeline works on any
 directory of Ada source. An Alire manifest (`alire.toml`), an `alire.lock` or
-`alire-dev.toml`, or a GNAT project file is only needed for SBOM generation and
+`alire-dev.toml`, or a [GNAT project file](../glossary/ste100/identifiers.md#technical-name-gnat-project-file-gpr) is only needed for [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) generation and
 the dependency graph, which degrade gracefully (a warning, not a failure) when
 absent.
 
@@ -57,11 +57,11 @@ POSIX path model with Linux, and `Adacovex.Paths` already answers its
 `~/Library` directory convention, so the source builds there unchanged.
 
 The **differential modes** (`--compare-base` / `--coverage-delta`) snapshot a
-base revision through the VCS command itself. They run through the host shell:
+base revision through the [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs) command itself. They run through the host shell:
 `sh -c` on Linux, the BSDs, macOS, and WSL, and `cmd /c` on native Windows.
 A Windows host therefore needs no WSL, Cygwin, MSYS2, or Git Bash for them.
 
-The `man` and `tldr` subcommands follow the readers and clients that the host
+The `man` and `tldr` [subcommands](../glossary/ste100/tooling-terms.md#technical-name-subcommand) follow the readers and clients that the host
 runs; see [Local man page](#local-man-page) and
 [Local tldr page](#local-tldr-page). Every other feature works on every
 platform above.
@@ -124,16 +124,16 @@ To keep the tool free of 32/64-bit and endian surprises, adacovex:
 - rises above Windows' small default main-thread stack: the build reserves
   32 MiB (`-Wl,--stack,33554432`) so a function that holds several large
   fixed-size line buffers in one frame cannot trip `STORAGE_ERROR`;
-- resolves the GNATprove job count from the detected core count and
+- resolves the [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) job count from the detected core count and
   honours the `CI` environment variable so CI uses every core and a
   developer machine keeps two cores free;
 - keeps every path, line, and description buffer bounded at compile
   time, with overlong input failing loudly (skipped, count incremented,
-  DAL unmet) instead of silently truncated.
+  [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) unmet) instead of silently truncated.
 
 ## `status` subcommand
 
-`adacovex status` reports platform and toolkit state without running
+`adacovex status` reports platform and [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) state without running
 an assessment and without downloading anything:
 
 - **Alire**: installed and the version it reports;
@@ -149,7 +149,7 @@ an assessment and without downloading anything:
   set;
 - **VCS**: the detected source-control tools for the differential
   modes (`git`, `hg`, `svn`, `fossil`, `jj`) plus both man indexers
-  (`mandb`, `makewhatis`) for the man page installer.
+  (`mandb`, `makewhatis`) for the [man page](../glossary/ste100/tooling-terms.md#technical-name-man-page) installer.
 
 `status` never changes the working tree and never writes files, so it
 is safe to run from a CI job or a packaging script before any
@@ -182,7 +182,7 @@ binary for dependency-managed installs. See
 
 **A Windows developer runs `just check` with the `fmt` gate skipped.**
 `gnatformat` has no Windows binary in the Alire community index, so the
-formatter gate SKIPs on Windows with the reason "gnatformat is not
+formatter gate SKIPs on Windows with the reason "[gnatformat](../glossary/ste100/identifiers.md#technical-name-gnatformat) is not
 available in the dev toolchain"; every other gate runs as usual. The
 detail and the reason are on the [contributor
 guide](../contributing/developer-guide.md#setting-up-the-repository).

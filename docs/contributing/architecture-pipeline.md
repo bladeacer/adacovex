@@ -2,17 +2,17 @@
 
 This page covers the exact pipeline execution order, the supported platforms,
 the delivery and versioning channels, the build-time linker output, and how to
-swap the GNAT compiler for an LLVM-backend GNAT. The output formats, the
+swap the [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) compiler for an LLVM-backend GNAT. The output formats, the
 build and documentation gates, and the reading contract are on [Architecture:
 outputs and formats](architecture-outputs.md).
 
 ## Supported Platforms
 
-adacovex supports the same platforms Alire itself supports. Because Alire is
+adacovex supports the same platforms [Alire](../glossary/ste100/identifiers.md#technical-name-alire) itself supports. Because Alire is
 the packaging and delivery mechanism, adacovex inherits Alire's
 supported-platform matrix. The crate builds via `alr build`. It is distributed
 through the Alire community index (`alr install covex`). The release workflow
-builds it with the Alire toolchain:
+builds it with the Alire [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain):
 
 - **Binary distribution**: Linux x86-64, Windows x86-64, and macOS x86-64
   (the platforms for which Alire publishes binary releases and GNAT FSF
@@ -34,9 +34,9 @@ adacovex follows one version across every delivery channel, and each channel is
 version-locked to the same release:
 
 - **Single source of truth**: the `version` field in `alire.toml` /
-`alire-dev.toml` is the single source, resolved by installation method. `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build time (and `just bump-version`). It reads the first available of `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts), or `alire.toml` (dependency-managed installs). For dependency-managed installs, the published crate builds from its release manifest, so the toml associated with the covex binary for dependency management carries the version. `Adacovex. Version` in `src/adacovex.ads` re-exports the version.
+`alire-dev.toml` is the single source, resolved by installation method. `tools/gen-version.py` regenerates `src/adacovex_version_info.ads` at build time (and `just bump-version`). It reads the first available of `ADACOVEX_VERSION` (release builds), `alire-dev.toml` (source checkouts), or `alire.toml` (dependency-managed installs). For dependency-managed installs, the published crate builds from its release manifest, so the toml associated with the [covex](../glossary/ste100/identifiers.md#technical-name-covex) binary for dependency management carries the version. `Adacovex. Version` in `src/adacovex.ads` re-exports the version.
 
-As a result, `--version`, the man page, the SBOM tool version, and the result-cache namespace all derive from the manifest and can never drift. Release builds bundle the release tag instead via the `ADACOVEX_VERSION` environment variable (release workflow / `just release`).
+As a result, `--version`, the [man page](../glossary/ste100/tooling-terms.md#technical-name-man-page), the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) tool version, and the [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) namespace all derive from the manifest and can never drift. Release builds bundle the release tag instead via the `ADACOVEX_VERSION` environment variable (release workflow / `just release`).
 
 A version reaches four places -- the two manifests, the generated Ada constant the binary compiles, the built binary itself, and the committed `sbom.json` -- and each one derives from a different source, so they can drift apart. The SBOM shows the split most clearly: its `metadata.tools` version comes from the binary that wrote the file, while its root component version is read from the manifest.
 
@@ -51,7 +51,7 @@ Y. Z` runs that exact version). Floating tags (`vMAJOR`, `vMAJOR. MINOR`, `lates
 
 - **CI platform/compiler**: CI validates the self-assessment (build, prove,
   tests) with the pinned `gnat-version` on `ubuntu-latest`, so the CI-proven
-  combination is the released binary built against that exact toolkit.
+  combination is the released binary built against that exact [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit).
 - **Attestation**: every release bundle is attested with
   `actions/attest` (OIDC), and the release notes link the
   signed attestation.
@@ -62,7 +62,7 @@ The Alire GNAT toolchain's bundled `ld` (2.44) emits a benign message
 (`error in ...(.sframe); no .sframe will be created`) when it reads the
 `.sframe` section that newer system binutils wrote into the glibc startup
 objects. The link still succeeds. `just build` filters only this one message;
-all compiler and gnatprove warnings remain fully visible, so nothing real is
+all compiler and [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) warnings remain fully visible, so nothing real is
 ever suppressed.
 
 ## Pipeline (execution order)
@@ -97,9 +97,9 @@ against the jj store), assess base and current tree, report the delta, and
 exit. `man` installs the generated man page (`Adacovex.Renderers.Man`) into
 the man root the host reader searches (the first home-owned `$MANPATH` entry,
 otherwise the platform data root) and refreshes it with `mandb` or
-`makewhatis`. `tldr` installs the bundled tldr page
+`makewhatis`. `tldr` installs the bundled [tldr page](../glossary/ste100/tooling-terms.md#technical-name-tldr-page)
 (`Adacovex.Renderers.Tldr`, from `docs/tldr/adacovex.md`) into the detected
-local client, either as a tealdeer custom page or as a page in a base
+local client, either as a [tealdeer](../glossary/ste100/identifiers.md#technical-name-tealdeer) custom page or as a page in a base
 client's cache pages tree.
 
 ## Swapping the GNAT compiler (LLVM backend)
@@ -132,5 +132,5 @@ Notes:
    a project with the same compiler.
 - GNAT LLVM's `-fstack-check` support is partial and some features
   (`Scalar_Storage_Order`, `Convention C++`) differ from GCC GNAT.
-- SPARK proof results are compiler-independent, so `covex prove` and the
-  DAL assessment are unaffected by the choice.
+- [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) proof results are compiler-independent, so `covex prove` and the
+  [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) assessment are unaffected by the choice.

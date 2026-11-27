@@ -1,9 +1,9 @@
 # ISO 26262 and the ASIL levels
 
-ISO 26262 is the automotive functional-safety standard. It applies the same
+[ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262) is the automotive functional-safety standard. It applies the same
 rigour to road-vehicle software, such as braking, steering, and powertrain
 control. Every item is assessed at one of four Automotive Safety Integrity
-Levels (ASIL A to ASIL D), or as quality-managed (QM).
+Levels ([ASIL](../glossary/ste100/proof-terms.md#technical-name-asil) A to ASIL D), or as quality-managed (QM).
 
 The ASIL follows the severity of the hazard. ASIL-D covers an uncontrolled,
 life-threatening malfunction, and QM covers software with no safety effect.
@@ -20,7 +20,7 @@ life-threatening malfunction, and QM covers software with no safety effect.
 
 ## What adacovex checks at each level
 
-adacovex evaluates the same four criteria as for DO-178C. Only the level
+adacovex evaluates the same four criteria as for [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c). Only the level
 name and the minimum proof bar change.
 
 ### Requirement traceability and orphan tags
@@ -71,7 +71,7 @@ adacovex --target=. --standard=iso26262 --dal=C
 adacovex --target=. --standard=all
 ```
 
-The console prints the level with its ASIL name in place of the DAL name,
+The console prints the level with its ASIL name in place of the [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) name,
 and `docs/compliance/VERIFICATION.md` labels the table rows the same way:
 
 ```

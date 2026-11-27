@@ -10,7 +10,7 @@ and its inputs are on [the composite action](ci-cd-action.md).
 
 Every `vX. Y. Z` tag triggers `.github/workflows/release.yml`. The workflow calls the composite action with `build`, `release-build`, and `prove`.
 
-It builds the release binary, runs GNATprove, and validates the self-assessment. Then it packages and publishes:
+It builds the release binary, runs [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove), and validates the self-assessment. Then it packages and publishes:
 
 - `adacovex-vX.Y.Z.tar.gz` -- the version-matched binary (`adacovex` plus the
   `covex` alias). The action downloads this asset for the tag it is referenced
@@ -53,14 +53,14 @@ is the step that moves the floating tags.
 
 **The CI release binary is Linux x86-64 only for now.** The release workflow
 runs on `ubuntu-latest`. It packages the Linux binary and the prebuilt
-GNATprove toolchain bundle for that target. macOS, FreeBSD, Windows, and Linux
-aarch64 build adacovex from source via Alire instead. See
+GNATprove [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain) bundle for that target. macOS, FreeBSD, Windows, and Linux
+aarch64 build adacovex from source via [Alire](../glossary/ste100/identifiers.md#technical-name-alire) instead. See
 [Platforms](platforms.md#release-binaries).
 
 Maintainers reproduce the release locally with `VERSION=x.y.z just release`
 (see the [developer guide](../contributing/developer-guide.md)): it builds
 `--release`, checks that the built binary reports the tag, generates proofs,
-validates DAL-C, and bundles `dist/`, then tags and pushes to trigger the
+validates [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal)-C, and bundles `dist/`, then tags and pushes to trigger the
 workflow. The release only starts on the `main` branch; any other branch
 aborts before a build or file change. The release workflow also refuses a
 tag whose commit is not on `main`.
@@ -90,7 +90,7 @@ Once the action is listed on the GitHub Actions marketplace, each `vX. Y. Z` tag
 
 ## Consumer manifest prerequisites (avoid a broken CI)
 
-adacovex's `prove` subcommand and the GitHub Action resolve `gnatprove`
+adacovex's `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) and the GitHub Action resolve `gnatprove`
 through the *target project's* manifest. The pinned gnatprove crate is
 deployed via `alr -n get gnatprove=<version>`. It is run directly, with no
 `alr exec` over the whole workspace.
@@ -101,7 +101,7 @@ manifests must follow two rules:
 1. **`alire.toml` must be the clean publishing manifest.** It must contain no
    dev tooling (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`, `covex`). It must
    contain **no `[[pins]]`**. Alire reads this manifest when the action runs
-   `alr build`. It must resolve with nothing but Alire + GNAT.
+   `alr build`. It must resolve with nothing but Alire + [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat).
 2. **`alire-dev.toml` must declare `covex` as a normal index dependency**
    (`covex = "*"`). It must never be pinned to a local path such as
    `covex = { path = "../adacovex" }`. A path pin resolves only on the machine

@@ -18,8 +18,8 @@ endpoint both open the manual.
 > **For contributors:** `docs/` is a Sphinx project (`docs/conf.py` + MyST),
 and `tools/gen-docs.py` runs `sphinx-build` and writes the site into
 `src/adacovex-docs_template.ads` as a path-keyed lookup table. Each constant
-stays small, because one multi-megabyte blob would overflow the gnatprove
-frontend stack, so the search index is split into chunks the server streams.
+stays small, because one multi-megabyte blob would overflow the [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)
+frontend stack, so the [search index](../glossary/ste100/web-terms.md#technical-name-search-index) is split into chunks the server streams.
 The `_sources/` page-source links are stripped, and the bundled HTML stays
 pure ASCII: non-ASCII glyphs are encoded as UTF-8 byte values in the Ada
 source.
@@ -40,12 +40,12 @@ it and the binary carries no inflate routine. A reader sees no difference: the
 pages arrive as normal HTML.
 
 > **For contributors:** `tools/gen-docs.py` gzip-compresses each asset and
-base85-encodes it into the generated spec. base85 (the quote-free Z85
+[base85](../glossary/ste100/identifiers.md#technical-name-base85)-encodes it into the generated spec. base85 (the quote-free Z85
 alphabet) packs 4 bytes into 5 characters against base64's 5.33, which took
 the payload from 1.72 MB to 1.61 MB. LZ4 was measured again and rejected: on
 the self tree it produced 1.63 MB against gzip's 1.29 MB, about 32% larger.
 The Ada runtime has no LZ4 decompressor either, so gzip also needs no decoder
-in the binary. The result cache stays uncompressed, because its per-unit
+in the binary. The [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) stays uncompressed, because its per-unit
 blobs are too small for compression to pay.
 
 ## Sidebar navigation
@@ -106,7 +106,7 @@ The rebuild decision tree is short:
    sidebar keeps a stale entry. The removed page's outputs are swept.
 4. A verification failure falls back to a clean rebuild. `--fresh` forces one
    by hand.
-5. With no Sphinx toolchain, the committed spec is kept and the build prints
+5. With no Sphinx [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain), the committed spec is kept and the build prints
    the reason. A missing build directory never produces a partial bundle.
 
 The encoder caches each body's gzip+base85 result by SHA-256 under

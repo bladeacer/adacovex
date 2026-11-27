@@ -36,14 +36,14 @@ document (no external assets) with hash-routed tabs; the theme dropdown and
 Start here. The **Status badges** row shows the same SVG badges the server
 serves at `/badge/*.svg`, so a reader sees what a README will. **Source
 Overview** counts the scanned packages, subprograms, and docstring coverage,
-and **Quick Stats** repeats the five headline figures: SPARK level, VCs
+and **Quick Stats** repeats the five headline figures: [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level), [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc)
 proved, tests, compliance status, and dependency count.
 
 The **Robustness tier** (S / A / B / C / D) is a single letter summarising
 five quality axes: Docs, Proof, Tests, Comp, and Deps. **S** means healthy
 across the board; **D** means an axis is below 50%. Below that:
 
-- **SPARK radar** -- proved verification conditions per check category (flow,
+- **[SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) radar** -- proved verification conditions per check category (flow,
   initialization, runtime, assertions, functional). A balanced polygon means
   every category has strong coverage; a spike in one corner and a flat line
   in another means the proof effort is uneven.
@@ -68,10 +68,10 @@ one, so relative proof effort is visible at a glance.
 
 Leads with a **Proof Achievement** gauge: the proved share, the VCs proved
 out of the total, and the assessed SPARK level (Stone .. Platinum). Below it,
-the **SPARK Proof Analysis** table repeats gnatprove's own check-type rows
+the **SPARK Proof Analysis** table repeats [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)'s own check-type rows
 (flow, initialization, runtime, assertions, functional, termination) with
 total and proved counts. **Proof Guidance** states the next action, and
-**SPARK Proof Coverage** reads the coverage report by file: statements,
+**SPARK [Proof Coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage)** reads the coverage report by file: statements,
 subprograms, VCs, and the three off classes. The prover never runs while the
 page is served -- the numbers come from `obj/gnatprove/`.
 
@@ -81,15 +81,15 @@ page is served -- the numbers come from `obj/gnatprove/`.
 
 Every test category with its count and Pass / Fail. A single failing category
 is enough to fail the compliance gate (`Tests passing` must be `Yes` for
-every tier except QM / DAL-E).
+every tier except QM / [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal)-E).
 
 ### Compliance tab
 
 ![Preview of Compliance tab](../media/dashboard_preview_compliance.png)
 
-A **Compliance Status** gauge per standard (DO-178C, ISO 26262, IEC 62304)
+A **Compliance Status** gauge per standard ([DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304))
 with the target level and the achieved share, then one **Compliance** table:
-every standard's level and status, HLRs traced, orphan-tag state, tests, and
+every standard's level and status, [HLRs](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) traced, orphan-tag state, tests, and
 one `Failure` row per unmet criterion. **HLR Traceability** lists the tags each
 package carries. Use this to verify that every HLR is tagged in source and
 that no tags are orphaned (tagged but not defined in `compliance/HLR.md`).

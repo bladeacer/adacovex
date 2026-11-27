@@ -14,8 +14,8 @@ relevant to you, or read the pages in the order below.
 
 **Read [Site transparency](site-transparency.md) first.** It is the first entry
 in the sidebar, so you can reach it from every page. It states what the online
-manual records when you read it: search, traffic analytics, advertising, and
-the flyout menu.
+manual records when you read it: search, traffic [analytics](glossary/ste100/web-terms.md#technical-name-analytics), advertising, and
+the [flyout menu](glossary/ste100/web-terms.md#technical-name-flyout-menu).
 
 ## Documentation map
 
@@ -44,7 +44,7 @@ a technical word in any doc, docstring, or changelog.
 
 - [Usage guide](usage/index.md) -- the self-contained user guide, grouped by
   task: install and run, assess a project, read the results, publish in CI,
-  and manage the toolkit. Start at
+  and manage the [toolkit](glossary/ste100/tooling-terms.md#technical-name-toolkit). Start at
   [installation](usage/installation.md).
 - [CLI reference](usage/cli-reference.md) -- every command, flag, and exit
   code. The detailed flag pages are
@@ -63,7 +63,7 @@ a technical word in any doc, docstring, or changelog.
   project and global configuration files, every key, and the sample
   configuration. The [state directories, environment variables, and
   reset](usage/configuration-state.md) are on the next page.
-- [Standards](usage/standards.md) -- DO-178C, ISO 26262, and IEC 62304
+- [Standards](usage/standards.md) -- [DO-178C](glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](glossary/ste100/tooling-terms.md#technical-name-iso-26262), and [IEC 62304](glossary/ste100/tooling-terms.md#technical-name-iec-62304)
   levels. The per-standard detail is on
   [DO-178C and the DAL levels](usage/standards-do-178c.md),
   [ISO 26262 and the ASIL levels](usage/standards-iso-26262.md),
@@ -74,7 +74,7 @@ a technical word in any doc, docstring, or changelog.
   [Measured figures](stats/index.md).
 - [Platforms](usage/platforms.md) -- supported platforms and toolkit
   state.
-- [VCS support](usage/vcs.md) -- differential assessment across git, hg,
+- [VCS support](usage/vcs.md) -- [differential assessment](glossary/ste100/tooling-terms.md#technical-name-differential-assessment) across git, hg,
   svn, fossil, and jj.
 - [CI/CD](usage/ci-cd.md) -- the GitHub Action and the workflow summary.
   The workflow internals are on
@@ -91,7 +91,7 @@ a technical word in any doc, docstring, or changelog.
   dictionary of rules and entries, split into seven lexicons: the Ada
   language, proof and compliance, tooling, hardware, the tools and files, the
   reports and concepts, and the web site terms. Link the first mention of a
-  term on a page to its glossary heading.
+  distinctive term on a page to its glossary heading.
 
 ## Contributing to adacovex
 
@@ -100,7 +100,7 @@ a technical word in any doc, docstring, or changelog.
   pipeline, and the generated artifacts are on the
   [repository layout](contributing/developer-guide-layout.md).
 - [Proving and writing proofs](contributing/proving.md) -- how to run and
-  write SPARK proofs, [proof patches](contributing/proving-patches.md), and
+  write [SPARK](glossary/ste100/ada-terms.md#technical-name-spark) proofs, [proof patches](contributing/proving-patches.md), and
   [reading a prove failure](contributing/proving-diagnostics.md).
 - [Architecture](contributing/architecture.md) -- the full technical
   design. The deeper pages are
@@ -124,10 +124,10 @@ a technical word in any doc, docstring, or changelog.
 
 ## Maintainer references
 
-- [Proof ledger](proof/index.md) -- the verified-VC history and the skipped
+- [Proof ledger](proof/index.md) -- the verified-[VC](glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) history and the skipped
   units audit.
 - [Compliance outputs](compliance/index.md) -- VERIFICATION.md, TRACE.md,
-  and the HLR/LLR indexes.
+  and the [HLR](glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr)/[LLR](glossary/ste100/proof-terms.md#technical-name-low-level-requirement-llr) indexes.
 - [HLR index](compliance/HLR.md) and [LLR mapping](compliance/LLR.md).
 - [Badges](badges/index.md) -- the badge set the self-assessment emits.
 - [Measured figures](stats/index.md) -- the current timings, binary size,

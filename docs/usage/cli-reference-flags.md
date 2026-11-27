@@ -2,7 +2,7 @@
 
 <!-- no-covex-docs-loc: subcommand reference page, the line cap does not apply -->
 
-This page details the assessment flags (`--target`, `--dal`, `--standard`, and the rest), the `status` and `complexity` subcommands, the `prove` subcommand, and the per-file opt-out markers. The flag summary table, exit codes, the `sbom` subcommand, and worked examples are on the [CLI reference](cli-reference.md); the output, serving, differential, and gate flags are on [CLI flag details: output and CI options](cli-reference-options.md).
+This page details the assessment flags (`--target`, `--dal`, `--standard`, and the rest), the `status` and `complexity` [subcommands](../glossary/ste100/tooling-terms.md#technical-name-subcommand), the `prove` subcommand, and the per-file opt-out markers. The flag summary table, [exit codes](../glossary/ste100/tooling-terms.md#technical-name-exit-code), the `sbom` subcommand, and worked examples are on the [CLI reference](cli-reference.md); the output, serving, differential, and gate flags are on [CLI flag details: output and CI options](cli-reference-options.md).
 
 ## Flag details
 
@@ -25,11 +25,11 @@ project metadata for the dependency graph.
 
 ### `--dal=LEVEL`
 
-DO-178C DAL level (and the shared rigour tier): `A`, `B`, `C`, `D`, or `E`
-(case-insensitive). It sets the minimum SPARK proof level and the criteria
+[DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c) [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) level (and the shared rigour tier): `A`, `B`, `C`, `D`, or `E`
+(case-insensitive). It sets the minimum [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) proof level and the criteria
 checked; the tier is shared across standards.
-`--dal=C` is DAL-C under DO-178C, ASIL B under ISO 26262, and safety Class A
-under IEC 62304. See [DAL levels](../api-docs/adacovex-dal-levels.md) and
+`--dal=C` is DAL-C under DO-178C, [ASIL](../glossary/ste100/proof-terms.md#technical-name-asil) B under [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), and safety Class A
+under [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304). See [DAL levels](../api-docs/adacovex-dal-levels.md) and
 [Standards](standards.md).
 
 ### `--asil=LEVEL`
@@ -63,7 +63,7 @@ Accepted case-insensitively, with or without the hyphen/space (`ISO-26262`,
 `iec62304`, and more). See [Standards](standards.md) for the full tier
 mapping.
 
-`--standard` also accepts a **combined standard + tier token**. The token
+`--standard` also accepts a **combined standard + [tier token](../glossary/ste100/concepts.md#technical-name-tier-token)**. The token
 names the standard together with the rigour tier, so one flag replaces two:
 
 - `dal-A`..`dal-E` -- DO-178C at that DAL tier
@@ -72,7 +72,7 @@ names the standard together with the rigour tier, so one flag replaces two:
 
 The token is case-insensitive, and `-` and `_` are interchangeable
 (`--standard=asil-b` == `--standard=ASIL_B` == `--asil=B`). An unknown value
-is rejected loudly. `-l` is never a compliance tier: it is the GNATprove
+is rejected loudly. `-l` is never a compliance tier: it is the [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)
 proof level, so standard selection always stays on `--standard` and its
 level companions.
 
@@ -83,19 +83,19 @@ level flag (or `--dal`) resolved to.
 
 ### `status`
 
-`adacovex status [--target=PATH]` reports toolkit and platform state. It
+`adacovex status [--target=PATH]` reports [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) and platform state. It
 runs no assessment and downloads or deploys nothing. It reports the following:
 
-- whether Alire is installed
+- whether [Alire](../glossary/ste100/identifiers.md#technical-name-alire) is installed
 - the installation method of the running binary (`source-checkout`,
   `alire-global`, `on-path`) and its path
 - how gnatprove is resolved
 - the host CPU count and CI status (and the resulting default `-j`
   parallelism)
-- a **VCS report** (which VCS tools are on `$PATH` and which manages the
+- a **[VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs) report** (which VCS tools are on `$PATH` and which manages the
   target -- see [VCS support](vcs.md))
 - mandb availability
-- the effective display timezone, the current date/time in it, and how many
+- the effective display [timezone](../glossary/ste100/concepts.md#technical-name-timezone), the current date/time in it, and how many
   dated release changelogs the target carries
 
 `adacovex status --tz=ZONE` (or `--timezone=ZONE`) overrides the display
@@ -161,7 +161,7 @@ for generated trees committed next to hand-written source (for example
 `--skip-path=docs/api-docs`). It prints
 a tokei-style summary (files, lines, code, comments, blanks) plus a per-file
 table of `Lines=`, `Code=`, `Comments=`, `Blanks=`, the codebase loc
-percentage, and the cyclomatic complexity `cx=`:
+percentage, and the [cyclomatic complexity](../glossary/ste100/tooling-terms.md#technical-name-cyclomatic-complexity) `cx=`:
 
 ```
 Language              Files      Lines       Code   Comments      Blanks
@@ -185,8 +185,8 @@ into CI as `adacovex complexity --excludes=...`; the workflow is in the
 
 ### `spark-coverage`
 
-`adacovex spark-coverage [--target=PATH]` reports SPARK proof coverage for
-the target: statement, subprogram, and VC coverage as three separate metrics,
+`adacovex spark-coverage [--target=PATH]` reports SPARK [proof coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage) for
+the target: statement, subprogram, and [VC](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) coverage as three separate metrics,
 grouped by file, folder, or Ada package (`--group=file|folder|package`),
 with the off breakdown (irreducible / I/O-bound / work queue) as separate
 rows. It never runs the prover, so run `adacovex prove` first.
@@ -225,7 +225,7 @@ loud `1`, never a silent `0`.
 
 The two files come from a completed proof run: the summary
 `obj/gnatprove/gnatprove.out` and its sibling
-`obj/gnatprove/gnatprove.sarif`. The SARIF file (Static Analysis Results
+`obj/gnatprove/gnatprove.sarif`. The [SARIF](../glossary/ste100/identifiers.md#technical-name-sarif) file (Static Analysis Results
 Interchange Format, an [OASIS standard](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html))
 holds one JSON result per reported check: the file, the line, the check
 kind, and the message. Any SARIF consumer opens it without adacovex: an
@@ -239,9 +239,9 @@ pair together, and the writing side is on
 
 `adacovex prove --target=PATH` resolves a gnatprove installation and runs it against the target. It then falls through to the normal assessment pipeline, which parses the fresh proof summary, so one command both proves and assesses.
 
-For the full guide to proving and writing SPARK proofs (contracts, VC categories, proof patches for vendored deps), see [Proving and writing proofs](../contributing/proving.md). gnatprove is resolved in this order: manifest pin > global pin > `$PATH` > cached toolkit > download. The target does not need to declare gnatprove. Full detail: [Architecture -- GNATprove toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
+For the full guide to proving and writing SPARK proofs (contracts, VC categories, [proof patches](../glossary/ste100/tooling-terms.md#technical-name-proof-patch) for vendored deps), see [Proving and writing proofs](../contributing/proving.md). gnatprove is resolved in this order: manifest pin > global pin > `$PATH` > cached toolkit > download. The target does not need to declare gnatprove. Full detail: [Architecture -- GNATprove toolchain resolution](../contributing/architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 
-The summary is written to `<target>/obj/gnatprove/gnatprove.out` and the per-check report to its `gnatprove.sarif` sibling, the same locations the assessment and the `spark-coverage` report discover; the SVG badges are emitted as usual. The result cache stores both artefacts and restores both, so a warm run over a wiped `obj/gnatprove/` leaves the same pair a real run would; `--force` bypasses the cache and forces a full gnatprove reanalysis. When the target carries proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree copy at `<target>/obj/adacovex-proof/`, and both artefacts are copied back to `<target>/obj/gnatprove/`.
+The summary is written to `<target>/obj/gnatprove/gnatprove.out` and the per-check report to its `gnatprove.sarif` sibling, the same locations the assessment and the `spark-coverage` report discover; the SVG badges are emitted as usual. The [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) stores both artefacts and restores both, so a warm run over a wiped `obj/gnatprove/` leaves the same pair a real run would; `--force` bypasses the cache and forces a full gnatprove reanalysis. When the target carries proof patches (`.adacovex/patches/`), gnatprove runs against a patched tree copy at `<target>/obj/adacovex-proof/`, and both artefacts are copied back to `<target>/obj/gnatprove/`.
 
 Vendored dependencies then participate in the proof without their sources being touched. See [Proving and writing proofs](../contributing/proving-patches.md#proof-patches-proving-vendored-dependencies) for how to write them, and [Architecture -- Proof patches](../contributing/architecture-verification.md#proof-patches-spark-contracts-over-vendored-dependencies) for the design.
 
@@ -284,7 +284,7 @@ them)`. When gnatprove fails, the final `ERROR:` line adds the count of
 error and warning lines it saw, for example
 `ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
 
-Unproved checks also get a diagnostics block after the replay. Each
+Unproved checks also get a [diagnostics block](../glossary/ste100/proof-terms.md#technical-name-diagnostics-block) after the replay. Each
 finding reads like a compiler diagnostic:
 `file:line:col: error: <kind>`, then its solver set, counterexample (when
 one exists), source excerpt with a caret ruler, and one fix hint. A

@@ -17,7 +17,7 @@ comparable, so the 1.55.0 work re-measured every shape with
 
 ## Method
 
-- **Machine.** 12 logical cores, 10 proof jobs, gnatprove 16.1.0 at
+- **Machine.** 12 logical cores, 10 proof jobs, [gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove) 16.1.0 at
   `--level=4`, resolved from `<data>/toolkit/`. Sphinx 9.1.0, Python
   3.14.7, hyperfine 1.20.0, strace 7.2.
 - **Tree.** The adacovex self tree, binary `bin/adacovex`, unstripped dev
@@ -42,7 +42,7 @@ profile (`-O2 -gnatn`, no debug information) and names it, because that is the
 binary the released figures describe. The 1.57.0-1.61.0 phase reused this
 protocol unchanged, and its representative figures (1.58.0's session) are in
 that page's tables: a 3-run prove-cold sample of 63.8 s (59.1-67.3 s) on the
-shipped 1047 VCs, prove warm 45.8 ms over 15 runs, and a fully cold clone at
+shipped 1047 [VCs](../../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc), prove warm 45.8 ms over 15 runs, and a fully cold clone at
 78.0 s over two runs, all from one hyperfine session at load 0.59 with the
 machine otherwise idle.
 
@@ -54,7 +54,7 @@ review](prove-timing.md#how-the-phase-table-works).
 
 ## The fully cold shape
 
-This is the shape to read for a first run on a new checkout: the result cache,
+This is the shape to read for a first run on a new checkout: the [result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache),
 the gnatprove session store (`obj/gnatprove/`), and the proof summary are all
 absent, so every run pays a from-scratch solver session.
 

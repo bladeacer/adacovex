@@ -17,11 +17,12 @@ term that is not in this list, add it to the list first, then use it.
 
 ## How to link a term
 
-Link the first mention of a Technical Name on a page to its entry heading, for
-example [fixture](tooling-terms.md#technical-name-fixture). Use a plain
-Markdown link with the heading anchor, so the Read the Docs link preview works
-both offline and online. Link the first mention only; a later mention on the
-same page stays plain text.
+Link the first mention of a distinctive Technical Name on a page to its entry
+heading, for example [SBOM](tooling-terms.md#technical-name-software-bill-of-materials-sbom).
+A distinctive term is a proper name, an acronym, or a defined multiword
+concept. Use a plain Markdown link with the heading anchor, so the Read the
+Docs link preview works offline and online. Link the first mention only, and
+leave a term that is ordinary English as plain text.
 
 ## Categories for Ada Technical Names
 

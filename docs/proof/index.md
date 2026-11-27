@@ -1,13 +1,13 @@
 # Proof Records
 
-This directory holds the record of every SPARK proof run for adacovex.
+This directory holds the record of every [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) proof run for adacovex.
 
 ## Reading the ledger
 
 The [gnatprove 16.1.0 ledger](16.1.0-ledger.md) documents the current
-verified surface: the VC counts (currently 1060 VCs, 0 unproved, 0
+verified surface: the [VC](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) counts (currently 1060 VCs, 0 unproved, 0
 justified) and the per-package fixes that reach them. The assessed SPARK
-level is Gold: Platinum also requires full proof coverage, and the SPARK
+level is Gold: Platinum also requires full [proof coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage), and the SPARK
 coverage report shows subprograms outside the proof. The earlier proof-debt audit has been retired; its conclusions were stale and superseded by the per-package classification below:
 
 - the audit of the skipped units and the reason each stays SPARK_Mode Off;
@@ -20,11 +20,11 @@ coverage report shows subprograms outside the proof. The earlier proof-debt audi
 
 ## How to verify the numbers
 
-Run `just prove` at any time. It runs gnatprove through the `prove`
-subcommand and enforces the full-proof gate: 0 unproved VCs and 0 justified
+Run `just prove` at any time. It runs [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) through the `prove`
+[subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) and enforces the full-proof gate: 0 unproved VCs and 0 justified
 VCs. `just proof-status` then syncs the measured counts into the docs.
 
-The full proving workflow, including proof patches over vendored
+The full proving workflow, including [proof patches](../glossary/ste100/tooling-terms.md#technical-name-proof-patch) over vendored
 dependencies, lives in [Proving and writing proofs](../contributing/proving.md).
 
 Documentation in this directory uses British English and ASD-STE100

@@ -10,11 +10,11 @@ The gate order lives in `CHECK_GATES` in `tools/tasks.py`. Six rules keep
 repeated work out of the pipeline:
 
 - **Build once.** `task_build` records a successful build in the process, so
-  the build, native-test, prove, complexity, CLI end-to-end, and SBOM gates
+  the build, native-test, prove, complexity, CLI end-to-end, and [SBOM](../../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) gates
   reuse one `alr build`. A no-op build is cheap, but a real one is not.
 - **Format once.** `task_fmt` stores a digest of every source and the dev
   manifest in `obj/adacovex-fmt.stamp`. A warm tree matches the stamp and
-  skips gnatformat, so the formatter never bumps a source mtime and the build
+  skips [gnatformat](../../glossary/ste100/identifiers.md#technical-name-gnatformat), so the formatter never bumps a source mtime and the build
   stays a no-op.
 - **Bundle the manual once.** `tools/build.py` regenerates the bundled offline
   manual among its pre-build steps, so the offline-manual gate reuses that
@@ -23,11 +23,11 @@ repeated work out of the pipeline:
   that gate verifies the committed spec rather than producing it.
 - **Render the API docs once.** `task_doc` stores a digest of every Ada
   source, the converter, the project file, and the dev manifest. A warm tree
-  reads `obj/adacovex-doc.stamp` in 0.07 s instead of running gnatdoc.
+  reads `obj/adacovex-doc.stamp` in 0.07 s instead of running [gnatdoc](../../glossary/ste100/identifiers.md#technical-name-gnatdoc).
 - **Prove once.** `task_prove` records a successful proof run, so no later
-  gate re-runs gnatprove. The SBOM gate runs after the proof gate and reads
+  gate re-runs [gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove). The SBOM gate runs after the proof gate and reads
   the single run's `obj/gnatprove/` artefacts.
-- **Cache what is safe.** The result cache, the generated specs, and the docs
+- **Cache what is safe.** The [result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache), the generated specs, and the docs
   bundle are content-keyed. The docs bundle records the fingerprint of its
   inputs, so an unchanged tree reads 76 ms instead of running Sphinx.
 
@@ -46,7 +46,7 @@ The gates run in three short serial phases around one parallel phase:
    build artefacts, so every later gate must see their product. The docs-tree
    regeneration follows them, so every later gate that reads AGENTS.md (the
    surface-parity tagline check, for example) sees the current block.
-2. **Middle (serial).** The bundled-manual gates, the SPARK proof, the API
+2. **Middle (serial).** The bundled-manual gates, the [SPARK](../../glossary/ste100/ada-terms.md#technical-name-spark) proof, the API
    docs, the SBOM, and the tools unit tests run alone. The first four write
    products that a later gate reads (`docs/api-docs/`, `sbom.json`, the
    badges), and the tools suite compares `git status` around every `--check`,

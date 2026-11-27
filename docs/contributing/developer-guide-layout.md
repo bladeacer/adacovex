@@ -62,7 +62,7 @@ A handful of modes exit before the pipeline: `--help`, `--version`, `man`,
 
 ### API docs and cross-links
 
-`just doc` regenerates `docs/api-docs/` from the `.ads` docstrings via gnatdoc + `tools/rst2md.py`. It produces one page per package plus `index.md`. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the SPARK levels, and the DAL, ASIL, and Class level pages.
+`just doc` regenerates `docs/api-docs/` from the `.ads` docstrings via [gnatdoc](../glossary/ste100/identifiers.md#technical-name-gnatdoc) + `tools/rst2md.py`. It produces one page per package plus `index.md`. The six hand-written reference pages are never regenerated. They are the docstring spec, the test formats, the [SPARK levels](../glossary/ste100/proof-terms.md#technical-name-spark-level), and the [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal), [ASIL](../glossary/ste100/proof-terms.md#technical-name-asil), and Class level pages.
 
 gnatdoc does not copy a subprogram or type description into its RST directives, so `tools/rst2md.py` reads the prose of each `.ads` docstring itself and renders it as the item description. The tool fails the run when a rendered item has no description, an empty parameter row, or an empty Returns line. A new public type or subprogram therefore needs a one-line description in its docstring, or `just doc` reports it and exits non-zero.
 
@@ -94,7 +94,7 @@ Cross-links between the generated package pages and the reference pages live in 
 - The incremental build is a pure speed-up: a one-page prose edit costs about
   1.2 s of Sphinx time instead of about 7 s, and the emitted spec is
   byte-identical to a clean build of the same sources.
-- Every asset body is gzip-compressed, then base85-encoded (the quote-free
+- Every asset body is gzip-compressed, then [base85](../glossary/ste100/identifiers.md#technical-name-base85)-encoded (the quote-free
   Z85 alphabet, which packs 4 bytes into 5 characters where base64 needs
   5.33) into one or more Ada string constants. The server sends the gzip
   bytes with `Content-Encoding: gzip`, so the browser inflates them and the

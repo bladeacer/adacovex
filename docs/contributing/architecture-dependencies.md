@@ -1,18 +1,18 @@
 # Architecture: dependency management and the toolkit
 
 adacovex keeps its publishing manifest dependency-free and resolves its proof
-toolkit at run time. This page records the dependency-management
-decisions: the Alire manifests, the gnatprove resolution order, and the
-system and vendored tools the SBOM records. The companion pages are
+[toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) at run time. This page records the dependency-management
+decisions: the [Alire](../glossary/ste100/identifiers.md#technical-name-alire) manifests, the [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) resolution order, and the
+system and vendored tools the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) records. The companion pages are
 [the architecture decisions](architecture.md),
 [verification and proof patches](architecture-verification.md), and
 [outputs, pipeline, and delivery](architecture-outputs.md).
 
 ## Dependency Management: Alire
 
-adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery mechanism. The publishing manifest `alire.toml` declares **zero dependencies**. It declares no libraries beyond the GNAT runtime. It declares no tool dependencies.
+adacovex uses [Alire](https://alire.ada.dev/) as its packaging and delivery mechanism. The publishing manifest `alire.toml` declares **zero dependencies**. It declares no libraries beyond the [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) runtime. It declares no tool dependencies.
 
-In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gnatprove.out` files produced externally. The `prove` subcommand resolves a gnatprove executable at run time (per-project manifest, `$PATH`, cached toolkit, or download). Development-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is never published to the Alire community index.
+In particular `gnatprove` is *not* a declared dependency. adacovex analyses `gnatprove.out` files produced externally. The `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) resolves a gnatprove executable at run time (per-project manifest, `$PATH`, cached toolkit, or download). Development-only tools (`gnatprove`, `gnatdoc_bin`, `gnatformat_bin`) are declared in `alire-dev.toml`, which is never published to the Alire community index.
 
 ### Manifest distinction (`alire.toml` vs `alire-dev.toml`)
 
@@ -45,7 +45,7 @@ executable in this order:
    `<target>/alire-dev.toml` declares a `gnatprove` dependency, the pinned
    gnatprove binary crate is deployed standalone into `<data>/toolkit/`
    via `alr -n get gnatprove=<version>` and executed directly (the version-set
-   expression, for example `^16.1.0`, is reduced to the bare version alr
+   expression, for example `^16.1.0`, is reduced to the bare version [alr](../glossary/ste100/identifiers.md#technical-name-alr)
    accepts). This isolates the proof run from the target's other dev-manifest
    tools and never swaps manifests. A manifest pin always wins. When the pinned
    version cannot be deployed, the run fails instead of falling back.
@@ -53,7 +53,7 @@ executable in this order:
    variable or the `[prove] gnatprove-version` key in
    the global configuration file, deployed standalone via
    `alr -n get gnatprove=<version>`. It uses the same never-fall-back
-   semantics. It is folded into the proof result-cache identity.
+   semantics. It is folded into the proof [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) identity.
 3. **`$PATH`**: a `gnatprove` already installed (for example `alr install gnatprove`).
 4. **Cached toolkit**: `<data>/toolkit/`. The download layout
    (`<toolkit>/bin/gnatprove`) is used. A previously `alr get`-deployed
@@ -77,7 +77,7 @@ dev-only tool declarations never leak into dependency graphs or SBOMs.
 
 Beyond the Alire graph, `Discover_System_Dev_Deps` adds the system binaries a project interacts with at development time (`python3`, `git`, `gnatprove`, `make`, and more) as `Scope_System` SBOM components. It scans the project's dev-facing files (Makefile variants, build manifests, `.sh` / `.gpr` / `.yml` / `.toml`) for a curated toolkit list and registers every referenced tool that is actually installed on `$PATH` under a `pkg:generic/<tool>` purl. Tools referenced nowhere in the project, or referenced but not installed, are skipped. A Makefile at the project root implies `make`.
 
-`Skip_Scan_Dir` owns the directory decision: VCS metadata, test suites, tool configuration, and generated build trees are never descended into. A build tree is recognised by its conventional name (`build`, `builddir`, `target`, `dist`, `out`, `coverage`) or by the build-system state it holds (`build.ninja`, `meson-info`, `CMakeCache.txt`, `compile_commands.json`). `Source_Tree_Hash` uses the same predicate, so the tool-set cache key covers exactly the files the scan reads.
+`Skip_Scan_Dir` owns the directory decision: [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs) metadata, test suites, tool configuration, and generated build trees are never descended into. A build tree is recognised by its conventional name (`build`, `builddir`, `target`, `dist`, `out`, `coverage`) or by the build-system state it holds (`build.ninja`, `meson-info`, `CMakeCache.txt`, `compile_commands.json`). `Source_Tree_Hash` uses the same predicate, so the tool-set cache key covers exactly the files the scan reads.
 
 The scan runs after the cached manifest graph is resolved (so cache hits and misses agree). Each registered tool's version is probed by running `--version` (or a tool-specific subcommand such as fossil's `version`) and extracting the version token, so the SBOM records the installed version. A probe that fails or prints no digit token leaves the version empty. The source file declaring the `System_Tools` table is skipped by the scan.
 
@@ -123,7 +123,7 @@ Three readers answer for the dialects a row can name: the JSON, TOML,
 and XML readers, plus `Expr_Value`, which reads a plain `Key: value` or
 `Key = value` line (pubspec, DESCRIPTION, cabal, opam, mix.exs,
 rebar.config, Gradle, gemspec, rockspec, conanfile). An ecosystem whose
-manifest states its licence in a non-SPDX vocabulary (R's free-form
+manifest states its licence in a non-[SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) vocabulary (R's free-form
 `License:` field, CPAN's `perl_5`) leaves the field empty, so a licence
 file beside the manifest classifies instead: a licence is never guessed.
 

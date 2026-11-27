@@ -20,9 +20,9 @@ An entry older than its TTL (7 days by default) is a miss, so a cache
 restored long after a project changed cannot serve a stale record. The age
 comes from the entry header, not the file mtime, which a CI restore rewrites.
 
-The result cache is content-addressed per file, so an edit costs only the file
+The [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) is content-addressed per file, so an edit costs only the file
 it touches. The proof cache also records one entry per unit and reports
-`N/M unit(s) hit`; a one-unit edit keeps the other unit entries. gnatprove
+`N/M unit(s) hit`; a one-unit edit keeps the other unit entries. [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)
 still receives one invocation for a partial edit, because the project proof is
 assembled from one run, and its session store
 (`<target>/obj/gnatprove/`) absorbs the solver cost on a warm tree.

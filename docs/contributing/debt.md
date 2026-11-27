@@ -27,10 +27,10 @@ new entry must not propose work that breaks them.
 
 - `pragma SPARK_Mode (Off)` stays at exactly two packages:
   `Types.Implementation` and `Complexity`. Both instantiate the non-formal
-  `Ada.Containers` vectors that gnatprove rejects in `SPARK_Mode On` code.
+  `Ada.Containers` vectors that [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) rejects in `SPARK_Mode On` code.
   `just spark-off-check` fails on a third package.
 - Every new executable statement carries contracts, so `just prove` reaches
-  0 unproved and 0 justified VCs. A change that cannot be proved narrows
+  0 unproved and 0 justified [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc). A change that cannot be proved narrows
   instead of widening the Off set.
 
 ## Register

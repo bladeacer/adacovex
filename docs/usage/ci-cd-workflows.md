@@ -14,14 +14,14 @@ that records the decision for every trigger.
     CSS 4px rule, the `SPARK_Mode (Off)` rule, the changelog format, the
     action/CLI/docs parity, documentation coverage, diagnostics coverage, the
     test layout, test portability, CLI surface parity, the docs tree, markdown
-    links, user documentation, the paragraph splitter, the tldr structure, the
+    links, user documentation, the paragraph splitter, the [tldr](../glossary/ste100/identifiers.md#technical-name-tldr) structure, the
     tools unit tests, the version source, and version consistency. It then
     verifies that the crate description and `requirements.txt` are in sync
     without writing (`CHECK=1`).
   - `build-test` -- `alr build` plus the native suite, then the complexity
     and file-size gate.
   - `self-assessment` -- build + prove + assess at `--standard=all` (so the
-    DO-178C, ISO 26262, and IEC 62304 badges/reports are all emitted and
+    [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), and [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304) badges/reports are all emitted and
     gated), with the Gold / 100% docstrings / test-count / 100% proof
     thresholds and the statement-coverage floor.
   - `coverage-delta` (pull requests only) -- `--coverage-delta` against
@@ -40,9 +40,9 @@ that records the decision for every trigger.
   `adacovex.toml` project-file assertion; see [Project
   configuration](ci-cd-action.md#project-configuration)), and the end-to-end
   suites (CLI, prove diagnostics, and Playwright; one small fixture proves
-  first so the pinned prover is in the toolkit cache). The publish job
+  first so the pinned prover is in the [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) cache). The publish job
   waits for all four, re-runs the parity gates, builds the release binary,
-  runs GNATprove, validates the `--standard=all` self-assessment, and
+  runs [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove), validates the `--standard=all` self-assessment, and
   publishes the GitHub Release (see [Release bundling](#release-bundling)).
 
 Every gate job runs as plain Python (`python3 tools/tasks.py <gate>`), the
@@ -55,10 +55,10 @@ Every CI run leaves a **Markdown summary at the bottom of the job page**
 (`$GITHUB_STEP_SUMMARY`):
 
 - The composite action's assessment step writes an `## adacovex assessment`
-  table. The table shows target, bundled version, compliance label, SPARK
+  table. The table shows target, bundled version, compliance label, [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark)
   level, tests, and coverage. It also writes the full raw output.
 - An `if: always()` **Write run summary** step appends a run-overview table.
-  The table shows version, target, standard, DAL, and job result.
+  The table shows version, target, standard, [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal), and job result.
 - Each workflow adds a **`summary` job** (`if: always()`, `needs:` all other
   jobs) that aggregates every job result into one table at the bottom of the
   run.
@@ -74,7 +74,7 @@ re-running locally:
   full, untruncated assessment output. It also carries the `--emit-metrics`
   JSON export when `emit-metrics` is set. A flaky or unmet gate never requires
   a re-run to reproduce.
-- Badge and SBOM artifacts are uploaded even when the step failed
+- Badge and [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) artifacts are uploaded even when the step failed
   (`if: always()`). Partially produced reports stay inspectable.
 
 Threshold failures **fail loudly** at every layer:
@@ -106,7 +106,7 @@ Threshold failures **fail loudly** at every layer:
 
 **Better debugging output contract.** `ci.yml` now has `timeout-minutes`,
 `concurrency.cancel-in-progress`, `fetch-tags: true`, and `actions/cache` for
-both toolkit and result-cache. After these brittleness fixes, every failure
+both toolkit and [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache). After these brittleness fixes, every failure
 leaves three things without a re-run:
 
 1. The `::error`/`::notice` annotations at the top of the job page.
@@ -128,9 +128,9 @@ cache can never mask a regression.
 | adacovex result cache | `result-cache: true` on `uses: ./` | SHA-256 of the target tree's proof-relevant sources (content-addressed, shared across PR and main) |
 | gnatprove session store | `actions/cache` on `obj/gnatprove` in ci.yml/release.yml | SHA-256 of the proof-relevant sources |
 
-The Alire home cache is new in 1.65.0: it makes the gnatprove binary that
-the `prove` subcommand fetches at run time a cache hit across CI runs on the
-same toolchain. gnatprove is not an `alr toolchain` component, so
+The [Alire](../glossary/ste100/identifiers.md#technical-name-alire) home cache is new in 1.65.0: it makes the gnatprove binary that
+the `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) fetches at run time a cache hit across CI runs on the
+same [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain). gnatprove is not an `alr toolchain` component, so
 `setup-alire`'s own cache (compiler + gprbuild) does not reliably cover it.
 The step lives in the composite action, so every action consumer gets it
 automatically; the existing `cache` input controls it. The cache key tracks
@@ -175,7 +175,7 @@ content-addressed one -- instead of failing before it reaches the restore
 step.
 
 The false-pass guard holds across all four caches. The prove result cache
-refuses to serve a stored summary whose Total row reports unproved VCs, so a
+refuses to serve a stored summary whose Total row reports unproved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc), so a
 degraded run (one killed mid-session, for example) is re-proved rather than
 replayed. Content-addressed keys make a stale restore either an exact hit or
 absent, never a partial match.

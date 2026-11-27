@@ -17,11 +17,11 @@ Each page states the task first: install, run, and read a result. A blockquote
 that starts with **For contributors** holds detail you need only to build
 adacovex from source, change it, or work on its CI. Skip those blockquotes when
 you use the released tool. Every command in the main text is an `adacovex`
-subcommand or flag, so you can paste it as written.
+[subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) or flag, so you can paste it as written.
 
 ## Install and run
 
-- [Installing adacovex](installation.md) -- the Alire crate, the release
+- [Installing adacovex](installation.md) -- the [Alire](../glossary/ste100/identifiers.md#technical-name-alire) crate, the release
   bundle, and the source build, with the version source for each route.
 - [Target project requirements](target-projects.md) -- what a target project
   must contain before adacovex can assess it.
@@ -30,12 +30,12 @@ subcommand or flag, so you can paste it as written.
 
 ## Assess a project
 
-- [CLI reference](cli-reference.md) -- every command, flag, and exit code. The
+- [CLI reference](cli-reference.md) -- every command, flag, and [exit code](../glossary/ste100/tooling-terms.md#technical-name-exit-code). The
   detailed flag pages are
   [assessment flags and subcommands](cli-reference-flags.md),
   [serving, CI, and tool options](cli-reference-options.md), and
   [emitted reports and differential modes](cli-reference-emit.md).
-- [Compliance standards](standards.md) -- DO-178C, ISO 26262, and IEC 62304.
+- [Compliance standards](standards.md) -- [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), and [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304).
   The per-standard detail is on
   [DO-178C and the DAL levels](standards-do-178c.md),
   [ISO 26262 and the ASIL levels](standards-iso-26262.md),
@@ -54,7 +54,7 @@ subcommand or flag, so you can paste it as written.
   schema, the theme resolution order, and the `localStorage` theme key.
 - [Bundled offline manual](dashboard-docs.md) -- the manual that `--serve`
   exposes at `/docs`, and how it is embedded in the binary.
-- [SBOM](sbom.md) -- the proof-aware CycloneDX and SPDX bill of materials.
+- [SBOM](sbom.md) -- the proof-aware [CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx) and [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) bill of materials.
   [SBOM dependency resolution](sbom-resolution.md) holds the licence and
   dependency lookup.
 - [HLR index](../compliance/HLR.md) and
@@ -75,7 +75,7 @@ subcommand or flag, so you can paste it as written.
   and global configuration files, every key, and the sample configuration.
 - [Configuration state and environment](configuration-state.md) -- the state
   directories, the environment variables, and how to reset state.
-- [Platform support](platforms.md) -- supported platforms and the toolkit
+- [Platform support](platforms.md) -- supported platforms and the [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit)
   state of each.
 
 ## Where to look next

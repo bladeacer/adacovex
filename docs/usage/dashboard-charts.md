@@ -16,14 +16,14 @@ never rotate or overflow and the ring colour reflects the covered share
 - **Robustness** -- the five-axis health radar (Docs, Proof, Tests, Comp,
   Deps) with the S/A/B/C/D tier rating, shared with the Overview (one
   source of truth, so the two tabs cannot drift apart).
-- **SPARK Proof by Check Type** -- the per-category proof radar (Flow,
+- **[SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) Proof by Check Type** -- the per-category proof radar (Flow,
   Init, Runtime, Assert, Func), also shared with the Overview.
-- **SPARK Proof** -- *donut* of proved vs unproved VCs (`720/720` shows a
+- **SPARK Proof** -- *donut* of proved vs unproved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) (`720/720` shows a
   full green ring. `680/720` shows `94%` green + `6%` red unproved).
 - **Proof Check Types** -- *bars* of proved checks per category (flow,
   init, runtime, assertions, functional, termination), sized against the
   largest category so bars scale with magnitude exactly like the test
-  chart. The numbers mirror gnatprove's own summary table: on gnatprove 16
+  chart. The numbers mirror [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)'s own summary table: on gnatprove 16
   the Flow category sums the "Data Dependencies" and "Flow Dependencies"
   rows, and every category's proved count is Total - Justified - Unproved,
   so the rows sum to the Total.

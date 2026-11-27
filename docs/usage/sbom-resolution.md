@@ -59,10 +59,10 @@ Vendored manifest ecosystems report their licence from the local manifest
 `composer.json`; `license:` in `*.cabal` and `*.opam`; `license =` in a
 `.rockspec` and `conanfile.py`; `PackageLicenseExpression` in a `*.csproj`;
 `s.license` in a `*.gemspec`). A licence file beside the manifest is
-classified into an SPDX identifier when the manifest carries none, and the
+classified into an [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) identifier when the manifest carries none, and the
 package registry answers as the online fallback when both are silent.
 
-CycloneDX writes one SPDX identifier in `license.id` and an SPDX
+[CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx) writes one SPDX identifier in `license.id` and an SPDX
 **expression** in `license.expression`, so a licence that carries a space or
 a parenthesis (`Apache-2.0 OR MIT`, `Apache-2.0 WITH LLVM-exception`) takes
 the expression form. A single identifier (MIT, Apache-2.0, GPL-2.0+) keeps
@@ -81,7 +81,7 @@ table, so adding a language is one row rather than a new code path:
 - **cargo** (Rust) -- `cargo search <pkg>`, with the SPDX id read from the
   `(license: ...)` token in the output.
 - **go** -- `go list -m --json <module>@latest`, with the version read from
-  the `Version` field. See [Go modules](#go-modules) below: the Go toolchain
+  the `Version` field. See [Go modules](#go-modules) below: the Go [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain)
   reports no licence and no website, so both come from files instead.
 - An ecosystem with no portable, reliable registry query keeps an empty
   licence, version, and website; nothing is ever guessed.
@@ -117,7 +117,7 @@ Gitea, Codeberg, or a private mirror.
   or an ambiguous GPL text reports **no** licence. **A licence is never
   guessed.**
 - **Website.** Always empty. `go list -m` has no website field, and its
-  `Origin.URL` names a forge-specific VCS endpoint, not a project home
+  `Origin.URL` names a forge-specific [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs) endpoint, not a project home
   page, so adacovex does not surface it.
 
 A vanity import path (one whose first element is not a forge host, such as
@@ -136,13 +136,13 @@ so each component boots node once instead of once per field. The fallback
 runs only when the offline read finds nothing, so a vendored package that
 ships a licence never touches the network -- and the same holds for a Go
 tree that carries a `modules.txt` and a licence file. The
-resolved licence flows into every SBOM format (CycloneDX `licenses`, SPDX
+resolved licence flows into every [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) format (CycloneDX `licenses`, SPDX
 `licenseConcluded` / `licenseDeclared`, Markdown `License` column) and the
 dashboard detail panel; the resolved version and website appear in the
 dashboard detail panel and the `/api/deps` JSON.
 
 The resolver caches each answer in a per-project store under the project's
-result cache (the same `--cache-dir` the scan uses), keyed by the target
+[result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) (the same `--cache-dir` the scan uses), keyed by the target
 directory as well as the ecosystem and package name, with a 7-day TTL -- the
 same scheme as the system-tool version probes. The content-addressed result
 cache does not cover these registry calls, so without this layer a warm run
@@ -205,7 +205,7 @@ version probes, and the cache identity are on
 A dependency used only by the project's tests is classified `test` (the
 `adacovex:dep_scope` property value `"test"`). adacovex recognises
 test-only declarations in every supported ecosystem's manifest, in addition
-to the Alire `[[test-depends-on]]` sections and test project files:
+to the [Alire](../glossary/ste100/identifiers.md#technical-name-alire) `[[test-depends-on]]` sections and test project files:
 
 | Manifest file       | Test label |
 |---------------------|------------|

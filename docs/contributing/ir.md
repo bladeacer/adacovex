@@ -1,9 +1,9 @@
 # A gnatprove-friendly IR for lowered code
 
-adacovex audits Ada/SPARK projects. Some of the code it audits is written in
+adacovex audits Ada/[SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) projects. Some of the code it audits is written in
 a foreign style: C-style integer types (`int32_t`, `size_t`), unchecked
 arithmetic, and subprogram signatures that carry no SPARK contracts. Such
-code is hard for gnatprove to prove, because the proof must discover the
+code is hard for [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) to prove, because the proof must discover the
 bounded intent behind the foreign names and the unchecked operations.
 
 This page records the exploration of an **intermediate representation (IR)**
@@ -31,7 +31,7 @@ The existing bounded types in `Adacovex.Target_Profiles` (`IR_Int32`,
 `IR_UInt64`, and the other `IR_*` scalars) fix half of the problem. They give
 lowered code a type whose range is the machine word size, so the arithmetic
 is checked against the intent. The `Adacovex.IR_Bounds` fixture proves that
-checked additions over these types discharge in one or two VCs.
+checked additions over these types discharge in one or two [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc).
 
 The other half is the **contract**. Lowered code must carry the half-range
 guard that makes the checked arithmetic provable. `Target_Profiles`

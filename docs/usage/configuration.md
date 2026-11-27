@@ -90,7 +90,7 @@ file can set one value and inherit the rest.
 
 ### `[prove] gnatprove-version`
 
-This key pins the gnatprove version that the `prove` subcommand runs. It
+This key pins the [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) version that the `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) runs. It
 applies **only** when the target project does not declare `gnatprove` in its
 own `alire.toml` or `alire-dev.toml`; a project manifest pin always wins.
 adacovex deploys the pinned version standalone with
@@ -99,8 +99,8 @@ binary directly.
 
 The pin is authoritative and never falls back. When the pinned version cannot
 be deployed, the run fails instead of using a different prover, because a
-different gnatprove can change which verification conditions are discharged.
-The pin is also folded into the proof result-cache identity, so changing it
+different gnatprove can change which [verification conditions](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) are discharged.
+The pin is also folded into the proof [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) identity, so changing it
 forces a fresh proof instead of serving a stale one. The value must be a bare
 version such as `16.1.0`, or a constraint such as `^16.1.0` whose leading
 operator is stripped.
@@ -108,7 +108,7 @@ operator is stripped.
 The environment variable `ADACOVEX_GNATPROVE_VERSION` overrides this key. The
 full resolution order is: project manifest pin, then the global pin
 (environment variable, then this file), then a gnatprove on `$PATH`, then the
-cached toolkit under `<data>/toolkit/`, and finally the last-resort
+cached [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) under `<data>/toolkit/`, and finally the last-resort
 platform download.
 
 ### `[prove] coverage`

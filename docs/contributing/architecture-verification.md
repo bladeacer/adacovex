@@ -1,6 +1,6 @@
 # Architecture: verification and proof patches
 
-This page covers the verification machinery: the IR synthesiser, the DO-178C DAL assessment criteria, source scanning, and the patch system (including proof patches that add SPARK contracts over vendored dependencies). The dependency and proof-level design is on [Architecture Decisions](architecture.md); the renderers, caching, delivery, and execution order are on [Architecture: outputs and pipeline](architecture-outputs.md).
+This page covers the verification machinery: the IR synthesiser, the [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c) [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) assessment criteria, source scanning, and the patch system (including [proof patches](../glossary/ste100/tooling-terms.md#technical-name-proof-patch) that add [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) contracts over vendored dependencies). The dependency and proof-level design is on [Architecture Decisions](architecture.md); the renderers, caching, delivery, and execution order are on [Architecture: outputs and pipeline](architecture-outputs.md).
 
 ## IR Synthesiser
 
@@ -8,7 +8,7 @@ The `src/ir/` layer starts an intermediate representation for
 cross-compilation assessments, so the tool can reason about types as they
 exist on a target rather than only as they appear in Ada source:
 
-- `Adacovex.Target_Profiles` defines bounded machine-integer types
+- `Adacovex.Target_Profiles` defines bounded [machine-integer types](../glossary/ste100/tooling-terms.md#technical-name-machine-integer-type)
   (`IR_Int8`..`IR_Int64`, `IR_UInt8`..`IR_UInt64`) with `Size` clauses and a
   `Target_Config` record (host/target/pointer word sizes). The types are
   SPARK-proved: `Checked_Add32` / `Checked_Add64` show overflow is detected,
@@ -16,7 +16,7 @@ exist on a target rather than only as they appear in Ada source:
 - `Adacovex.IR_Synthesiser` lowers foreign type names (`int8_t`, `size_t`,
   `usize`, `ptrdiff_t`, ...) onto the bounded IR types and synthesizes
   package declarations from a comma/whitespace-separated type list.
-- `Adacovex.IR_Bounds` is a gnatprove fixture deriving synthesized-style
+- `Adacovex.IR_Bounds` is a [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) fixture deriving synthesized-style
   `int32_t` / `int64_t` types and proving their `Add32` / `Add64` overflow
   checks, so absence of integer overflow on the lowered types is
   machine-checked.
@@ -25,7 +25,7 @@ exist on a target rather than only as they appear in Ada source:
 
 The DAL assessment evaluates four criteria:
 
-1. All HLRs defined in `docs/compliance/HLR.md` are traced by `-- HLR-XXXX` tags in source
+1. All [HLRs](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) defined in `docs/compliance/HLR.md` are traced by `-- HLR-XXXX` tags in source
 2. No orphan tags (every in-source HLR maps to a defined HLR)
 3. All tests passing (zero failures in `test_result.md`)
 4. Minimum SPARK proof level met (varies by DAL level)
@@ -43,7 +43,7 @@ The scanner walks the target directory tree, skipping always-excluded directorie
 
 In strict mode (default), the scanner also applies docstring patches from `.adacovex/patches/` to document vendored/third-party code without modifying the originals.
 
-A file can opt out of an individual analysis gate with a marker in its leading comment block: `no-covex-complexity-scan`, `no-covex-docstrings`, `no-covex-spark-proof`, or `no-covex-analysis` for all three. The scanner honours the docstring and proof markers when it reads each `.ads` header; the complexity checker applies the complexity marker to every scanned language, and the `prove` subcommand applies the proof marker to the root project's units (via gnatprove `-u`). See the [CLI reference -- per-file opt-out markers](../usage/cli-reference-flags.md#per-file-opt-out-markers) and `Adacovex.Opt_Outs`.
+A file can opt out of an individual analysis gate with a marker in its leading comment block: `no-covex-complexity-scan`, `no-covex-docstrings`, `no-covex-spark-proof`, or `no-covex-analysis` for all three. The scanner honours the docstring and proof markers when it reads each `.ads` header; the complexity checker applies the complexity marker to every scanned language, and the `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) applies the proof marker to the root project's units (via gnatprove `-u`). See the [CLI reference -- per-file opt-out markers](../usage/cli-reference-flags.md#per-file-opt-out-markers) and `Adacovex.Opt_Outs`.
 
 ## Patch System
 
@@ -130,7 +130,7 @@ The original vendored sources are never touched.
    `<target>/obj/gnatprove/gnatprove.out` for the assessment pipeline. The
    copy lives under the target's `obj/`, so it is excluded from scanning,
    manifest graphs, and the prove input hash.
-4. Proof-patch contents are folded into the prove result-cache key, so a
+4. Proof-patch contents are folded into the prove [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) key, so a
    patch edit invalidates the cached proof and forces a re-prove.
 
 #### The two patch shapes
@@ -162,7 +162,7 @@ spec and body carry no contracts, with the spec patch above declaring
 and the body patch opting the body into the proof. The merged copy is what
 gnatprove sees -- `package body Vecmath with SPARK_Mode => On is` with the
 original `if Value < Lo ... return Value` implementation intact -- and the
-contracts prove: 2 VCs (the `Clamp` postcondition and its termination
+contracts prove: 2 [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) (the `Clamp` postcondition and its termination
 check), 0 unproved.
 
 Where the vendored body is SPARK-clean and opted in via a body patch,

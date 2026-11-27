@@ -1,7 +1,7 @@
 # CLI flag details: serving, CI, and tool options
 
 This page details the serving flags (`--serve`, `--theme`, `--port`,
-`--serve-workers`, `--watch`/`--no-watch`, `--tz`), the subcommands with flags of their own
+`--serve-workers`, `--watch`/`--no-watch`, `--tz`), the [subcommands](../glossary/ste100/tooling-terms.md#technical-name-subcommand) with flags of their own
 (`completion`, `man`), the CI threshold gates (`--require-*`), result caching,
 `--verbose`, and `--help`. The flag summary table and worked examples are on
 the [CLI reference](cli-reference.md); the assessment flags and subcommands
@@ -22,7 +22,7 @@ Full detail, the JSON schema, the theme-resolution order, and embedding tips are
 
 ### `--theme=NAME`
 
-Dashboard colour theme for `--serve`: `system` (default, follows `prefers-color-scheme`), `light`, or `dark` (case-insensitive). It sets the initial dropdown selection in the served page. The header dropdown can switch live afterwards, and **Save settings** persists the choice in `localStorage` (no cookies). Only relevant with `--serve`.
+Dashboard colour theme for `--serve`: `system` (default, follows `prefers-color-scheme`), `light`, or `dark` (case-insensitive). It sets the initial dropdown selection in the served page. The header dropdown can switch live afterwards, and **Save settings** persists the choice in `localStorage` (no [cookies](../glossary/ste100/web-terms.md#technical-name-cookie)). Only relevant with `--serve`.
 
 See [dashboard themes](dashboard-api.md#themes).
 
@@ -45,7 +45,7 @@ use less memory. It must be a valid `Positive` integer and only works with
 ### `--watch` / `--no-watch`
 
 Watch mode for `--serve`, **on by default**. The server rescans the target
-every two seconds through the result cache and publishes fresh document and
+every two seconds through the [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) and publishes fresh document and
 package metrics. The dashboard polls `GET /api/watch` and reloads when the
 generation changes, so an edit shows on the next refresh.
 
@@ -61,11 +61,11 @@ See [Web dashboard](dashboard.md).
 
 ### `--tz=ZONE` / `--timezone=ZONE`
 
-Display timezone for the status report. adacovex stores timestamps as
+Display [timezone](../glossary/ste100/concepts.md#technical-name-timezone) for the status report. adacovex stores timestamps as
 `UTC+00:00` by default. Without the flag, or with `--tz=UTC` / `--tz=GMT+0`,
 the report shows `UTC+00:00`. Use `--tz=local` to opt into the operating
 system's wall-clock timezone for this invocation. Other accepted forms are a
-well-known IANA name (for example `Asia/Singapore`) or a fixed UTC/GMT offset
+well-known [IANA](../glossary/ste100/concepts.md#technical-name-iana) name (for example `Asia/Singapore`) or a fixed [UTC](../glossary/ste100/concepts.md#technical-name-utc)/[GMT](../glossary/ste100/concepts.md#technical-name-gmt) offset
 (`UTC+8`, `GMT+8`, `UTC+08`, `GMT+08`, `UTC+08:30`).
 
 A named zone resolves from a built-in table of common IANA names. A zone
@@ -85,7 +85,7 @@ marker (`no-covex-*`) opts one file out of one gate, or out of all gates with
 `no-covex-analysis`; the per-file markers are on [CLI flag details: assessment
 flags and subcommands](cli-reference-flags.md#per-file-opt-out-markers). A file
 named `.covex-ignore` in a directory excludes that directory and every
-directory below it from the source scan (docstrings, HLR tags, and the DAL
+directory below it from the source scan (docstrings, [HLR tags](../glossary/ste100/identifiers.md#technical-name-hlr-tag), and the [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal)
 assessment) and from the complexity walk; an empty file is enough.
 
 The forms stay separate: a marker file cannot opt one gate out, and a header
@@ -107,7 +107,7 @@ their narrower scopes.
 
 Print the bundled version (`adacovex vX. Y. Z`) and exit, without scanning or assessing. The version source depends on the **installation method** (`ADACOVEX_VERSION` for release builds, `alire-dev.toml` for source checkouts, `alire.toml` for dependency-managed installs).
 
-The same constant drives the man page, the SBOM tool version, and the result-cache namespace. As a result, they cannot drift. Full detail: [Installation -- version source](installation.md#version-source-per-installation-method).
+The same constant drives the [man page](../glossary/ste100/tooling-terms.md#technical-name-man-page), the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) tool version, and the result-cache namespace. As a result, they cannot drift. Full detail: [Installation -- version source](installation.md#version-source-per-installation-method).
 
 ### `completion`
 
@@ -139,19 +139,19 @@ page matches the binary. It exits 1 otherwise (a shell prompt hook can
 auto-update as a result). `--dir=PATH` overrides the install root.
 
 Full
-detail, the platform matrix, exit codes, and the prompt-hook recipe are in
+detail, the platform matrix, [exit codes](../glossary/ste100/tooling-terms.md#technical-name-exit-code), and the prompt-hook recipe are in
 [Installation -- keeping the man page in sync](installation.md#keeping-the-man-page-in-sync)
 and [Platforms -- local man page](platforms.md#local-man-page).
 
 ### `tldr`
 
-`adacovex tldr` installs the bundled tldr page into the local tldr client, so
+`adacovex tldr` installs the bundled [tldr page](../glossary/ste100/tooling-terms.md#technical-name-tldr-page) into the local tldr client, so
 `tldr adacovex` works offline. The page is `docs/tldr/adacovex.md`, embedded
 in the binary at build time. The command detects the client first.
 
-tealdeer receives the page in its flat custom pages directory
+[tealdeer](../glossary/ste100/identifiers.md#technical-name-tealdeer) receives the page in its flat custom pages directory
 (`adacovex.page.md`), which sits outside the cache, so `tldr --update` cannot
-remove it. A client that follows the tldr CLIENT-SPECIFICATION receives the
+remove it. A client that follows the [tldr](../glossary/ste100/identifiers.md#technical-name-tldr) CLIENT-SPECIFICATION receives the
 page in its cache pages tree: the common page, plus the platform page when
 the system is known.
 
@@ -174,15 +174,15 @@ target does not meet the required level:
 adacovex --target=. --spark=Gold --docstrs=100 --require-tests=2606 -r 100
 ```
 
-- `require-spark` (alias `--spark`) compares the honest assessed SPARK level
+- `require-spark` (alias `--spark`) compares the honest assessed [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level)
   (Stone..Platinum).
 - `require-docstrings` (alias `--docstrs`) and `require-proof` (shorthand
   `-r`) take a percentage (0-100).
 - `require-tests` (alias `--tests`) takes a count of passing tests.
 
-CI that pins a gnatprove version (manifest or global `adacovex.toml` pin)
+CI that pins a [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) version (manifest or global `adacovex.toml` pin)
 must set these to the values that version actually achieves. A stricter
-prover can legitimately leave more VCs unproved. As a result, gate on the
+prover can legitimately leave more [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) unproved. As a result, gate on the
 results of the prover you pin. The global pin is documented on
 [Global configuration and state](configuration.md); the other environment
 variables on [Configuration state and environment](configuration-state.md).
@@ -190,7 +190,7 @@ variables on [Configuration state and environment](configuration-state.md).
 ### Result caching (`--cache` / `--no-cache` / `--cache-dir` / `--cache-max` / `--cache-expiry` / `--cache-clear`)
 
 Shorthands: `-c` and the bare word `cache`. adacovex persists parsed
-analysis results on disk, so unchanged inputs are not re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged manifest/lockfile/.gpr set serves the cached dependency graph, and unchanged `compliance/HLR.md` and `compliance/LLR.md` files serve the cached requirement parses.
+analysis results on disk, so unchanged inputs are not re-scanned, re-parsed, or re-proved. Every entry is keyed by a namespace prefix plus the SHA-256 of the artifact(s) it was derived from. An unchanged manifest/lockfile/[.gpr](../glossary/ste100/identifiers.md#technical-name-gnat-project-file-gpr) set serves the cached dependency graph, and unchanged `compliance/HLR.md` and `compliance/LLR.md` files serve the cached requirement parses.
 
 `--no-cache` bypasses the cache entirely. `--cache-dir` relocates it. `--cache-max` (default `4096`) caps entries before oldest-first eviction.
 
@@ -202,7 +202,7 @@ Every entry carries a fixed 24-byte header: a format tag and the entry's own wri
 
 Every run reads the cache through one resolved project identity. A relative `--target`, an absolute `--target`, and a run started in the project directory share the same entries, from `prove`, `sbom`, and a plain assessment alike, so long as the resolved project path is the same. The proof cache also records one entry per unit under the `proveunit:` namespace; a one-unit edit keeps the other unit entries and reports the split (`N/M unit(s) hit`). The whole-run proof entry is still the gate that restores the proof artefacts.
 
-The ANSI report shows a `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design (schema namespace, per-unit proof entries, eviction, overflow safety, `--target` normalization) is in [Architecture -- Result caching](../contributing/architecture.md#result-caching).
+The [ANSI](../glossary/ste100/identifiers.md#technical-name-ansi) report shows a `result cache: X hit(s), Y miss(es), Z evicted` line per run. Full design (schema namespace, [per-unit proof entries](../glossary/ste100/tooling-terms.md#technical-name-per-unit-proof-entry), eviction, overflow safety, `--target` normalization) is in [Architecture -- Result caching](../contributing/architecture.md#result-caching).
 
 ### `--verbose`
 

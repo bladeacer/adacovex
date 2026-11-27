@@ -27,7 +27,7 @@ not as today's numbers. 1.47.0 is the first release compiled with `-O2
 were measured in the same session as 1.47.0, so their load conditions match.
 The 1.50.0 column came from a later session, so read it for shape, not for a
 millisecond-level A/B against 1.47.0. The 1.52.0 column is the first measured
-at gnatprove `--level=4` (its prove gate) and on the same tree the cold-clone
+at [gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove) `--level=4` (its prove gate) and on the same tree the cold-clone
 scenario landed in:
 
 | Scenario | 1.46.0 (`-O0`) | 1.47.0 (`-O2`) | 1.50.0 | 1.52.0 |
@@ -42,7 +42,7 @@ scenario landed in:
 | Stripped binary | 6.49 MiB | 5.39 MiB (-17%) | 5.3 MiB | 5.4 MiB |
 
 The 1.52.0 column was measured in one session (hyperfine, gnatprove 16.1.0,
-12 logical cores, `--level=4` prove gate at 878 VCs). Its pipeline rows are
+12 logical cores, `--level=4` prove gate at 878 [VCs](../../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc)). Its pipeline rows are
 the fastest of the four columns, which is measurement noise on an I/O-bound
 path, not a claimed optimisation: the 1.52.0 work touched no scanning or
 rendering code. The prove-cold figure moves down from 1.50.0's 87.6 s
@@ -74,7 +74,7 @@ session store amortises across repetitions that keep it).
 The numbers shift with the machine and the codebase. What matters is the
 shape: the warm paths sit in the tens of milliseconds, and the cold paths
 are bounded by work that genuinely must happen (hashing the changed
-sources, parsing the proof, building the SBOM) -- a from-scratch solver
+sources, parsing the proof, building the [SBOM](../../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom)) -- a from-scratch solver
 run happens once per gnatprove session, not once per run.
 
 **Every scenario banner carries the load it was measured under**, because the
@@ -238,7 +238,7 @@ wall time (strace -c on the same tree):
 | `gen-docs.py --fresh` | 115 581 | 46 366 |
 
 The same change closed the parity gap that made the spec gate fail on a
-cold machine. Sphinx merges an incremental search index with the one
+cold machine. Sphinx merges an incremental [search index](../../glossary/ste100/web-terms.md#technical-name-search-index) with the one
 already on disk, and its prune empties a removed word's document set
 without dropping the key, so a committed spec carried phantom word
 entries (`"appveyor":[]`) that a clean build never emits. The bundler now
@@ -265,13 +265,13 @@ tree -- the cold tree pays the compile, not the check.
 
 ## Host-side toolkit caches
 
-A cold machine pays for its toolkit once, per host, outside the tree.
-Alire fetches `gnat_native` (990 MB unpacked) and `gprbuild` (278 MB) into
+A cold machine pays for its [toolkit](../../glossary/ste100/tooling-terms.md#technical-name-toolkit) once, per host, outside the tree.
+[Alire](../../glossary/ste100/identifiers.md#technical-name-alire) fetches `gnat_native` (990 MB unpacked) and `gprbuild` (278 MB) into
 `~/.local/share/alire/toolchains/` on the first `alr build`. The
 dev-manifest commands fetch their binary crates into
 `~/.local/share/alire/releases/`: `gnatdoc_bin` (139 MB) for `just doc`,
 `gnatformat_bin` (53 MB) for `just fmt`, and `gnatprove` (1.3 GB) for the
-proof tools. The `prove` subcommand's own download keeps a second copy
+proof tools. The `prove` [subcommand](../../glossary/ste100/tooling-terms.md#technical-name-subcommand)'s own download keeps a second copy
 under `~/.local/share/adacovex/toolkit/`.
 
 Nothing in that list is a build dependency of the crate. Once the caches
@@ -292,7 +292,7 @@ describe the shipped binary's profile.
 ## The prove cold-clone shape
 
 1.52.0 adds a fifth scenario to `just bench`: prove against a **fresh copy**
-of the tree -- no result cache, no gnatprove session, and no
+of the tree -- no [result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache), no gnatprove session, and no
 `gnatprove.out`. It is the first-run-on-a-new-checkout shape: prove cold
 wipes the session but leaves the summary in place, while a cold clone has
 nothing, so nothing can short-circuit. Measured on the 1.52.0 tree:

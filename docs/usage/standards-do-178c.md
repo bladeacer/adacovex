@@ -1,6 +1,6 @@
 # DO-178C and the DAL levels
 
-DO-178C is the airborne-software standard. It defines how a team designs,
+[DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c) is the airborne-software standard. It defines how a team designs,
 implements, verifies, and certifies software that flies an aircraft. Every
 item of flight software is assessed at one of five
 [Design Assurance Levels (DAL A to DAL E)](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal).
@@ -44,7 +44,7 @@ the test gate changes with the level.
 | E | No requirement |
 
 Structural coverage (MC/DC or statement) is not assessed: adacovex reports
-the statement, subprogram, and VC coverage gnatprove measures, and the
+the statement, subprogram, and [VC](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) coverage [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) measures, and the
 structural-coverage evidence a DAL A or DAL B campaign needs stays with
 the project.
 
@@ -60,8 +60,8 @@ the project.
 
 The minimum levels match `Min_SPARK_For` in
 `src/compliance/adacovex-compliance-dal.adb`. Gold is the compliance
-baseline. Platinum (every functional contract proved, and full proof coverage:
-every subprogram the SPARK coverage report assesses proved) is a best-effort
+baseline. Platinum (every functional contract proved, and full [proof coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage):
+every subprogram the [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) coverage report assesses proved) is a best-effort
 ideal that adacovex reports when achieved, never a compliance gate.
 
 ## Assessing at a DAL

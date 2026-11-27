@@ -1,12 +1,12 @@
 # Architecture: outputs and formats
 
-This page covers the output formats, the build and documentation gates, and the reading contract. The dependency and proof-level design is on [Architecture Decisions](architecture.md); the IR, DAL, scanning, and patch system are on [Architecture: verification and proof patches](architecture-verification.md); the pipeline order, the platforms, and the delivery channels are on [Architecture: pipeline, platforms, and delivery](architecture-pipeline.md).
+This page covers the output formats, the build and documentation gates, and the reading contract. The dependency and proof-level design is on [Architecture Decisions](architecture.md); the IR, [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal), scanning, and patch system are on [Architecture: verification and proof patches](architecture-verification.md); the pipeline order, the platforms, and the delivery channels are on [Architecture: pipeline, platforms, and delivery](architecture-pipeline.md).
 
 ## Output Formats
 
 adacovex supports multiple output formats:
 
-- **ANSI terminal report**: Colour-coded summary for interactive use.
+- **[ANSI](../glossary/ste100/identifiers.md#technical-name-ansi) terminal report**: Colour-coded summary for interactive use.
   Colour is suppressed under CI, `NO_COLOR`, or `TERM=dumb`, so CI logs
   stay plain (see `Adacovex.Ansi` and its pure decision function
   `Colour_Allowed`)
@@ -24,30 +24,30 @@ adacovex supports multiple output formats:
    libraries at the `resources/` root (`graphre.js`, `nomnoml.js`,
    `flexsearch.js`, `yace.js`) into a single minified page shell. The layout
    separates dependency JavaScript (`resources/` root) from authored dashboard
-   JavaScript (`resources/js/`), which is also how the SBOM asset scanner
+   JavaScript (`resources/js/`), which is also how the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) asset scanner
    tells vendored components from the project's own modules.
 
    The tool regenerates `src/adacovex-dashboard_template.ads` (a String
    constant, committed and byte-identical when unchanged).
    
    The Ada compiler includes that constant in the final binary. Every released
-   binary - whether a GitHub release artifact or an Alire crate binary - carries
+   binary - whether a GitHub release artifact or an [Alire](../glossary/ste100/identifiers.md#technical-name-alire) crate binary - carries
    the complete dashboard with no external file dependencies.
    
    At runtime, `Adacovex.Renderers.HTML.Render_Dashboard_Internal` only builds
    the dynamic card markup and injects it at the `__CARDS__` placeholder, filling
    the `__THEME__` initial-theme marker. The result is a single self-contained
    HTML document: no CDN, no network requests, works offline.
-- **SBOM**: CycloneDX 1.5, SPDX 2.3, or Markdown format with proof, standard,
+- **SBOM**: [CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx) 1.5, [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) 2.3, or Markdown format with proof, standard,
   and DAL/level properties
 
 ## Testing
 
-adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 2606 tests across 30 categories. No external test framework (AUnit, and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
+adacovex uses a native zero-dependency test framework (`Adacovex.Test_Support`) with 2606 tests across 30 categories. No external test framework ([AUnit](../glossary/ste100/identifiers.md#technical-name-aunit), and more) is required. Test results are written to `docs/test_result.md` in a parseable Markdown table format.
 
 ## Complexity check
 
-The `complexity` subcommand walks the whole target and scores every language
+The `complexity` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) walks the whole target and scores every language
 the SBOM parser recognises: Ada, C, C++, C#, Go, Java, JavaScript,
 TypeScript, Python, Ruby, PHP, Rust, Shell, PowerShell, Kotlin, Swift,
 Scala, OCaml, Lua, Perl, Haskell, Elixir, Erlang, Clojure, Dart, SQL,
@@ -61,7 +61,7 @@ complexity-check` gates the tree through the same thresholds.
 
 ## Timezone resolution
 
-adacovex honours the operating system's timezone by default. The resolved
+adacovex honours the operating system's [timezone](../glossary/ste100/concepts.md#technical-name-timezone) by default. The resolved
 offset comes from `Ada.Calendar.Time_Zones.UTC_Time_Offset`, the standard
 Ada runtime, which reads the `TZ` variable and the system timezone through
 the C library, so the default is always the operator's wall clock
@@ -70,7 +70,7 @@ time in it, and how many dated release changelogs the target carries under
 `docs/changelogs`.
 
 `--tz` / `--timezone` override the display zone for one invocation. The
-value is either a well-known IANA name (for example `Asia/Singapore`) or a
+value is either a well-known [IANA](../glossary/ste100/concepts.md#technical-name-iana) name (for example `Asia/Singapore`) or a
 fixed `UTC`/`GMT` offset (`UTC+8`, `GMT+8`, `UTC+08`, `GMT+08`,
 `UTC+08:30`). adacovex ships no timezone database, so a named zone
 resolves from a built-in table of common IANA names and their standard-time
@@ -79,7 +79,7 @@ table), or one the table lacks, is probed against the platform tzdata
 (`zdump` validates the name, `date +%z` reads the current offset, both
 through one shell command) for the DST-correct offset; the table offset is
 the fallback when the probe is unavailable. The date/time rendering
-compensates for GNAT's local-time calendar accessors, so the displayed wall
+compensates for [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat)'s local-time calendar accessors, so the displayed wall
 clock is correct in every zone. `HLR-TZ` covers this behaviour.
 
 ## Build and documentation gates

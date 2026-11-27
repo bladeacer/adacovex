@@ -13,8 +13,8 @@ same information.
 
 Prerequisites:
 
-- **Alire** >= 2.0 (`alr`) -- the Ada package manager. It downloads and manages
-  the GNAT toolchain for you.
+- **[Alire](../glossary/ste100/identifiers.md#technical-name-alire)** >= 2.0 (`alr`) -- the Ada package manager. It downloads and manages
+  the [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain) for you.
 - **GNAT** Ada compiler -- managed by Alire (`alr` pulls `gnat_native`).
 - **Python 3** -- required at **build time** to bundle the dashboard and the
   offline manual into the binary (`tools/gen-dashboard.py` and
@@ -23,8 +23,8 @@ Prerequisites:
   (`[project].dependencies`), which `just requirements` renders into the
   committed `requirements.txt`. The shipped binary itself has no Python or
   other runtime dependency.
-- **gnatprove** -- optional for *using* adacovex, required for `just prove`.
-  It is resolved at run time (manifest pin, `$PATH`, cached toolkit, or
+- **[gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)** -- optional for *using* adacovex, required for `just prove`.
+  It is resolved at run time (manifest pin, `$PATH`, cached [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit), or
   download). It lives in the dev manifest, never the published one.
 
 ```bash
@@ -53,7 +53,7 @@ A cold host pays for its toolkit once, outside the tree. The first
 `gprbuild` (278 MB). The dev-manifest commands fetch their binary crates
 into `~/.local/share/alire/releases/`: `gnatdoc_bin` (139 MB) for
 `just doc`, `gnatformat_bin` (53 MB) for `just fmt`, and `gnatprove`
-(1.3 GB) for the proof tools. The `prove` subcommand's own download keeps
+(1.3 GB) for the proof tools. The `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand)'s own download keeps
 a second copy under `~/.local/share/adacovex/toolkit/`.
 
 Nothing in that list is a build dependency of the crate itself. The
@@ -92,10 +92,10 @@ recipes pick `.venv/Scripts` instead of `.venv/bin`.
 
 `just check` is the pre-commit gate. `fmt` and `build` run first and alone,
 because gnatprove, the API docs, and the tests all read the formatted,
-compiled tree. The manual, API-docs, SBOM, proof, and tools-test gates run next as short
+compiled tree. The manual, API-docs, [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom), proof, and tools-test gates run next as short
 serial steps, then every independent gate (the static checks, native tests,
 CLI end-to-end checks, and prove diagnostics) runs in one parallel phase. The run finishes with the tree-wide count-sync checks. A warm
-tree finishes in about 39 s; the stamps for `fmt` and gnatdoc and the build,
+tree finishes in about 39 s; the stamps for `fmt` and [gnatdoc](../glossary/ste100/identifiers.md#technical-name-gnatdoc) and the build,
 docs-bundle, and proof memos keep a warm run from repeating work.
 
 Every gate runs a preflight before it runs. A gate whose tool is missing on
@@ -108,7 +108,7 @@ only when a gate failed.
 **`gnatformat` has no Windows binary.** The `fmt` gate resolves
 `gnatformat_bin` through the dev manifest, and the Alire community index
 carries no Windows build of it, so `just fmt` and the `fmt` step of
-`just check` SKIP on a Windows host with the reason "gnatformat is not
+`just check` SKIP on a Windows host with the reason "[gnatformat](../glossary/ste100/identifiers.md#technical-name-gnatformat) is not
 available in the dev toolchain". The formatting itself is unchanged: the
 gate still runs on Linux and on the CI Linux runners, and a Windows
 developer runs `just check` with `fmt` skipped and the rest of the gate
@@ -123,7 +123,7 @@ generated artifacts](developer-guide-layout.md).
 
 ## Testing
 
-The test suite is native and zero-dependency. `src/tests/` is the one test root. It holds one file per native category (scanner, config, types, renderers, SBOM, VCS, and more), and each file exposes a `Run (R : in out Runner'Class)` procedure wired into `src/tests/test_runner.adb`. A test is a `R. Check (Condition, "Description")` call.
+The test suite is native and zero-dependency. `src/tests/` is the one [test root](../glossary/ste100/tooling-terms.md#technical-name-test-root). It holds one file per native category (scanner, config, types, renderers, SBOM, [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs), and more), and each file exposes a `Run (R : in out Runner'Class)` procedure wired into `src/tests/test_runner.adb`. A test is a `R. Check (Condition, "Description")` call.
 
 The Python end-to-end suites live under `src/tests/e2e/` in a category directory: `cli/`, `prove/`, `dashboard/`, `action/`, and the shared `lib/`. A fixture is a real project under `src/tests/projects/`, never an Ada heredoc in a workflow. `just test-layout-check` gates that shape. The CLI suite keeps `cli_flags.py` as its registry; `cli_support.py` owns the shared helpers, and `checks_basic`, `checks_sbom`, `checks_serve`, `checks_config`, and `checks_prove` own the check groups.
 
@@ -143,13 +143,13 @@ just test-count    # sync every anchored count across the repo (AGENTS.md,
                    # README, Makefile, CI workflows, manifests, agents-tree.map)
 ```
 
-The count-sync is enforced by `just check`. A test change that skips the sync fails the gate. Tests create scratch directories under the host temp directory through `Adacovex.Test_Support.Temp_Dir` and remove them with `Remove_Tree`. The default on-disk result cache (`<cache>`) is shared.
+The count-sync is enforced by `just check`. A test change that skips the sync fails the gate. Tests create scratch directories under the host temp directory through `Adacovex.Test_Support.Temp_Dir` and remove them with `Remove_Tree`. The default on-disk [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) (`<cache>`) is shared.
 
 Tests that exercise caching use content-hashed keys. They never depend on each other's state.
 
 The CLI end-to-end suite (`just cli-e2e`, `src/tests/e2e/cli/cli_flags.py`) runs the
 real binary and checks the shorthands, the long aliases, the `--standard`
-tier tokens, the reject paths, the `complexity` subcommand (its pass and
+[tier tokens](../glossary/ste100/concepts.md#technical-name-tier-token), the reject paths, the `complexity` subcommand (its pass and
 fail gates, `--excludes`, and `--skip-path`), the VCS differential modes
 (`--compare-base` / `--coverage-delta`, every alias, a docstring-coverage
 regression, and the not-a-repository failure), the `prove` subcommand (its
@@ -166,13 +166,13 @@ or the Chromium download fails, so a clean clone and a locked-down CI runner
 still finish with a verdict about the tree.
 
 The prove diagnostics suite (`just prove-e2e`,
-`src/tests/e2e/prove/prove_diagnostics.py`) proves one committed SPARK project
+`src/tests/e2e/prove/prove_diagnostics.py`) proves one committed [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) project
 per contract-writing mistake, each with a broken variant and a fixed
 counterpart under `src/tests/projects/contract-errors/`: `index`, `overflow`,
 `division`, `precondition`, `invariant`, `invariant_entry`, `flow`,
 `typo_attribute`, and `typo_identifier`.
 It runs the real `prove` command over each pair and checks the quiet replay,
-the diagnostics block, the compile-error shape for a typo, and the `--verbose`
+the [diagnostics block](../glossary/ste100/proof-terms.md#technical-name-diagnostics-block), the compile-error shape for a typo, and the `--verbose`
 mode. Add `--case=NAME` to run one case and `--debug` to print every prover
 output. The suite skips itself when no gnatprove is resolvable.
 
@@ -238,7 +238,7 @@ before committing.
 ## SPARK proof discipline
 
 `just prove` runs gnatprove through the `prove` subcommand and enforces the
-full-proof gate: **0 unproved VCs and 0 justified VCs**. The rules that keep
+full-proof gate: **0 unproved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) and 0 justified VCs**. The rules that keep
 the proof tractable:
 
 - Every user assertion and every runtime check must be proved.
@@ -249,10 +249,10 @@ the proof tractable:
   them; the evidence is in `docs/proof/16.1.0-ledger.md`. `just
   spark-off-check` enforces this.
 - I/O- and container-heavy units are default-off bodies or carry per-subprogram
-  `SPARK_Mode => On` aspects. They never carry an explicit Off pragma.
+  `SPARK_Mode => On` aspects. They never carry an explicit Off [pragma](../glossary/ste100/ada-terms.md#technical-name-pragma).
 
 The proof result is anchored in `docs/proof/` (the per-version VC ledger).
-`just proof-status` syncs the VC count and SPARK level into the docs.
+`just proof-status` syncs the VC count and [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level) into the docs.
 
 ## Common workflows
 
@@ -287,8 +287,8 @@ The proof result is anchored in `docs/proof/` (the per-version VC ledger).
 - [CLI reference](../usage/cli-reference.md) -- every flag and its defaults
 - [Architecture](architecture.md) -- design decisions, the overflow contract,
   the patch system, result caching
-- [Standards](../usage/standards.md) -- the DO-178C, ISO 26262, and IEC 62304
+- [Standards](../usage/standards.md) -- the [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), and [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304)
   compliance model
 - [API reference](../api-docs/index.md) -- generated package docs and the
-  reference pages (docstring spec, test formats, SPARK/DAL/ASIL/Class levels)
+  reference pages (docstring spec, test formats, SPARK/[DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal)/[ASIL](../glossary/ste100/proof-terms.md#technical-name-asil)/Class levels)
 - [CONTRIBUTING.md](https://github.com/bladeacer/adacovex/blob/main/CONTRIBUTING.md) -- contribution process and changelog format

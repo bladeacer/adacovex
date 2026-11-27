@@ -37,7 +37,7 @@ environment still has a writable state directory.
 adacovex 1.74.0 renamed this directory from `<data>/toolchain/` to
 `<data>/toolkit/`, and the bundle variable from `ADACOVEX_TOOLCHAIN_URL` to
 `ADACOVEX_TOOLKIT_URL`. The old path and variable are not read. The first
-`prove` run after the upgrade deploys gnatprove into the new directory, so it
+`prove` run after the upgrade deploys [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) into the new directory, so it
 performs one re-download.
 
 The result cache is namespaced by the adacovex version and a cache schema
@@ -90,8 +90,8 @@ location.
   gnatprove again.
 - Delete `<cache>/stamps/index.bin` to drop the stat-stamp fast path; the
   next run re-hashes every file and rebuilds the index.
-- Delete `<cache>/probes/` and `<data>/meta/` to force the next SBOM run to
-  re-probe the toolkit and the package registries.
+- Delete `<cache>/probes/` and `<data>/meta/` to force the next [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) run to
+  re-probe the [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) and the package registries.
 
 Result caching is documented in full, including the schema namespace and the
 eviction policy, in

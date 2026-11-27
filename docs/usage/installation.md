@@ -2,7 +2,7 @@
 
 ## Quick start
 
-1. **Install** via Alire: `alr install covex gnatprove && export PATH="$HOME/.local/bin:$PATH"`
+1. **Install** via [Alire](../glossary/ste100/identifiers.md#technical-name-alire): `alr install covex gnatprove && export PATH="$HOME/.local/bin:$PATH"`
 2. **Assess** your project: `adacovex --target=. --dal=C`
 3. **Serve** the dashboard: `adacovex --target=. --serve --port=8080`
 
@@ -26,8 +26,8 @@ gnatprove = "^16.1.0"
 ```
 
 Then `alr build` produces `bin/adacovex` inside the project. `covex prove`
-deploys the pinned gnatprove crate standalone via `alr -n get` and runs it
-directly. Each project pins its own toolchain version. No global install
+deploys the pinned [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) crate standalone via `alr -n get` and runs it
+directly. Each project pins its own [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain) version. No global install
 is needed:
 
 ```bash
@@ -40,7 +40,7 @@ alr build
 
 The manifest pin is **authoritative**: when `alire-dev.toml` or `alire.toml`
 declares `gnatprove`, `covex prove` always runs that version and never falls
-back to another prover (a prover-version drift can change which VCs are
+back to another prover (a prover-version drift can change which [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) are
 discharged, so results must always come from the pinned toolchain). The
 resolution works like this:
 
@@ -76,7 +76,7 @@ guessing.
 Projects that do *not* declare gnatprove fall back to (in order): a global
 pin (`ADACOVEX_GNATPROVE_VERSION`, or `[prove] gnatprove-version` in
 the global configuration file, deployed through the same `alr -n get` path),
-a gnatprove on `$PATH`, a cached toolkit in `<data>/toolkit/`, and
+a gnatprove on `$PATH`, a cached [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) in `<data>/toolkit/`, and
 finally the platform toolkit download. `adacovex status` reports which
 tier applies without deploying anything. The global pin is documented on
 [Global configuration and state](configuration.md), and the environment
@@ -121,7 +121,7 @@ alr build && ./bin/adacovex --version
 
 Either route produces `bin/adacovex` (with a `bin/covex` alias). Add
 `--branch vX.Y.Z` to the clone for a released tag. A stock Alire toolchain
-(`gnat_native` + `gprbuild`) plus the standard GNAT runtime is all that is
+(`gnat_native` + `gprbuild`) plus the standard [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) runtime is all that is
 needed. No other dependencies.
 
 > **For contributors:** `just build` regenerates the version, dashboard, and
@@ -131,7 +131,7 @@ native suite. `just --list` names every task. The
 
 ## Version source per installation method
 
-`adacovex --version` (and the man page, the SBOM tool version, and the result
+`adacovex --version` (and the [man page](../glossary/ste100/tooling-terms.md#technical-name-man-page), the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) tool version, and the result
 cache namespace) resolve the version from `tools/gen-version.py`. The version
 depends on the installation method:
 
@@ -168,7 +168,7 @@ for the platform matrix, the root selection, and the reader behaviour.
 
 `adacovex tldr` installs the bundled tldr cheat sheet into the local tldr
 client, so `tldr adacovex` works offline. The command detects the client and
-writes to that client's own page location. tealdeer gets the page in the
+writes to that client's own page location. [tealdeer](../glossary/ste100/identifiers.md#technical-name-tealdeer) gets the page in the
 custom pages directory that `tldr --show-paths` reports, for example
 `~/.local/share/tealdeer/pages/adacovex.page.md` on Linux. A base client gets
 the page in its cache pages tree (for example

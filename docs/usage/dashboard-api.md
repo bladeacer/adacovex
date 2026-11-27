@@ -7,11 +7,11 @@ This page covers the JSON API endpoints, the API playground, themes, and the das
 ## Standard-awareness
 
 The dashboard **defaults to all standards** when no `--standard` / `--asil` /
-`--class` flag is given -- the same behaviour as the `sbom` subcommand, which
+`--class` flag is given -- the same behaviour as the `sbom` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand), which
 [Standards](standards.md) documents once for both. The status badges and the
-compliance card list every standard's label at the shared tier (DAL-C, ASIL
+compliance card list every standard's label at the shared tier ([DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal)-C, [ASIL](../glossary/ste100/proof-terms.md#technical-name-asil)
 B, Class A). An explicit standard flag narrows the dashboard to that single
-standard (for example `--asil=B` shows only ISO 26262 at ASIL B).
+standard (for example `--asil=B` shows only [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262) at ASIL B).
 
 ## The JSON API
 
@@ -82,7 +82,7 @@ The dashboard renders the page from the immutable assessment state on each
 request, which is microseconds of CPU -- no response cache is needed.
 
 `/api/deps` serves the resolved dependency graph as JSON (the same data the
-SBOM embeds, minus the SBOM envelope):
+[SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) embeds, minus the SBOM envelope):
 
 ```json
 {
@@ -174,7 +174,7 @@ Every route the server dispatches on is listed as a clickable button,
 grouped by purpose:
 
 - **Metrics** -- `GET /api/metrics` (JSON).
-- **Proof** -- `GET /api/spark` (JSON), the SPARK coverage report: the three
+- **Proof** -- `GET /api/spark` (JSON), the [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) coverage report: the three
   metrics, the off classes, and the per-group rollups.
 - **Dependencies** -- `GET /api/deps` (JSON).
 - **Server** -- `GET /api/info` and `GET /health` (JSON), the running
@@ -223,7 +223,7 @@ instance, so what you preview is exactly what `curl` returns.
 The dashboard supports **light**, **dark**, and **system** themes. Colours are
 driven by CSS custom properties, and a header dropdown switches live between
 them. **Save settings** persists the current selection in `localStorage`
-(no cookies, key `adacovex-theme`).
+(no [cookies](../glossary/ste100/web-terms.md#technical-name-cookie), key `adacovex-theme`).
 
 Theme resolution on page load:
 

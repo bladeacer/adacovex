@@ -29,18 +29,18 @@ Content is organised into **clickable tabs** (hash-routed,
 keyboard-accessible, persisted in `localStorage`):
 
 - **Overview** -- status badges (live `/badge/*.svg` preview), source overview
-  (packages scanned, subprograms, docstring %), and quick stats (SPARK level,
-  VCs proved, tests, compliance, dependency count), plus the at-a-glance
+  (packages scanned, subprograms, docstring %), and quick stats ([SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level),
+  [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) proved, tests, compliance, dependency count), plus the at-a-glance
   collation charts below the stats: a **Robustness radar with a tier rating**
   (S/A/B/C/D from the average of five quality axes), the per-check-type
-  **SPARK radar**, a tests **donut** and a doc-coverage **radial gauge**. The
+  **[SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) radar**, a tests **donut** and a doc-coverage **radial gauge**. The
   badge row doubles as a preview for the generated `docs/badges/*.svg` files.
   See [Robustness tier](dashboard-charts.md#robustness-tier) for how the rating is
   derived.
 - **Proof** -- the SPARK level (Stone..Platinum) and, per check category
   (flow, initialization, runtime, assertions, functional), total and proved
   counts plus a mini **VCs proved/total** column at the top of the tab,
-  followed by the **SPARK proof coverage** card: statement/subprogram/VC
+  followed by the **SPARK [proof coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage)** card: statement/subprogram/VC
   coverage as three separate metrics, the off-class breakdown
   (irreducible / I/O-bound / work queue / not covered), and a per-file
   table sortable by clicking its column headers.
@@ -48,7 +48,7 @@ keyboard-accessible, persisted in `localStorage`):
   **pass/fail donut** at the top of the tab.
 - **Compliance** -- a mini **achievement radial gauge** at the top, then the
   target integrity level and overall `Achieved` / `Unmet`
-  status, HLRs traced, orphan-tag state, whether tests pass, each unmet
+  status, [HLRs](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) traced, orphan-tag state, whether tests pass, each unmet
   criterion, and the HLR traceability table (package -> tags).
 - **Dependencies** -- a scope-distribution **stacked bar** at the top, then
   an interactive dependency tree/graph (see below).
@@ -81,7 +81,7 @@ is the single place to discover and exercise every endpoint (see
 ### Dependencies tab and alternative diagram
 
 The **Dependencies** tab visualises the resolved `alire.toml` / `alire.lock`
-graph that also powers the SBOM (`/api/deps` JSON, `sbom.json`). The server
+graph that also powers the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) (`/api/deps` JSON, `sbom.json`). The server
 resolves the graph at `--serve` start (best-effort, an unresolvable graph
 shows an empty state with a link to `/api/deps`).
 

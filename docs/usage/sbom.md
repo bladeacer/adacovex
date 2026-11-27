@@ -4,12 +4,12 @@
 
 A [Software Bill of Materials (SBOM)](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) is a structured inventory of every
 component in your project, plus its provenance, licence, and (in adacovex's
-case) its SPARK proof level and compliance context. Generate one in these
+case) its [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) proof level and compliance context. Generate one in these
 cases:
 
 - **Auditing or certifying** -- an SBOM is a standard artifact for safety
-  certification (DO-178C, ISO 26262, IEC 62304). It shows the auditor exactly
-  which Ada/Alire components are in scope and which are proved / not proved.
+  certification ([DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304)). It shows the auditor exactly
+  which Ada/[Alire](../glossary/ste100/identifiers.md#technical-name-alire) components are in scope and which are proved / not proved.
 - **Shifting left on supply-chain security** -- the dependency graph exposes
   transitive dependencies, their licences, and their PURLs so you can review
   them before a release.
@@ -22,12 +22,12 @@ cases:
 `adacovex sbom` resolves the target project's dependency graph from its Alire
 manifest (`alire.toml` / `alire-dev.toml`), the solved-crate list in
 `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes a
-proof-aware software bill of materials in CycloneDX 1.5 JSON, SPDX 2.3 JSON,
+proof-aware software bill of materials in [CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx) 1.5 JSON, [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) 2.3 JSON,
 or Markdown.
 
 ## How to read the output
 
-Choose the format that matches your toolkit:
+Choose the format that matches your [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit):
 
 - **CycloneDX 1.5 JSON** (`--format=cyclonedx-json`) -- drop into any CycloneDX
   consumer (Dependency-Track, OWASP Dependency-Check, and more). The root
@@ -67,17 +67,17 @@ adacovex sbom [--format=cyclonedx-json|spdx-json|md] [--out=PATH]
   `<target>/sbom.spdx.json` for `spdx-json`, and
   `<target>/docs/compliance/SBOM.md` for `md`. The containing directory is
   created automatically.
-- **Exit code**: `0` when the SBOM was written, `1` otherwise. If the target
+- **[Exit code](../glossary/ste100/tooling-terms.md#technical-name-exit-code)**: `0` when the SBOM was written, `1` otherwise. If the target
   has no Alire manifest the SBOM cannot be generated (the GitHub Action
   reports this as a warning without failing the job).
 
 ## Standard-awareness
 
-The `sbom` subcommand accepts the same standard flags as the assessment
+The `sbom` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) accepts the same standard flags as the assessment
 (`--standard`, `--dal`, `--asil`, `--class`) and **defaults to all
 standards**: without an explicit standard flag the SBOM carries the joined
-DO-178C / ISO 26262 / IEC 62304 properties at the shared DAL tier.
-`--standard=iso26262` / `--asil=B` narrows it to ISO 26262 at ASIL B, and
+DO-178C / ISO 26262 / IEC 62304 properties at the shared [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) tier.
+`--standard=iso26262` / `--asil=B` narrows it to ISO 26262 at [ASIL](../glossary/ste100/proof-terms.md#technical-name-asil) B, and
 `--class=A` to IEC 62304 at Class A. See [Standards](standards.md) for the
 cross-standard tier mapping.
 
@@ -97,7 +97,7 @@ encoded as `attributionTexts` in SPDX.
 
 ## Determinism
 
-The `metadata.timestamp` / `creationInfo.created` field honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds convention). When set to a Unix epoch second count, the timestamp is derived from it in UTC via pure integer math. As a result, SBOM output is byte-for-byte deterministic across runs and machines. To tie it to a specific git commit, run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before adacovex.
+The `metadata.timestamp` / `creationInfo.created` field honors the `SOURCE_DATE_EPOCH` environment variable (reproducible-builds convention). When set to a Unix epoch second count, the timestamp is derived from it in [UTC](../glossary/ste100/concepts.md#technical-name-utc) via pure integer math. As a result, SBOM output is byte-for-byte deterministic across runs and machines. To tie it to a specific git commit, run `export SOURCE_DATE_EPOCH=$(git -C <target> log -1 --format=%ct)` before adacovex.
 
 The bundled `make` targets (`run-self`, `run-ada-crdt`, `prove`, `release`, and Ada_CRDT's `prove`/`badges`) already set it from the target's git `HEAD` commit time.
 

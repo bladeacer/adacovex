@@ -1,7 +1,7 @@
 # Benchmarking adacovex
 
 This page documents how to benchmark the pipeline and the `prove`
-subcommand, the benchmark machine, and the raw sample output. The
+[subcommand](../../glossary/ste100/tooling-terms.md#technical-name-subcommand), the benchmark machine, and the raw sample output. The
 benchmark categories and the expected numbers are on
 [Performance](index.md).
 
@@ -26,7 +26,7 @@ machine (a CPU/I/O-bound CLI; the GPU is irrelevant to every code path):
 | Toolkit | gnatprove 16.1.0 (via Alire), hyperfine 1.20, perf 7.2, strace 7.0 |
 
 The i7-1255U is a hybrid laptop part: 10 of the 12 threads are E-cores,
-and gnatprove's solver jobs fan out across all of them. Single-threaded
+and [gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove)'s solver jobs fan out across all of them. Single-threaded
 pipeline figures are dominated by P-core behaviour; the prove-cold solver
 floor depends on the E-core fleet. Lower-thread machines pay more per
 solver run; the warm paths stay warm anywhere.
@@ -41,7 +41,7 @@ solver run; the warm paths stay warm anywhere.
 - **The build phases run first.** An strace syscall profile of the no-op
   build and of the cold-tree docs run, then a per-step breakdown: each
   pre-build step (version spec, CSS gate, dashboard template, bundled
-  manual, tldr page) timed on its own and then as the parallel bundle
+  manual, [tldr page](../../glossary/ste100/tooling-terms.md#technical-name-tldr-page)) timed on its own and then as the parallel bundle
   (`tools/build.py --steps-only`), with the step list read from
   `tools/build.py`. The timings follow: `alr build` on an already-built
   tree (5 runs), a full `tools/build.py --release` against a fresh copy of
@@ -79,7 +79,7 @@ section each; `just bench` runs all of them.
 For single-shot timings, plain `time` over the same commands (`--no-cache`
 for cold, `--cache-dir=<populated dir>` for warm, with or without
 `prove`) works the same way. When comparing two versions, always reset
-the cache between runs so the result cache cannot hide the real cost.
+the cache between runs so the [result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache) cannot hide the real cost.
 
 `just perf-bench` profiles CPU and syscalls directly with `perf` and
 `strace` over `bin/adacovex`, printing cache-miss rates and syscall counts
@@ -87,11 +87,11 @@ so a regression in I/O or data layout is visible before a release.
 
 ## Probe cache
 
-*(Origin story.)* The SBOM builds a *dev-scope* dependency edge for every
+*(Origin story.)* The [SBOM](../../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) builds a *dev-scope* dependency edge for every
 tool that the target's build references, installed on `$PATH` (for
 example `gcc`, `alr`, `git`, `make`). It probes each with `<tool> <flag>`
 to capture its version, and each probe spawns a subprocess (tens of
-milliseconds per tool, ~150 ms end to end on an 11-tool toolkit). The
+milliseconds per tool, ~150 ms end to end on an 11-tool [toolkit](../../glossary/ste100/tooling-terms.md#technical-name-toolkit)). The
 probed versions were first cached under `<cache-root>/probes/<tool>` with
 a 7-day TTL, so a wiped result cache re-probed every tool on the next
 run -- 1.28.0 moved the store into the tools-set cache blob.

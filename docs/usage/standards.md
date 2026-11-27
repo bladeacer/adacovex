@@ -1,24 +1,24 @@
 # Compliance standards (DO-178C / ISO 26262 / IEC 62304)
 
 adacovex assesses one safety case and re-labels the result for three
-standards. **DO-178C** is the avionics software standard, **ISO 26262** is
-the automotive functional-safety standard, and **IEC 62304** is the
+standards. **[DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c)** is the avionics software standard, **[ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262)** is
+the automotive functional-safety standard, and **[IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304)** is the
 medical-device software lifecycle standard.
 
 Each standard ranks its software by the severity of a failure. DO-178C uses
-Development Assurance Levels (DAL A to DAL E), ISO 26262 uses Automotive
-Safety Integrity Levels (ASIL A to ASIL D, plus QM), and IEC 62304 uses
-software safety classes (A to C). The level names differ, but the evidence
+Development Assurance Levels ([DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) A to DAL E), ISO 26262 uses Automotive
+Safety Integrity Levels ([ASIL](../glossary/ste100/proof-terms.md#technical-name-asil) A to ASIL D, plus QM), and IEC 62304 uses
+software [safety classes](../glossary/ste100/tooling-terms.md#technical-name-safety-class) (A to C). The level names differ, but the evidence
 does not.
 
 All three standards demand the same four pieces of evidence:
 
-1. **Requirement traceability** -- every high-level requirement (HLR) is
+1. **Requirement traceability** -- every [high-level requirement](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) (HLR) is
    traced by a `-- HLR-XXXX` tag in source.
 2. **No orphan tags** -- every tag in source maps to a defined HLR.
 3. **Tests passing** -- the suite has zero failures (except at the lowest
    tier).
-4. **Minimum SPARK level** -- the formal-proof bar for the selected rigour
+4. **Minimum [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level)** -- the formal-proof bar for the selected rigour
    tier.
 
 adacovex computes these checks once and re-labels the result per standard.
@@ -33,7 +33,7 @@ One assessment therefore satisfies every standard at once.
 - [IEC 62304 and the safety classes](standards-iec-62304.md) -- the three
   safety classes.
 - [Selecting a standard and reading the reports](standards-selection.md) --
-  the level flags, `--standard=all`, and the dashboard and SBOM labels.
+  the level flags, `--standard=all`, and the dashboard and [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) labels.
 
 ## When to use which standard
 
@@ -71,10 +71,10 @@ The four checks are identical across standards. Only the level names change:
 
 1. **Requirement traceability** -- every HLR defined in
    `docs/compliance/HLR.md` is traced by a `-- HLR-XXXX` tag in source.
-2. **No orphan tags** -- every in-source HLR tag maps to a defined HLR.
+2. **No orphan tags** -- every in-source [HLR tag](../glossary/ste100/identifiers.md#technical-name-hlr-tag) maps to a defined HLR.
 3. **Tests passing** -- zero failures, and the lowest tier (DAL E / QM) does
    not enforce this check.
-4. **Minimum SPARK level** -- the proof bar for the selected rigour tier. The
+4. **Minimum [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) level** -- the proof bar for the selected rigour tier. The
    lowest tier accepts any Spark subset, so `Stone` is met by every tree.
 
 The compliance artifacts are identical too. ISO 26262 and IEC 62304 require
@@ -89,7 +89,7 @@ printed inside them changes.
 - [Selecting a standard and reading the reports](standards-selection.md) --
   the CLI flags, `--standard=all`, and the report labels.
 - [Compliance outputs](../compliance/index.md) -- `VERIFICATION.md`,
-  `TRACE.md`, and the HLR and LLR indexes.
+  `TRACE.md`, and the HLR and [LLR](../glossary/ste100/proof-terms.md#technical-name-low-level-requirement-llr) indexes.
 - [DAL levels](../api-docs/adacovex-dal-levels.md),
   [ASIL levels](../api-docs/adacovex-asil-levels.md), and
   [safety classes](../api-docs/adacovex-class-levels.md) -- the generated

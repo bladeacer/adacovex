@@ -8,7 +8,7 @@ the rules that keep a structure key out of them.
 
 ## Lockfile-resolved dependencies
 
-adacovex reads the lockfile beside a manifest, so the SBOM carries the
+adacovex reads the lockfile beside a manifest, so the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) carries the
 packages the project really installs. A declared package keeps its `base`,
 `dev`, or `test` scope, and a package only the lockfile names is a
 `transitive` component of the root.

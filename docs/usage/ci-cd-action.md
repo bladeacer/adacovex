@@ -9,17 +9,17 @@ bundling](ci-cd-workflows.md).
 
 ## Composite action (`./action.yml`)
 
-The composite action installs Alire via
+The composite action installs [Alire](../glossary/ste100/identifiers.md#technical-name-alire) via
 [`alire-project/setup-alire`](https://github.com/alire-project/setup-alire).
-GNAT comes from `gnat-version` plus `gprbuild`. `gnatprove` is NOT an
-`alr toolchain` component. The `prove` subcommand resolves it through the
-target project's manifest, `$PATH`, cached toolkit, or download.
+[GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) comes from `gnat-version` plus `gprbuild`. `gnatprove` is NOT an
+`alr toolchain` component. The `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) resolves it through the
+target project's manifest, `$PATH`, cached [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit), or download.
 
 The action obtains the version-matched adacovex binary. It downloads the
 release bundle by default. You can set `build: true` to build from source.
 
-Optionally, the action runs GNATprove (`prove`) and the native tests
-(`run-tests`). Then it runs the assessment. It generates a proof-aware SBOM
+Optionally, the action runs [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) (`prove`) and the native tests
+(`run-tests`). Then it runs the assessment. It generates a proof-aware [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom)
 (`generate-sbom`, default `true`). It publishes a Markdown step summary,
 machine-readable outputs, and SVG badge artifacts.
 
@@ -151,7 +151,7 @@ automatically.
 
 #### Result-cache key
 
-The result-cache key is content-addressed on the target tree's
+The [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) key is content-addressed on the target tree's
 proof-relevant sources: a SHA-256 hash of every tracked `*.ads`, `*.adb`,
 and `*.gpr` under the target, excluding the two generated bundle specs
 (`adacovex-docs_template.ads`, `adacovex-dashboard_template.ads`) which are
@@ -168,7 +168,7 @@ that could mask a regression.
 
 #### Alire home cache (gnatprove install)
 
-When `cache` is `true` and the action would install the Alire toolchain
+When `cache` is `true` and the action would install the Alire [toolchain](../glossary/ste100/tooling-terms.md#technical-name-toolchain)
 (`build: true` or `prove: true`), the action also caches the Alire home
 directory (`~/.alire` / `$ALIRE_HOME`) with `actions/cache`. This covers
 the gnatprove binary that the `prove` subcommand fetches at run time --

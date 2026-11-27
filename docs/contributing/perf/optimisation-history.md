@@ -16,15 +16,15 @@ The driver was `plan.md` P1 and P2: the cold build and cold `prove` phases
 each needed a measured verdict, and the 1.61.0 profile put a 13 percent L1
 dcache-miss rate beside 14 106 warm `newfstatat` calls, and the 1.61.0
 direction memo put 14 597 warm `newfstatat` calls beside a 41.7 ms warm
-pipeline, largely in the directory memo's slot layout.
+pipeline, largely in the [directory memo](../../glossary/ste100/tooling-terms.md#technical-name-directory-memo)'s slot layout.
 
 - **The five pre-build steps are independent, so they now run at once.**
   The version spec, the CSS 4px gate, the dashboard template, the bundled
-  manual, and the tldr page read different inputs and write different
+  manual, and the [tldr page](../../glossary/ste100/tooling-terms.md#technical-name-tldr-page) read different inputs and write different
   outputs, and the serial recipe paid their sum. The steps measure 463 ms
   in series and 295 ms as the concurrent bundle at load 2.7-2.8 (36 percent
   of the step time overlaps), and a paired ten-run sample of a no-op
-  `just build` reads 609 ms against 732 ms (-16.8 percent). Every exit code
+  `just build` reads 609 ms against 732 ms (-16.8 percent). Every [exit code](../../glossary/ste100/tooling-terms.md#technical-name-exit-code)
   is still checked before the compile, and the first failure is the build's
   exit code.
 - **The phase split is now an instrument, not a one-off script.**
@@ -55,7 +55,7 @@ they were removed.
 ### Deterministic doc bundling + no-op builds (1.50.0)
 
 The driver was the `just prove` wall: on an unchanged tree it still took
-seconds, and sometimes tens of seconds, even with a warm result cache.
+seconds, and sometimes tens of seconds, even with a warm [result cache](../../glossary/ste100/tooling-terms.md#technical-name-result-cache).
 The suspect was the embedded offline manual (`tools/gen-docs.py` ->
 `src/adacovex-docs_template.ads`), and the profile confirmed it:
 
@@ -65,7 +65,7 @@ The suspect was the embedded offline manual (`tools/gen-docs.py` ->
   assets while a fresh clone produced 204 (thirteen dead pages from the
   pre-1.49.0 layout), and `gen-docs.py --check` failed on a fresh clone.
   Because the spec is a proof input, any content change invalidated the
-  cached SPARK proof and made `just prove` run gnatprove again (a
+  cached [SPARK](../../glossary/ste100/ada-terms.md#technical-name-spark) proof and made `just prove` run [gnatprove](../../glossary/ste100/identifiers.md#technical-name-gnatprove) again (a
   20-88 s session).
 - **The fix removes the failed work.** Sphinx now builds clean whenever a
   SHA-256 fingerprint of `docs/` changes, and both generators write their
@@ -89,7 +89,7 @@ date`, ~0.38 s) instead of recompiling the 28k-line unit and relinking.
   sources changed (the fingerprint stamp): a no-op `just build` spends
   ~0.4 s in the generator instead of ~5.9 s in a clean Sphinx rebuild.
 - **The payload itself shrank.** The asset bodies moved from base64 to
-  base85 (4 bytes to 5 characters instead of 5.33), and the Furo sidebar
+  [base85](../../glossary/ste100/identifiers.md#technical-name-base85) (4 bytes to 5 characters instead of 5.33), and the Furo sidebar
   is stored once per branch under `_nav/` instead of once in each of the
   191 pages, filled in by `resources/js/book-nav.js`. Together they take
   the generated spec from 2.34 MB to 1.93 MB (17.3%) and the stripped
@@ -114,7 +114,7 @@ cold paths, so the release was profiled before shipping
   the opt-out detector twice per scanned spec -- once for the docstring
   marker and once for the SPARK-proof marker -- but the proof flag it
   wrote (`Pkg.Proof_Opt_Out`) was never read anywhere: the `prove`
-  subcommand probes the markers itself for its `-u` unit list. Removing
+  [subcommand](../../glossary/ste100/tooling-terms.md#technical-name-subcommand) probes the markers itself for its `-u` unit list. Removing
   the redundant probe (and the dead `Package_Info` field, which bumped
   `Cache_Schema` to s11) saves one `open` plus one header read per
   scanned spec on every cold scan -- measured at ~160 -> ~120 source-file
@@ -142,7 +142,7 @@ after 1.44.0:
 
 The same release fixed a correctness bug the perf work exposed: cached
 system-tool versions were keyed only on the tool name and a 7-day TTL,
-so an upgraded binary kept its old version in the SBOM for up to a week.
+so an upgraded binary kept its old version in the [SBOM](../../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) for up to a week.
 Both cache layers (the probe store and the tools-set blob) now carry the
 identity digest of the installed binary (path + size + mtime, SHA-256
 folded); a changed digest re-probes exactly once, then serves from cache
@@ -219,7 +219,7 @@ warm syscall count to ~12k and warm wall to ~35 ms:
 - `Restore_Proof_Output` (see the table notes above): a warm prove hit
   writes the cached `gnatprove.out` content back to
   `<target>/obj/gnatprove/`, so a wiped session store no longer turns a
-  cache hit into a Stone/0-VC assessment failure.
+  cache hit into a Stone/0-[VC](../../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) assessment failure.
 
 `just perf-bench` itself had two reporting bugs fixed while profiling
 this: `perf stat` writes its counter table to stderr, which the old
@@ -230,7 +230,7 @@ the header rows. Both tables now print in full, and a missing `perf` or
 `strace` fails loudly instead of silently printing nothing.
 
 Deploying a manifest-pinned gnatprove prints a progress line (`deploy:
-gnatprove <v> not in the toolkit cache -- downloading via alr
+gnatprove <v> not in the [toolkit](../../glossary/ste100/tooling-terms.md#technical-name-toolkit) cache -- downloading via [alr](../../glossary/ste100/identifiers.md#technical-name-alr)
 (one-time, may take a minute)...`) -- the first deployment downloads a
 ~130 MB bundle through `alr -n get` and a silent minute of nothing read
 as a hang. The deployment is one-time per version; every later run
@@ -251,7 +251,7 @@ speed-ups could improve the pipeline. The measurements say no:
   where data-layout work pays, so no struct packing or prefetching is
   warranted. The I/O story is unchanged: ~6.3k `newfstatat` on a warm run
   (~67% of syscall time) is the walk floor.
-- The per-byte scanning loops (comment stripping, decision counting, HLR tags)
+- The per-byte scanning loops (comment stripping, decision counting, [HLR tags](../../glossary/ste100/identifiers.md#technical-name-hlr-tag))
   are the only SIMD candidates. They process short lines one byte at a time;
   auto-vectorisation needs `-O3` (or `-ftree-vectorize`) and gains little on
   data this small, at the cost of the zero-dependency build's simplicity.

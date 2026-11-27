@@ -39,7 +39,7 @@ shorthand. The shorthands are `-t` (`--target`), `-m` (`--manifest`), `-s`
 `relaxed` also select their flag. Use the long forms in scripts and non-trivial cases; the
 shorthands are for interactive use.
 
-`-l` is **only** the GNATprove proof level. It is never a compliance tier.
+`-l` is **only** the [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) proof level. It is never a compliance tier.
 Compliance selection stays on `--standard` and its level companions
 `--dal`, `--asil`, and `--class`.
 
@@ -50,7 +50,7 @@ the same frame: the version banner, a `Usage:` fence, grouped `Options:`, and
 the footer. The topics are `prove`, `serve`, `status`, `sbom`, `complexity`,
 `spark-coverage`, `man`, `tldr`, `init`, `completion`, and `cache`.
 
-The man page carries the full reference: every option states its own
+The [man page](../glossary/ste100/tooling-terms.md#technical-name-man-page) carries the full reference: every option states its own
 effect, its default, and the flag it pairs with, so an offline reader never
 needs to return to `--help`.
 
@@ -135,8 +135,8 @@ companion pages:
 
 - [Assessment flags and subcommands](cli-reference-flags.md) -- `--target`,
   the per-standard level flags, `status`, `complexity`, the `prove`
-  subcommand, and the per-file opt-out markers.
-- [Output, serving, and CI options](cli-reference-options.md) -- SBOM
+  [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand), and the per-file opt-out markers.
+- [Output, serving, and CI options](cli-reference-options.md) -- [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom)
   control, `--serve`/`--theme`/`--port`, `--emit-*`, differential
   assessment, the `--require-*` gates, caching, and help.
 
@@ -149,7 +149,7 @@ companion pages:
 | Patch files | Applied from `.adacovex/patches/` (docstrings always, SPARK proof aspects in prove mode) | Not applied |
 | Use case | Full compliance audit | Quick assessment of production code |
 
-Patch files can carry SPARK contracts as well as docstrings: a
+Patch files can carry [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) contracts as well as docstrings: a
 `SPARK_Mode` / `Pre` / `Post` / `Global` aspect makes the patch a **proof
 patch** for vendored code in prove mode -- a spec patch (`.ads`) declares
 the contracts, and a body patch (`.adb`) opts the vendored body into the
@@ -176,13 +176,13 @@ out automatically when the output would not take it:
 
 ## The `sbom` subcommand
 
-`adacovex sbom` resolves the target project's dependency graph from its Alire
+`adacovex sbom` resolves the target project's dependency graph from its [Alire](../glossary/ste100/identifiers.md#technical-name-alire)
 manifest, `alire/alire.lock`, and the root `.gpr` `with` clauses, then writes
-a proof-aware software bill of materials in CycloneDX 1.5 JSON or SPDX 2.3
+a proof-aware software bill of materials in [CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx) 1.5 JSON or [SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) 2.3
 JSON. It is **standard-aware** (all standards by default), honours
 `SOURCE_DATE_EPOCH` for deterministic output, and is mutually exclusive with
 `--compare-base` / `--coverage-delta`. Full detail (usage, properties,
-determinism, exit codes) is in
+determinism, [exit codes](../glossary/ste100/tooling-terms.md#technical-name-exit-code)) is in
 [The `sbom` subcommand](sbom.md).
 
 ## Examples

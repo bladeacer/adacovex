@@ -31,7 +31,7 @@ jobs:
 ```
 
 This job builds adacovex. It runs the target's native tests and the full
-assessment. It gates on Gold SPARK, 100% docstring coverage, and the test
+assessment. It gates on Gold [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark), 100% docstring coverage, and the test
 count the target declares. On failure, the job publishes
 `adacovex-assessment` artifacts and Markdown summaries.
 
@@ -85,7 +85,7 @@ adacovex:
       - docs/badges/*.svg
 ```
 
-If your runner already has Alire, replace the `install.sh` step with
+If your runner already has [Alire](../glossary/ste100/identifiers.md#technical-name-alire), replace the `install.sh` step with
 `alr install covex gnatprove`.
 
 ## Other CI systems
@@ -93,7 +93,7 @@ If your runner already has Alire, replace the `install.sh` step with
 The action is a pure composite of shell steps. It works on any runner that can
 run `bash` and install Alire:
 
-1. Install Alire + GNAT (`alr toolchain --install gnat_native`).
+1. Install Alire + [GNAT](../glossary/ste100/identifiers.md#technical-name-gnat) (`alr toolchain --install gnat_native`).
 2. Download the release bundle or build from source.
 3. Run `adacovex --target=.` with the same flags as the GitHub Action
    inputs.

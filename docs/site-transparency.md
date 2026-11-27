@@ -7,7 +7,7 @@ nothing about a reader.
 
 The manual is a static site. Every page, style, script, and image file is built
 from the repository and served as a file. The page you read now was generated
-once, when the hosting provider built the documentation.
+once, when the [hosting provider](glossary/ste100/web-terms.md#technical-name-hosting-provider) built the documentation.
 
 ## The short answers
 
@@ -25,28 +25,28 @@ once, when the hosting provider built the documentation.
 
 ## Search
 
-The search box in the sidebar comes from the search index that the Sphinx HTML
+The search box in the sidebar comes from the [search index](glossary/ste100/web-terms.md#technical-name-search-index) that the Sphinx HTML
 builder writes. The build produces one static file that holds the words and
 page names of the whole manual. Your browser loads that file and matches your
 search word against it, in your own browser.
 
 A search word never leaves your computer, and the hosting provider never
 receives it. The manual keeps no list
-of search words, and it sets no cookie to remember a past search.
+of search words, and it sets no [cookie](glossary/ste100/web-terms.md#technical-name-cookie) to remember a past search.
 
 The offline manual that `adacovex --serve` exposes at `/docs` carries the same
 search index. The same search box works with no network at all.
 
 ## Traffic analytics
 
-The hosting provider counts **page views** with its own **analytics**. It does
+The hosting provider counts **[page views](glossary/ste100/web-terms.md#technical-name-page-view)** with its own **[analytics](glossary/ste100/web-terms.md#technical-name-analytics)**. It does
 this for every manual it serves, and this project cannot switch it off. The
 provider states that the counting is aggregate, that it uses no cookie, and
 that it does not follow readers between sites. The provider also states that it
 deletes its web server logs, including the IP address and the browser type,
 after 10 days.
 
-The provider obeys **Do Not Track**. If your browser sends `DNT: 1`, the
+The provider obeys **[Do Not Track](glossary/ste100/web-terms.md#technical-name-do-not-track)**. If your browser sends `DNT: 1`, the
 provider does not count the page view. The provider publishes its own
 [privacy policy](https://docs.readthedocs.io/page/privacy-policy.html) and its
 [analytics section](https://docs.readthedocs.io/page/privacy-policy.html#plausible).
@@ -58,13 +58,13 @@ renders carries no analytics either, and no code that calls a third party.
 
 ## Advertising and the flyout menu
 
-This project serves no **paid advertisement**. The project owner turned that
+This project serves no **paid [advertisement](glossary/ste100/web-terms.md#technical-name-advertisement)**. The project owner turned that
 option off in the dashboard of the hosting provider, under `Admin` >
 `Advertising`. The provider also offers free **community advertisements** for
 open source projects. Those messages are not paid, and the project cannot
 remove them through the dashboard.
 
-The manual does not show the **flyout menu** of the hosting provider either. The
+The manual does not show the **[flyout menu](glossary/ste100/web-terms.md#technical-name-flyout-menu)** of the hosting provider either. The
 project owner turned the flyout off under `Settings` > `Addons` > `Flyout
 Menu`. The flyout holds the version selector, so the manual now serves one
 version, the latest build.
@@ -91,11 +91,11 @@ machine, and it never leaves that machine.
 ## The binary and the toolkit
 
 The adacovex binary makes no network call; it reads the files of the target
-project, runs the tools on the local toolkit, and writes the reports. The
+project, runs the tools on the local [toolkit](glossary/ste100/tooling-terms.md#technical-name-toolkit), and writes the reports. The
 optional toolkit setup is the only network activity, and it happens only when
-you ask for it. It reaches the Alire and AdaCore toolchain servers, and it
+you ask for it. It reaches the [Alire](glossary/ste100/identifiers.md#technical-name-alire) and AdaCore [toolchain](glossary/ste100/tooling-terms.md#technical-name-toolchain) servers, and it
 downloads Alire itself from GitHub when Alire is missing, because the `prove`
-subcommand resolves the toolkit through Alire. The cache directory holds the
+[subcommand](glossary/ste100/tooling-terms.md#technical-name-subcommand) resolves the toolkit through Alire. The cache directory holds the
 downloaded archives under the state directories, and the
 [configuration state page](usage/configuration-state.md) describes the paths
 and the environment variables.

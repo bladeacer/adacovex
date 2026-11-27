@@ -1,16 +1,16 @@
 # Target project requirements
 
-adacovex assesses an **Ada/SPARK project**. The target root can be the repository root or a subdirectory (via `--target=PATH`). For a meaningful report, the target must provide the items that follow. Any missing item shows as `N/A`.
+adacovex assesses an **Ada/[SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) project**. The target root can be the repository root or a subdirectory (via `--target=PATH`). For a meaningful report, the target must provide the items that follow. Any missing item shows as `N/A`.
 
-DAL checks that depend on the missing item report `Unmet`.
+[DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) checks that depend on the missing item report `Unmet`.
 
 ## What the target provides
 
 1. **Ada source files** (`.ads`) under the target root -- scanned for
-   subprogram declarations, docstrings, and HLR traceability tags. See the
+   subprogram declarations, docstrings, and [HLR](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) traceability tags. See the
    [docstring spec](../api-docs/adacovex-docstring-spec.md) for the annotation
    format and coverage rules.
-2. **GNATprove output** -- a `gnatprove.out` summary, discovered in this
+2. **[GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) output** -- a `gnatprove.out` summary, discovered in this
    order:
    - `<target>/obj/gnatprove/gnatprove.out`
    - `<target>/gnatprove.out`
@@ -25,7 +25,7 @@ DAL checks that depend on the missing item report `Unmet`.
     Supported formats come from your runner's log or a summary file:
 
     - Markdown tables: the native `test_runner` layout
-      `| Category | N | PASS |` and the AUnit-report layout
+      `| Category | N | PASS |` and the [AUnit](../glossary/ste100/identifiers.md#technical-name-aunit)-report layout
       `| - | Category | N | PASS |`
     - TAP (`ok`/`not ok`)
     - GNU Automake (`PASS:`/`FAIL:`)
@@ -35,7 +35,7 @@ DAL checks that depend on the missing item report `Unmet`.
     See the [test format spec](../api-docs/adacovex-test-format.md) for the
     detailed rules (what each line looks like and which line wins when formats
     mix).
-4. **HLR / LLR documents** (for DAL assessment) --
+4. **HLR / [LLR](../glossary/ste100/proof-terms.md#technical-name-low-level-requirement-llr) documents** (for DAL assessment) --
    `<target>/docs/compliance/HLR.md` and optionally
    `<target>/docs/compliance/LLR.md`, following the
    [HLR traceability-tag format](../api-docs/adacovex-docstring-spec.md#hlr-traceability-tags).
@@ -54,17 +54,17 @@ DAL checks that depend on the missing item report `Unmet`.
 adacovex is a tool for **Ada/SPARK**, and Ada/SPARK is the only **first-class**
 language: source scanning, docstring coverage, HLR traceability, DAL
 assessment, and the proof pipeline are Ada-specific. Every other language
-joins the SBOM, complexity, and test-dependency tooling at the level that
+joins the [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom), complexity, and test-dependency tooling at the level that
 applies to it. The tiers below make the support explicit, so a team knows
 what to expect before it runs an assessment.
 
 ### Ada / SPARK -- first-class
 
-- Full source scan of `.ads` / `.adb` (subprograms, docstrings, HLR tags).
-- Per-subprogram cyclomatic complexity.
-- SPARK proof analysis and the full-proof gate (0 unproved VCs).
-- DO-178C / ISO 26262 / IEC 62304 DAL assessment.
-- Alire / GPR manifests build the Ada dependency graph in the SBOM.
+- Full source scan of `.ads` / `.adb` (subprograms, docstrings, [HLR tags](../glossary/ste100/identifiers.md#technical-name-hlr-tag)).
+- Per-subprogram [cyclomatic complexity](../glossary/ste100/tooling-terms.md#technical-name-cyclomatic-complexity).
+- SPARK proof analysis and the full-proof gate (0 unproved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc)).
+- [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c) / [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262) / [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304) DAL assessment.
+- [Alire](../glossary/ste100/identifiers.md#technical-name-alire) / GPR manifests build the Ada dependency graph in the SBOM.
 
 This is the only tier whose assessment a project can fully rely on.
 
@@ -93,7 +93,7 @@ The source **extensions** below are recognised for three purposes:
    `node_modules`, resources, and loose source drops report their language(s)
    from the extensions actually present (a directory mixes languages and
    reports its top 3).
-2. **The `complexity` subcommand**: per-file lines of code and decision
+2. **The `complexity` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand)**: per-file lines of code and decision
    counts for these languages (Ada is the only per-subprogram analysis).
 3. **Test-dependency names**: the npm/Cargo/Go/Maven/PyPI test-label heuristic
    works from the dependency *name* and is language-independent.

@@ -1,7 +1,7 @@
 # IEC 62304 and the safety classes
 
-IEC 62304 is the medical-device software lifecycle standard. It classifies
-software into safety classes A, B, and C by the severity of the harm that a
+[IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304) is the medical-device software lifecycle standard. It classifies
+software into [safety classes](../glossary/ste100/tooling-terms.md#technical-name-safety-class) A, B, and C by the severity of the harm that a
 failure can cause.
 
 Class C is the highest class, where death or serious injury is possible.
@@ -17,7 +17,7 @@ Class A is the lowest class, where no injury or damage to health is possible.
 
 ## What adacovex checks at each class
 
-adacovex evaluates the same four criteria as for DO-178C. Only the class
+adacovex evaluates the same four criteria as for [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c). Only the class
 name and the minimum proof bar change.
 
 ### Requirement traceability and orphan tags
@@ -62,7 +62,7 @@ adacovex --target=. --standard=iec62304 --dal=C
 adacovex --target=. --standard=all
 ```
 
-The console prints the level with its class name in place of the DAL name,
+The console prints the level with its class name in place of the [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) name,
 and `docs/compliance/VERIFICATION.md` labels the table rows the same way:
 
 ```

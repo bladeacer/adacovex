@@ -1,10 +1,10 @@
 # Proving and writing SPARK proofs
 
-adacovex runs gnatprove, reads its summary, and grades the result against
+adacovex runs [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove), reads its summary, and grades the result against
 the [SPARK assurance levels](../api-docs/adacovex-spark-levels.md). This page
 is the guide to both halves: **how proving works** under adacovex, and
 **how to write proofs** -- contracts in your own code, and -- when the code
-is vendored and cannot be modified -- **proof patches** that add the
+is vendored and cannot be modified -- **[proof patches](../glossary/ste100/tooling-terms.md#technical-name-proof-patch)** that add the
 contracts for you (see [Proof patches over vendored code](proving-patches.md)).
 
 ## Proving a project with adacovex
@@ -13,11 +13,11 @@ contracts for you (see [Proof patches over vendored code](proving-patches.md)).
 adacovex prove --target=.
 ```
 
-The `prove` subcommand (full options:
+The `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) (full options:
 [CLI reference -- the `prove` subcommand](../usage/cli-reference-flags.md#the-prove-subcommand)):
 
 1. **Resolves gnatprove** without requiring the target to declare it:
-   manifest pin > global pin > `$PATH` > cached toolkit > download. Full
+   manifest pin > global pin > `$PATH` > cached [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) > download. Full
    order and per-method detail:
    [Architecture -- GNATprove toolchain resolution](architecture-dependencies.md#gnatprove-toolchain-resolution-prove-subcommand).
 2. **Runs gnatprove** against the target (or against a patched tree copy
@@ -33,7 +33,7 @@ The `prove` subcommand (full options:
     --require-proof=100` and more; see
    [CLI reference -- CI threshold gates](../usage/cli-reference-options.md#ci-threshold-gates---require-)).
 
-The result cache serves unchanged targets so repeated runs are cheap.
+The [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) serves unchanged targets so repeated runs are cheap.
 `--force` bypasses the cache and forces a full gnatprove reanalysis. A target
 without a `gnatprove.out` at all is graded `Stone` with proof metrics `N/A`.
 Run `prove` to generate one.
@@ -101,7 +101,7 @@ so on one line:
 When gnatprove fails, the final line adds the failure detail, for
 example `ERROR: gnatprove exited with code 1 (error lines: 2 above)`.
 
-When the run leaves unproved checks, a diagnostics block follows the
+When the run leaves unproved checks, a [diagnostics block](../glossary/ste100/proof-terms.md#technical-name-diagnostics-block) follows the
 replay. The block names the prover identity, the source location and
 check kind of each finding, and one fix hint:
 
@@ -145,7 +145,7 @@ the OASIS Static Analysis Results Interchange Format.
 
 The assessment and `adacovex spark-coverage` read the pair, and the result
 cache stores and restores both, so a warm run over a wiped tree leaves the
-same pair a real run does. Because SARIF is an open standard, ordinary
+same pair a real run does. Because [SARIF](../glossary/ste100/identifiers.md#technical-name-sarif) is an open standard, ordinary
 consumers open the file without adacovex: an editor plugin such as the
 SARIF Viewer extension for VS Code lists every finding with clickable
 locations, and GitHub code scanning ingests it through the `upload-sarif`
@@ -157,7 +157,7 @@ and its coverage gate -- is on
 
 ## What a proof contains
 
-gnatprove reports verification conditions (VCs) per check category. The
+gnatprove reports [verification conditions](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) (VCs) per check category. The
 summary in `gnatprove.out` breaks them down as:
 
 | Category | What it covers |
@@ -184,7 +184,7 @@ derived from how many of each category were discharged:
   subprograms outside the proof is Gold, not Platinum.
 
 Justified VCs count neither as proved nor as unproved. Only unproved VCs
-downgrade the level. For a DAL assessment, the level must meet the requirement
+downgrade the level. For a [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) assessment, the level must meet the requirement
 of the tier (`--dal=C` needs Bronze, `--dal=A` needs Gold, and more) -- see
 [DAL levels](../api-docs/adacovex-dal-levels.md).
 
@@ -233,7 +233,7 @@ The goal for a clean proof: every VC in every category proved, 0 unproved,
 ## See also
 
 - [Proof patches over vendored code](proving-patches.md) -- the full guide
-  to `.ads`/`.adb` patches that add SPARK contracts over vendored
+  to `.ads`/`.adb` patches that add [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) contracts over vendored
   dependencies
 - [SPARK assurance levels](../api-docs/adacovex-spark-levels.md) -- Stone to
   Platinum, per-category objectives

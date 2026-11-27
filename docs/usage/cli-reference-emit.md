@@ -1,17 +1,17 @@
 # CLI flag details: emitted reports, scan scope, and differential modes
 
-This page details the flags that write artifacts (the automatic SBOM and the
+This page details the flags that write artifacts (the automatic [SBOM](../glossary/ste100/tooling-terms.md#technical-name-software-bill-of-materials-sbom) and the
 `--emit-*` family), the scan-scope flags (`--skip-dir`, `--relaxed`), and the
-differential assessment modes (`--compare-base`, `--coverage-delta`) with
-their VCS support. The serving, CI, and tool flags are on [CLI flag details:
+[differential assessment](../glossary/ste100/tooling-terms.md#technical-name-differential-assessment) modes (`--compare-base`, `--coverage-delta`) with
+their [VCS](../glossary/ste100/tooling-terms.md#technical-name-version-control-system-vcs) support. The serving, CI, and tool flags are on [CLI flag details:
 serving, CI, and tool options](cli-reference-options.md); the flag summary
 table is on the [CLI reference](cli-reference.md).
 
 ### Automatic SBOM (`--no-sbom` / `--sbom-format`)
 
 Every assessment writes a proof-aware SBOM by default (the pipeline's last
-step): `<target>/sbom.json` (CycloneDX 1.5), `<target>/sbom.spdx.json`
-(SPDX 2.3), or `<target>/docs/compliance/SBOM.md` depending on
+step): `<target>/sbom.json` ([CycloneDX](../glossary/ste100/identifiers.md#technical-name-cyclonedx) 1.5), `<target>/sbom.spdx.json`
+([SPDX](../glossary/ste100/identifiers.md#technical-name-spdx) 2.3), or `<target>/docs/compliance/SBOM.md` depending on
 `--sbom-format` (default `cyclonedx-json`). `--no-sbom` skips it entirely.
 These are separate from the dedicated [`sbom` subcommand](sbom.md), which
 writes a single SBOM at an explicit path and exits.
@@ -22,7 +22,7 @@ Alias: `--svg-path=PATH`. Write SVG badges to a directory. Default
 `<target>/docs/badges` (project-scoped). The value is optional: bare
 `--emit-svg` uses the default directory. Creates:
 
-- `spark.svg` -- SPARK assurance level (Stone through Platinum)
+- `spark.svg` -- [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) assurance level (Stone through Platinum)
 - `tests.svg` -- test pass/fail count
 - `do178c.svg` / `iso26262.svg` / `iec62304.svg` -- compliance status for the
   selected standard (Achieved / Unmet), or all three with `--standard=all`
@@ -50,8 +50,8 @@ Aliases: `--emit-md[=PATH]` and `--md-path=PATH`. Write compliance reports to
 a directory (default `<target>/docs`; the value is optional, so bare
 `--emit-md` uses the default). Creates two files:
 
-- `VERIFICATION.md` -- full verification report with all metrics
-- `TRACE.md` -- HLR traceability matrix (source-to-requirement mapping)
+- `VERIFICATION.md` -- full [verification report](../glossary/ste100/concepts.md#technical-name-verification-report) with all metrics
+- `TRACE.md` -- [HLR](../glossary/ste100/proof-terms.md#technical-name-high-level-requirement-hlr) [traceability matrix](../glossary/ste100/concepts.md#technical-name-traceability-matrix) (source-to-requirement mapping)
 
 ### `--no-md`
 
@@ -77,7 +77,7 @@ apply `.adacovex/patches/`. `--strict` re-enables strict mode. See
 Aliases: `--diff=REF`, `--base=REF`, and `-b REF`.
 
 Differential mode: snapshot a base revision and print a side-by-side
-comparison against the current tree (packages, subprograms, docstring %, HLR traced, orphan tags, SPARK level, VCs proved, tests, DAL status). Exit `0` only if there are no regressions AND the current DAL is Achieved. Exit `1` otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj**.
+comparison against the current tree (packages, subprograms, docstring %, HLR traced, orphan tags, [SPARK level](../glossary/ste100/proof-terms.md#technical-name-spark-level), [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) proved, tests, [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal) status). Exit `0` only if there are no regressions AND the current DAL is Achieved. Exit `1` otherwise. Works on **git, Mercurial, Subversion, Fossil, and jj**.
 
 Full detail and the per-VCS snapshot mechanisms are in [VCS support and differential assessment](vcs.md).
 
@@ -85,7 +85,7 @@ Full detail and the per-VCS snapshot mechanisms are in [VCS support and differen
 
 Alias: `--delta=REF` (and `-d REF`).
 
-Lightweight docstring-coverage gate for PR-style CI checks. Scans sources + patches + computes docstring metrics on both a base revision and the current tree (no GNATprove/tests/DAL), prints a compact coverage table plus a machine-parseable `coverage_delta:` line, and cleans up the snapshot. Exit `0` if current docstring coverage is `>=` the base. Exit `1` if coverage regressed.
+Lightweight docstring-coverage gate for PR-style CI checks. Scans sources + patches + computes docstring metrics on both a base revision and the current tree (no [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove)/tests/DAL), prints a compact coverage table plus a machine-parseable `coverage_delta:` line, and cleans up the snapshot. Exit `0` if current docstring coverage is `>=` the base. Exit `1` if coverage regressed.
 
 Mutually exclusive with `--compare-base`. See [VCS support and differential assessment](vcs.md).
 

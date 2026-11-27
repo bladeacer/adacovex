@@ -2,7 +2,7 @@
 
 <!-- no-covex-docs-loc: diagnostics matrix and mode reference, the line cap does not apply -->
 
-`adacovex prove` runs gnatprove and reports what it found. This page shows
+`adacovex prove` runs [gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) and reports what it found. This page shows
 what the output looks like in each mode, and what each unproved check asks you
 to change. The contract rules are on
 [Proving and writing proofs](proving.md).
@@ -34,7 +34,7 @@ with its location and excerpt, and states the count in a `duplicates:` footer.
 passes `--verbose`, so a CI log keeps the unedited prover stream.
 
 `--diagnostics` changes only the finding detail. It never changes the
-replay, the exit code, or the proof itself. The proof result cache is shared
+replay, the [exit code](../glossary/ste100/tooling-terms.md#technical-name-exit-code), or the proof itself. The proof [result cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) is shared
 between the two shapes, and the cached replay is kept apart, so a warm hit
 prints the shape the caller asked for.
 
@@ -49,7 +49,7 @@ Colour is off when a CI variable is set, when `NO_COLOR` is set, or when
 
 A warm cache hit is not a silent run. adacovex stores the plain replay text
 under the proof input hash and prints it again, so a cached run and a fresh
-run report the same warnings, diagnostics block, and footers. The `cache:`
+run report the same warnings, [diagnostics block](../glossary/ste100/proof-terms.md#technical-name-diagnostics-block), and footers. The `cache:`
 line says that the proof itself came from disk.
 
 Inside GitHub Actions, each distinct unproved finding is also an inline
@@ -70,8 +70,8 @@ the replay has no footer, and the run prints no diagnostics block.
 
 ## The coverage summary
 
-The last line reports **proof coverage**: the proved statements, the proved
-subprograms, and the proved VCs, each with its count and its total. A total of
+The last line reports **[proof coverage](../glossary/ste100/proof-terms.md#technical-name-proof-coverage)**: the proved statements, the proved
+subprograms, and the proved [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc), each with its count and its total. A total of
 zero prints `n/a`, never a division by zero and never 100 percent.
 
 The summary is on by default. `--no-coverage` hides it for one run, and
@@ -132,7 +132,7 @@ that needs the precondition. A check that really ran out of budget has no
 counterexample, and its hint raises the budget instead.
 
 The solver is the prover set the gnatprove summary attributes to the check's
-category. gnatprove 16.1 records solvers per summary row, not per SARIF
+category. gnatprove 16.1 records solvers per summary row, not per [SARIF](../glossary/ste100/identifiers.md#technical-name-sarif)
 result, so the line names the set (for example `CVC5` or `CVC5, Z3`).
 
 The block names at most eight findings. A longer list still counts every
@@ -298,7 +298,7 @@ script as a gate, and it skips itself when no gnatprove is resolvable.
 
 ## Dogfood: Ada_CRDT
 
-The sibling `../Ada_CRDT` crate is the second target the diagnostics are tested on, and `just run-ada-crdt` runs it in strict mode. The run below is the complete level-4 output of 2026-11-24, and it is a clean prover result: 1107 VCs with none unproved and none justified, over 43 analysed units. The assessment grades the tree Gold and DAL-C Achieved, docstring coverage is complete at 273 of 273 subprograms, and all 10 441 native tests pass.
+The sibling `../Ada_CRDT` crate is the second target the diagnostics are tested on, and `just run-ada-crdt` runs it in strict mode. The run below is the complete level-4 output of 2026-11-24, and it is a clean prover result: 1107 VCs with none unproved and none justified, over 43 analysed units. The assessment grades the tree Gold and [DAL](../glossary/ste100/proof-terms.md#technical-name-design-assurance-level-dal)-C Achieved, docstring coverage is complete at 273 of 273 subprograms, and all 10 441 native tests pass.
 
 A clean run produces no findings block, because the block exists to explain an unproved check. The replay still reports what it filtered: 4 informational notices hidden, 11 repeated diagnostic lines shown once, and 6 warning lines over 2 distinct messages.
 
@@ -311,7 +311,7 @@ The committed fixtures under `src/tests/projects/contract-errors/` cover the fin
 ## See also
 
 - [Proving and writing proofs](proving.md) -- contracts, VC categories, and
-  proof patches for vendored code
+  [proof patches](../glossary/ste100/tooling-terms.md#technical-name-proof-patch) for vendored code
 - [Proof patches over vendored code](proving-patches.md) -- adding contracts
   without touching the originals
 - [CLI reference -- the `prove` subcommand](../usage/cli-reference-flags.md#the-prove-subcommand)

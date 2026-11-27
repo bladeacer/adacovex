@@ -1,6 +1,6 @@
 # Proof patches: SPARK contracts over vendored code
 
-This page is the guide to proof patches: why they exist, how the `prove` subcommand applies them, writing `.ads` and `.adb` patches, matching rules, worked examples, and the common pitfalls. The design (the merge engine and patched-copy pipeline) is on [Architecture: verification and proof patches](architecture-verification.md). Proving a project and writing SPARK contracts are on [Proving and writing SPARK proofs](proving.md).
+This page is the guide to [proof patches](../glossary/ste100/tooling-terms.md#technical-name-proof-patch): why they exist, how the `prove` [subcommand](../glossary/ste100/tooling-terms.md#technical-name-subcommand) applies them, writing `.ads` and `.adb` patches, matching rules, worked examples, and the common pitfalls. The design (the merge engine and patched-copy pipeline) is on [Architecture: verification and proof patches](architecture-verification.md). Proving a project and writing [SPARK](../glossary/ste100/ada-terms.md#technical-name-spark) contracts are on [Proving and writing SPARK proofs](proving.md).
 
 ## Proof patches: proving vendored dependencies
 
@@ -20,7 +20,7 @@ Three facts force the design:
     missing docstrings and missing contracts count against the target.
     `--relaxed` skips vendored dirs but drops the audit to a quick pass -- not
     an option for a compliance assessment.
- 2. **gnatprove analyses a body only when the body itself opts in.** (The
+ 2. **[gnatprove](../glossary/ste100/identifiers.md#technical-name-gnatprove) analyses a body only when the body itself opts in.** (The
     rule from [Writing proofs](proving.md#writing-proofs-spark-contracts).) A
     vendored spec with no contracts contributes nothing to the proof. A
     vendored body without `SPARK_Mode` is skipped entirely.
@@ -46,7 +46,7 @@ tree copy before running gnatprove -- the originals are never touched.
 3. gnatprove runs against the copy's root project and the resulting
    `gnatprove.out` is copied back to `<target>/obj/gnatprove/gnatprove.out`
    for the assessment pipeline.
-4. Patch contents are folded into the prove result-cache key, so a patch
+4. Patch contents are folded into the prove [result-cache](../glossary/ste100/tooling-terms.md#technical-name-result-cache) key, so a patch
    edit invalidates the cached proof and forces a re-prove (`--force` also
    bypasses the cache).
 
@@ -154,7 +154,7 @@ end Vecmath;
 The two patch files from above (spec with
 `Pre => Lo <= Hi, Post => Clamp'Result in Lo .. Hi`, and body with
 `SPARK_Mode => On`) merge into the copy unchanged in behaviour. gnatprove
-proves the contract: 2 VCs (the `Clamp` postcondition and its termination
+proves the contract: 2 [VCs](../glossary/ste100/proof-terms.md#technical-name-verification-condition-vc) (the `Clamp` postcondition and its termination
 check), 0 unproved. A caller in the target's own code can then rely on the
 contract without the vendored sources ever changing.
 
