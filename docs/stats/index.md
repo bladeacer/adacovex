@@ -7,18 +7,18 @@ This section is the record of measured adacovex figures. Each page states the ve
 ## At a glance
 
 <!-- perf-report:begin -->
-Measured on adacovex `1.75.0` on 2026-11-25.
+Measured on adacovex `1.76.0` on 2026-11-27.
 
 | Metric family | Current value | Detail |
 |---------------|---------------|--------|
-| Pipeline warm | 377.9 ms | [Timings](timings.md) |
-| Pipeline cold | 412.4 ms | [Timings](timings.md) |
-| Prove warm | 680.3 ms | [Timings](timings.md) |
-| Build warm (no-op) | 313.2 ms | [Timings](timings.md) |
-| Binary size | 16.7 MiB (17521504 bytes) | [Binary size](binary-size.md) |
-| Bundled manual spec | 2.6 MiB (2733237 bytes) | [Docs bundle](bundle.md) |
-| Cache hits (warm run) | 49 | [Cache](cache.md) |
-| Native tests | 2501 passed | [Tests](tests.md) |
+| Pipeline warm | 682.5 ms | [Timings](timings.md) |
+| Pipeline cold | 721.5 ms | [Timings](timings.md) |
+| Prove warm | 1.27 s | [Timings](timings.md) |
+| Build warm (no-op) | 1.22 s | [Timings](timings.md) |
+| Binary size | 10.8 MiB (11303624 bytes) | [Binary size](binary-size.md) |
+| Bundled manual spec | 2.6 MiB (2762735 bytes) | [Docs bundle](bundle.md) |
+| Cache hits (warm run) | 50 | [Cache](cache.md) |
+| Native tests | 2606 passed | [Tests](tests.md) |
 
 ## Host profile
 
@@ -26,15 +26,15 @@ Measured on adacovex `1.75.0` on 2026-11-25.
 |------|-------|
 | CPU | `12th Gen Intel(R) Core(TM) i7-1255U` |
 | Cores | `12` |
-| Kernel | `7.3.5-arch1-1` |
+| Kernel | `7.3.6-arch1-1` |
 | Platform | `Linux x86_64` |
 | Filesystem | `ext4` |
 | Compiler | `GNATMAKE 16.2.1 20260810` |
 | gnatprove | `unknown` |
-| Build profile | `development (-O1 -gnatn -g; alr build)` |
+| Build profile | `release (-O2 -gnatn; tools/build.py --release)` |
 | hyperfine | `hyperfine 2.0.0` |
 | strace | `strace -- version 7.3` |
-| Load average (1 min) | `1.86` |
+| Load average (1 min) | `2.85` |
 <!-- perf-report:end -->
 
 ## What the numbers mean

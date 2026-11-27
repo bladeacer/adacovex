@@ -11,11 +11,11 @@ Before 1.58.0 the release profile kept GNAT's default `-g`, so the build was
 ~14.0 MiB at `-O2` on the 1.50.0 tree and ~5.3 MiB after `strip bin/adacovex`.
 Since 1.58.0 the release profile compiles adacovex's own units at `-O2` without
 `-g`, and keeps `-g` on the development profile, where debuggability is the
-point. The 3.6 MiB that a strip pass still removes at 1.75.0 belongs to the
+point. The 3.6 MiB that a strip pass still removes at 1.76.0 belongs to the
 toolchain runtime.
 
-The open phase's representative (1.75.0) links at 11 269 352 bytes (10.7 MiB)
-and strips to 7 442 032 bytes (7.1 MiB). The stripped figure is 0.9 MiB above
+The open phase's representative (1.76.0) links at 11 303 624 bytes (10.8 MiB)
+and strips to 7 474 832 bytes (7.1 MiB). The stripped figure is 0.9 MiB above
 1.63.0's 6 552 528 bytes (6.2 MiB), which the larger manual and the SPARK
 coverage paths account for. All figures here are release-profile (`-O2 -gnatn`),
 a development build (`-O1`, with debug info) is larger by design, and `just
