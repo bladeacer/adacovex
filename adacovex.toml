@@ -17,7 +17,7 @@ coverage = true
 # (max(1, cores-2) locally, all cores in CI).
 # jobs = 4
 
-# Proof effort 0-4. Omit to use gnatprove's own default.
+# Proof effort 0-4. Omit to use the prove subcommand's default (4).
 # level = 2
 
 # Per-check prover timeout in seconds. Omit to use gnatprove's default.
