@@ -24,26 +24,34 @@ that records the decision for every trigger.
     [DO-178C](../glossary/ste100/tooling-terms.md#technical-name-do-178c), [ISO 26262](../glossary/ste100/tooling-terms.md#technical-name-iso-26262), and [IEC 62304](../glossary/ste100/tooling-terms.md#technical-name-iec-62304) badges/reports are all emitted and
     gated), with the Gold / 100% docstrings / test-count / 100% proof
     thresholds and the statement-coverage floor.
-  - `coverage-delta` (pull requests only) -- `--coverage-delta` against
-    `pull_request.base.sha`, so a PR that drops docstring coverage fails.
+  - `coverage-delta` (pull requests and manual dispatch) -- `--coverage-delta`
+    against `pull_request.base.sha` (a manual dispatch falls back to `main`),
+    so a change that drops docstring coverage fails.
   - `summary` -- writes the Markdown summary table and exits 1 when any job
     failed.
+
+  A manual dispatch can skip any job with its `run_*` boolean input
+  (`run_quality`, `run_build_test`, `run_self_assessment`,
+  `run_coverage_delta`). A push or a pull request always runs every job,
+  because the inputs are empty on those events.
 - **`.github/workflows/version-bump.yml`** -- push to `main` that changes
   `alire-dev.toml`. It compares the `version` line with the parent commit and
   runs the macOS and Windows native suite only when the version moved. A
   dev-only dependency edit in that file does not start the matrix.
 - **`.github/workflows/release.yml`** -- on a `v*` tag. It first checks that
-  the tagged commit is on `main` (a tag off `main` stops every later job),
-  then runs four gates in parallel: the `platform-build` matrix (a plain
-  `alr build` plus the native suite on macOS and Windows), the composite
-  action regression (the consumer workspace's `run-tests` and the
-  `adacovex.toml` project-file assertion; see [Project
+  the tagged commit is on `main` (a tag off `main` stops every later job).
+  It then re-runs the full `quality` gate set on the tagged tree (the release
+  does not trust a green `main` that may have drifted) and the `coverage-delta`
+  job against the previous release tag, so a release cannot ship a docstring
+  coverage regression. In parallel it runs the `platform-build` matrix, the
+  composite action regression (see [Project
   configuration](ci-cd-action.md#project-configuration)), and the end-to-end
-  suites (CLI, prove diagnostics, and Playwright; one small fixture proves
-  first so the pinned prover is in the [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) cache). The publish job
-  waits for all four, re-runs the parity gates, builds the release binary,
-  runs [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove), validates the `--standard=all` self-assessment, and
-  publishes the GitHub Release (see [Release bundling](#release-bundling)).
+  suites (one small fixture proves first so the pinned prover is in the
+  [toolkit](../glossary/ste100/tooling-terms.md#technical-name-toolkit) cache). The publish job waits for all of them, builds the
+  release binary, runs [GNATprove](../glossary/ste100/identifiers.md#technical-name-gnatprove), validates the `--standard=all` self-assessment, and publishes the
+  GitHub Release (see [Release bundling](#release-bundling)); it is fully
+  gated, so a failed run never creates or updates the release, and a re-pushed
+  tag cancels the in-flight run (`cancel-in-progress`).
 
 Every gate job runs as plain Python (`python3 tools/tasks.py <gate>`), the
 same recipe `just <gate>` runs locally. The Ubuntu runner images ship
@@ -119,13 +127,14 @@ When the gate is flaky, start from the artifact, not a local repro.
 ### Caching
 
 Four caches shorten a run. Every one is content-addressed, so a restored
-cache can never mask a regression.
+cache can never mask a regression. Each keeps the GitHub default eviction
+window; none is pinned.
 
 | Cache | Scope | Key |
 |-------|-------|-----|
 | Alire toolchain | `setup-alire` `cache: true` | Toolchain version |
 | Alire home (gnatprove install) | `actions/cache` on `~/.alire` / `$ALIRE_HOME` in the composite action | `gnat-version` + hash of the target's dev-manifest `[[depends-on]]` section |
-| adacovex result cache | `result-cache: true` on `uses: ./` | SHA-256 of the target tree's proof-relevant sources (content-addressed, shared across PR and main) |
+| adacovex result cache | `result-cache: true` on `uses: ./` | SHA-256 of the target tree's proof-relevant sources (content-addressed, branch-independent) |
 | gnatprove session store | `actions/cache` on `obj/gnatprove` in ci.yml/release.yml | SHA-256 of the proof-relevant sources |
 
 The [Alire](../glossary/ste100/identifiers.md#technical-name-alire) home cache is new in 1.65.0: it makes the gnatprove binary that
@@ -142,17 +151,22 @@ The result cache and the session store are the two that remove the solver
 cost. The result cache serves a file only when it is byte-for-byte unchanged.
 The session store skips re-proving units whose inputs did not change.
 
-The result-cache key is now content-addressed on the target tree's
+The result-cache key is content-addressed on the target tree's
 proof-relevant sources (a SHA-256 hash of every tracked `*.ads`, `*.adb`,
 and `*.gpr`, excluding the two generated bundle specs) instead of the
 per-run `github.run_id`. This is the same shape the session store already
 uses, so the two caches behave consistently. Because the key is
-content-addressed rather than per-run, a PR run and the post-merge main run
-for the same tree state share one cache entry: the main self-assessment hits
-the cache the PR run populated instead of re-proving everything from scratch.
-The safety property is preserved by construction -- a content-addressed key
-is an exact match or absent, never a partial match that could mask a
-regression.
+content-addressed rather than per-run, the cache is branch-independent: a
+pull-request run and the post-merge `main` run for the same tree state share
+one cache entry, so the `main` self-assessment hits the cache the pull-request
+run populated instead of re-proving everything from scratch.
+
+A pull request's
+cache entry is scoped to its merge ref, so a release on `main` does not read a
+pull-request entry directly; the content-addressed key makes the worst case an
+absent entry (a re-prove), never a stale hit. The safety property is preserved
+by construction -- a content-addressed key is an exact match or absent, never
+a partial match that could mask a regression.
 
 The session-store key hashes the tracked `*.ads`, `*.adb`, and `*.gpr`
 sources. It excludes the two generated bundle specs
@@ -200,16 +214,18 @@ release locally with `VERSION=x.y.z just release` (see the
 [developer guide](../contributing/developer-guide.md)); a normal source build
 reads the version from `alire-dev.toml` instead.
 
-### PR coverage gate
+### Coverage delta gate
 
 Gate every pull request so docstring coverage does not regress against the
-base branch. This is exactly what `--coverage-delta` was built for, and the
-`coverage-delta` job in `ci.yml` runs it on every pull request:
+base branch, and gate the release the same way against the previous release
+tag. This is exactly what `--coverage-delta` was built for. The `coverage-delta`
+job in `ci.yml` runs it on every pull request (and on a manual dispatch, with
+`main` as the base):
 
 ```yaml
 # .github/workflows/ci.yml (the coverage-delta job)
   coverage-delta:
-    if: github.event_name == 'pull_request'
+    if: (github.event_name == 'pull_request' || inputs.run_coverage_delta)
     steps:
       - uses: actions/checkout@v7
         with:
@@ -217,11 +233,13 @@ base branch. This is exactly what `--coverage-delta` was built for, and the
       - uses: bladeacer/adacovex@v1
         with:
           target: .
-          standard: all
-          coverage-delta: ${{ github.event.pull_request.base.sha }}
+          coverage-delta: ${{ github.event.pull_request.base.sha || 'main' }}
 ```
 
-The action exits non-zero when coverage drops, failing the check.
+The `coverage-delta` job in `release.yml` runs the same check against the
+previous release tag (resolved from the tag list, falling back to `HEAD^` for
+the first release) before the publish job runs. The action exits non-zero when
+coverage drops, failing the check.
 
 The release version bundling, the changelog listing, the floating tags, and
 the consumer-manifest prerequisites are on [Release bundling, tags, and

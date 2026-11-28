@@ -35,9 +35,11 @@ assessment. It gates on Gold [SPARK](../glossary/ste100/ada-terms.md#technical-n
 count the target declares. On failure, the job publishes
 `adacovex-assessment` artifacts and Markdown summaries.
 
-### PR coverage gate
+### Coverage delta gate
 
-Use `--coverage-delta` to fail PRs that drop docstring coverage:
+Use `--coverage-delta` to fail changes that drop docstring coverage, on a pull
+request against its base branch and on a release against the previous release
+tag:
 
 ```yaml
 # .github/workflows/pr-coverage.yml
@@ -56,6 +58,9 @@ jobs:
           target: .
           coverage-delta: ${{ github.event.pull_request.base.sha }}
 ```
+
+The bundled `release.yml` runs the same check against the previous release tag
+before it publishes, so a release cannot ship a docstring-coverage regression.
 
 ### Release workflow
 

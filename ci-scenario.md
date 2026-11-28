@@ -1,9 +1,9 @@
-# CI scenario worksheet
+# CI scenario record
 
-Status: **open for the maintainer to fill in.** Every row records what CI does
-today; the last column is where a decision is still missing. Once the `?`
-cells are settled, this page moves to `docs/usage/ci-cd-workflows.md` as the
-long-term record of which job runs when.
+Status: **settled.** Every row records what CI does; the last column names the
+decision that settled it. This page is the long-term record of which job runs
+when, and it matches `.github/workflows/ci.yml`, `version-bump.yml`, and
+`release.yml`.
 
 ## The rule this page answers
 
@@ -16,55 +16,70 @@ pipeline. Nothing runs the same gate twice for one change.
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| `ci.yml` | push to `main`, every pull request, manual dispatch | quality gates, build + native tests, self-assessment (prove), docstring coverage delta (PR only), summary |
+| `ci.yml` | push to `main`, every pull request, manual dispatch | quality gates, build + native tests, self-assessment (prove), docstring coverage delta (pull requests and manual dispatch), summary |
 | `version-bump.yml` | push to `main` that changes `alire-dev.toml`, and only when its `version` differs from the parent commit | detect, native tests (macOS, Windows), summary |
-| `release.yml` | push of a `v*` tag whose commit is on `main` | guard, cross-platform build + tests (macOS, Windows), composite action regression, end-to-end suites, build + prove + publish |
+| `release.yml` | push of a `v*` tag whose commit is on `main` | guard, quality gates, docstring coverage delta (pre-release), cross-platform build + tests (macOS, Windows), composite action regression, end-to-end suites, build + prove + publish, summary |
+
+A manual dispatch of `ci.yml` can skip any job with its `run_*` boolean input
+(`run_quality`, `run_build_test`, `run_self_assessment`,
+`run_coverage_delta`); a push or a pull request always runs every job, because
+the inputs are empty on those events.
 
 ## Scenario table
 
-`Y` runs the job, `-` does not run it, `?` needs the maintainer's decision.
+`Y` runs the job, `-` does not run it.
 
-| Scenario | ci quality | ci build+test | ci self-assessment | ci coverage delta | version-bump platform suite | release guard | release platform build | release action tests | release e2e | release publish | Open question |
-|----------|-----------|---------------|--------------------|-------------------|-----------------------------|---------------|------------------------|----------------------|-------------|-----------------|---------------|
-| Pull request, source only | Y | Y | Y | Y | - | - | - | - | - | - | `?` Is the full prove (`self-assessment`) wanted on every PR, or only on `main`? |
-| Pull request, docs only | Y | Y | Y | Y | - | - | - | - | - | - | `?` Should a docs-only PR skip build, tests, and prove? |
-| Push to `main`, source only | Y | Y | Y | - | - | - | - | - | - | - | `?` Wanted as is? |
-| Push to `main`, version bump | Y | Y | Y | - | Y | - | - | - | - | - | `?` Should the bump also run the end-to-end suites before the tag exists? |
-| Push to `main`, docs only | Y | Y | Y | - | - | - | - | - | - | - | `?` Same question as the docs-only PR. |
-| Tag `v*` on `main` | - | - | - | - | - | Y | Y | Y | Y | Y | `?` Should the release re-run the quality gates, or trust the `main` run? |
-| Tag `v*` off `main` | - | - | - | - | - | Y (fails) | - | - | - | - | `?` Is failing the guard the wanted behaviour? |
-| Manual dispatch | Y | Y | Y | - | - | - | - | - | - | - | `?` Which jobs should a manual run be able to pick? |
-| Failure on `main` after a merge | Y | Y | Y | - | - | - | - | - | - | - | `?` Should a red `main` block the next tag? |
+| Scenario | ci quality | ci build+test | ci self-assessment | ci coverage delta | version-bump platform suite | release guard | release quality | release coverage delta | release platform build | release action tests | release e2e | release publish |
+|----------|-----------|---------------|--------------------|-------------------|-----------------------------|---------------|-----------------|------------------------|------------------------|----------------------|-------------|-----------------|
+| Pull request, source only | Y | Y | Y | Y | - | - | - | - | - | - | - | - |
+| Pull request, docs only | Y | Y | Y | Y | - | - | - | - | - | - | - | - |
+| Push to `main`, source only | Y | Y | Y | - | - | - | - | - | - | - | - | - |
+| Push to `main`, version bump | Y | Y | Y | - | Y | - | - | - | - | - | - | - |
+| Push to `main`, docs only | Y | Y | Y | - | - | - | - | - | - | - | - | - |
+| Tag `v*` on `main` | - | - | - | - | - | Y | Y | Y | Y | Y | Y | Y |
+| Tag `v*` off `main` | - | - | - | - | - | Y (fails) | - | - | - | - | - | - |
+| Manual dispatch | Y | Y | Y | Y | - | - | - | - | - | - | - | - |
+| Failure on `main` after a merge | Y | Y | Y | - | - | - | - | - | - | - | - | - |
 
 ## Caching behaviour
 
 Every cache is content-addressed, so a restored entry is either an exact hit
-for the inputs or absent. A stale restore can never mask a regression.
+for the inputs or absent. A stale restore can never mask a regression. Each
+cache uses the GitHub default eviction window; none is pinned.
 
-| Cache | Written by | Key | Question |
-|-------|------------|-----|----------|
-| Alire toolchain | `setup-alire` `cache: true` | toolchain version and host | `?` Keep the default retention, or pin a window? |
-| Alire home (gnatprove install) | the composite action | `gnat-version` + the target dev manifest's `[[depends-on]]` | `?` Is a cross-workflow hit wanted between `ci.yml` and `release.yml`? |
-| adacovex result cache | `result-cache: true` | SHA-256 of the target's proof-relevant sources | `?` Should the release job read the cache a PR wrote? |
-| gnatprove session store | `actions/cache` on `obj/gnatprove` | SHA-256 of the proof-relevant sources | `?` Keep the 7-day default eviction for an idle tree? |
+| Cache | Written by | Key |
+|-------|------------|-----|
+| Alire toolchain | `setup-alire` `cache: true` | toolchain version and host |
+| Alire home (gnatprove install) | the composite action | `gnat-version` + the target dev manifest's `[[depends-on]]` |
+| adacovex result cache | `result-cache: true` | SHA-256 of the target's proof-relevant sources |
+| gnatprove session store | `actions/cache` on `obj/gnatprove` | SHA-256 of the proof-relevant sources |
 
-## Decisions already taken
+The result cache is branch-independent: a pull-request run and the post-merge
+`main` run for the same tree state share one entry, and a release run on a tag
+reads the same content-addressed entry. A pull request's cache is scoped to its
+merge ref, so a release on `main` does not read a pull-request entry directly;
+the content-addressed key makes the worst case an absent entry (a re-prove),
+never a stale hit.
 
-- The macOS and Windows native suites run on a version bump, not on every
-  commit. A non-Linux host proves nothing new about an ordinary source
-  change, and the queue cost is real.
-- The end-to-end suites (CLI, prove diagnostics, dashboard) run on a release
-  tag. They need a prover and a browser, and they are released-tree gates.
-- `pr-check.yml` no longer exists. `ci.yml` handles both events, so a pull
-  request runs each gate once.
-- The release pipeline refuses a tag whose commit is not on `main`.
+## Decisions taken
 
-## Open questions
-
-1. Prove on every pull request, or only on `main`? Today: every PR.
-2. Skip build, test, and prove for a docs-only change? Today: no skip.
-3. Run the e2e suites on a version bump, before the tag? Today: no.
-4. One job per gate, or fewer grouped jobs? Today: grouped (quality is one
-   job with one step per gate).
-5. Should a manual dispatch choose a subset of jobs? Today: it runs the whole
-   workflow.
+- Prove (`self-assessment`) runs on every pull request **and** on `main`.
+- A docs-only change does **not** skip the build, the native suite, or the
+  prove; the cheap gates are cheap, and a docs edit can still break a gate.
+- The end-to-end suites run on a release tag only, never on a version bump.
+  A suite whose tool path is absent in CI (the Playwright browser half without
+  `pnpm`/Chromium, the prove half without a prover) is skipped with its reason,
+  exactly as `just e2e` does locally.
+- The quality gates run as one grouped job (one step per gate), not one job
+  per gate.
+- A manual dispatch can pick a subset of `ci.yml` jobs through its `run_*`
+  inputs; the default runs the whole workflow.
+- The release re-runs the full quality gate set on the tagged tree rather than
+  trusting a green `main` that may have drifted.
+- The release `guard` fails a tag whose commit is not on `main`, and every
+  other release job waits on it.
+- A failed release run never creates or updates the GitHub Release: the publish
+  job is fully gated on every other job, and a re-pushed tag cancels the
+  in-flight run (concurrency, `cancel-in-progress`). A red `main` does not block
+  a tag; the tag is gated on its own tree, not on `main`'s CI colour.
+- Each cache keeps the GitHub default eviction window.

@@ -815,9 +815,12 @@ GitHub Actions (composite `./action.yml` + `ci.yml` / `version-bump.yml` /
 `release.yml`), action inputs/outputs, result caching, and release bundling:
 [docs/usage/ci-cd.md](docs/usage/ci-cd.md). `ci.yml` runs the cheap quality
 Gates, the build + native suite, and the self-assessment on a pull request and
-a `main` push; `version-bump.yml` runs the macOS/Windows native suite when the
-version in `alire-dev.toml` moves; `release.yml` runs the cross-platform build,
-the composite-action regression, and the end-to-end suites on a release tag.
+a `main` push (and a manual dispatch that can skip any job); `version-bump.yml`
+runs the macOS/Windows native suite when the version in `alire-dev.toml` moves;
+`release.yml` re-runs the quality gates and the coverage-delta on the tagged
+tree (it does not trust a green `main`), then runs the cross-platform build, the
+composite-action regression, and the end-to-end suites on a release tag, and
+publishes only when every job passed.
 Every trigger and its jobs: [ci-scenario.md](ci-scenario.md).
 
 Installation methods, target-project requirements, and running against another
@@ -873,7 +876,8 @@ its input all fail CI. The only assessment that is *not* reproduced in CI is
 `just run-ada-crdt` (a local dogfood regression against `../Ada_CRDT`);
 `ci.yml` runs the cheap quality gates, the native tests, and the
 `--standard=all` self-assessment instead, `version-bump.yml` runs the
-macOS/Windows native suite when the version moves, and `release.yml` runs the
+macOS/Windows native suite when the version moves, and `release.yml` re-runs
+the quality gates and the coverage-delta on the tagged tree, then runs the
 cross-platform `platform-build` matrix, the composite-action regression, and
 the end-to-end suites only when a release tag is pushed. Every gate job in
 the workflows runs as plain Python
