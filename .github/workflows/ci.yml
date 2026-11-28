@@ -17,6 +17,23 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_quality:
+        description: Run the code quality gates
+        type: boolean
+        default: true
+      run_build_test:
+        description: Build and run the native suite
+        type: boolean
+        default: true
+      run_self_assessment:
+        description: Build, prove, and assess at --standard=all
+        type: boolean
+        default: true
+      run_coverage_delta:
+        description: Run the docstring coverage delta against the base branch
+        type: boolean
+        default: true
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -28,6 +45,10 @@ jobs:
     #  set runs in one job: one runner, one checkout, and a failure names the
     #  gate in its step log.  A gate whose host tool is missing SKIPs with its
     #  reason (tools/taskkit/gates.py), exactly as `just check` does locally.
+    #
+    #  A manual dispatch can skip this job with run_quality=false; a push or
+    #  pull request always runs it (the inputs are empty on those events).
+    if: github.event_name != 'workflow_dispatch' || inputs.run_quality
     name: Code quality gates
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -68,6 +89,9 @@ jobs:
           CHECK=1 python3 tools/tasks.py requirements
 
   build-test:
+    #  A manual dispatch can skip this job with run_build_test=false; a push
+    #  or pull request always runs it (the inputs are empty on those events).
+    if: github.event_name != 'workflow_dispatch' || inputs.run_build_test
     name: Build + native tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -86,6 +110,10 @@ jobs:
         run: python3 tools/tasks.py complexity-check
 
   self-assessment:
+    #  A manual dispatch can skip this job with run_self_assessment=false; a
+    #  push or pull request always runs it (the inputs are empty on those
+    #  events).
+    if: github.event_name != 'workflow_dispatch' || inputs.run_self_assessment
     name: Self-assessment (all standards)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -174,9 +202,10 @@ jobs:
   coverage-delta:
     #  Pull-request regression gate: the docstring-coverage delta against the
     #  PR base branch.  It used to live in pr-check.yml; one workflow now owns
-    #  both event types, so a PR runs nothing twice.
-    name: Docstring coverage delta (pull requests)
-    if: github.event_name == 'pull_request'
+    #  both event types, so a PR runs nothing twice.  A manual dispatch can
+    #  skip it with run_coverage_delta=false.
+    if: (github.event_name == 'pull_request' || inputs.run_coverage_delta)
+    name: Docstring coverage delta (pull requests and manual dispatch)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -188,7 +217,9 @@ jobs:
           standard: all
           gnat-version: 16.1.0
           build: true
-          coverage-delta: ${{ github.event.pull_request.base.sha }}
+          #  A pull request compares against its base SHA; a manual dispatch
+          #  has no pull request, so it falls back to the default branch.
+          coverage-delta: ${{ github.event.pull_request.base.sha || 'main' }}
           #  Toolkit + adacovex result cache.  Result-cache entries are
           #  keyed by SHA-256 content hashes, so a restore is either an
           #  exact hit or absent and can never mask a regression.

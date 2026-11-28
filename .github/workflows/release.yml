@@ -10,6 +10,14 @@ permissions:
   attestations: write
   id-token: write
 
+#  A re-pushed tag cancels the in-flight run for the same ref, so a failed
+#  release can be removed, fixed, and re-released without a stale run holding
+#  the concurrency slot.  The publish job is fully gated (needs every other
+#  job), so a failed run never creates or updates the GitHub Release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   guard:
     #  Release CI only publishes commits main carries. A tag can be pushed
@@ -31,6 +39,85 @@ jobs:
             exit 1
           fi
           echo "Release tag $GITHUB_REF_NAME is on main."
+
+  quality:
+    #  The full cheap-gate set, re-run on the tagged tree rather than trusted
+    #  from the main run: a release must not ship on a green main that has
+    #  since drifted.  Same gate list and CHECK=1 sync checks as the ci.yml
+    #  quality job, plus the complexity/file-size gate.
+    name: Code quality gates
+    needs: [guard]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Static gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          for gate in \
+            ascii-check \
+            csslint-check \
+            spark-off-check \
+            changelog-check \
+            action-parity-check \
+            docs-coverage-check \
+            diagnostics-coverage-check \
+            test-layout-check \
+            portability-check \
+            surface-parity-check \
+            docs-tree-check \
+            link-check \
+            docs-check \
+            para-split-check \
+            tldr-check \
+            tools-check \
+            version-source-check \
+            version-consistency-check
+          do
+            echo "=== $gate ==="
+            python3 tools/tasks.py "$gate"
+          done
+      - name: Regenerated files in sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHECK=1 python3 tools/tasks.py description
+          CHECK=1 python3 tools/tasks.py requirements
+      - name: Complexity gate (no god objects)
+        shell: bash
+        run: python3 tools/tasks.py complexity-check
+
+  coverage-delta:
+    #  Pre-release docstring-coverage gate: the delta against the previous
+    #  release tag, so a release cannot ship a docstring-coverage regression
+    #  that the pull-request delta would have caught on the way in.  Runs on
+    #  the tagged tree (fetch-depth 0 gives the full tag history).
+    name: Docstring coverage delta (pre-release)
+    needs: [guard]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Resolve the previous release tag
+        #  One line for `with:`; fall back to HEAD^ for the first release.
+        id: prev-tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          CUR="${GITHUB_REF_NAME}"
+          PREV=$(git tag --sort=-version:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${CUR}$" \
+            | head -1 || true)
+          echo "tag=${PREV:-HEAD^}" >> "$GITHUB_OUTPUT"
+      - uses: ./
+        with:
+          target: .
+          standard: all
+          gnat-version: 16.1.0
+          build: true
+          coverage-delta: ${{ steps.prev-tag.outputs.tag }}
 
   platform-build:
     #  Cross-platform release gate: the tree builds and the native suite
@@ -184,29 +271,22 @@ jobs:
   release:
     name: Build and publish release artifacts
     runs-on: ubuntu-latest
-    needs: [guard, platform-build, action-tests, e2e]
+    #  Fully gated: the publish job runs only when every other job succeeded,
+    #  so a failed run never creates or updates the GitHub Release.  The
+    #  inline parity/complexity gates are gone -- the `quality` job re-runs
+    #  the full gate set on the tagged tree, so the release does not trust a
+    #  green main that may have drifted.
+    needs: [guard, quality, coverage-delta, platform-build, action-tests, e2e]
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      - name: Enforce action/CLI/docs parity
-        run: python3 tools/tasks.py action-parity-check
-
-      - name: Enforce documentation coverage
-        run: python3 tools/tasks.py docs-coverage-check
-
-      - name: Enforce CLI surface parity
-        run: python3 tools/tasks.py surface-parity-check
 
       - uses: alire-project/setup-alire@latest
         with:
           version: '2.1.1'
           toolchain: 'gnat_native=16.1.0 gprbuild'
           cache: true
-
-      - name: Enforce complexity + file-size caps
-        run: python3 tools/tasks.py complexity-check
 
       - name: Swap in the development manifest (pinned gnatprove)
         #  The release proof must run with the prover the dev manifest
@@ -405,13 +485,15 @@ jobs:
   summary:
     name: Release summary
     if: always()
-    needs: [guard, release, platform-build, action-tests, e2e]
+    needs: [guard, quality, coverage-delta, release, platform-build, action-tests, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Write release summary
         shell: bash
         env:
           GUARD: ${{ needs.guard.result }}
+          QUALITY: ${{ needs.quality.result }}
+          DELTA: ${{ needs.coverage-delta.result }}
           RELEASE: ${{ needs.release.result }}
           PLATFORM: ${{ needs.platform-build.result }}
           ACTIONS: ${{ needs.action-tests.result }}
@@ -426,13 +508,16 @@ jobs:
             echo "|------|-------|"
             echo "| Tag | $VERSION |"
             echo "| Tag on main | $GUARD |"
+            echo "| Code quality gates | $QUALITY |"
+            echo "| Docstring coverage delta (pre-release) | $DELTA |"
             echo "| Build + self-assessment + publish | $RELEASE |"
             echo "| Cross-platform build + tests (macOS, Windows) | $PLATFORM |"
             echo "| Composite action regression | $ACTIONS |"
             echo "| End-to-end suites | $E2E |"
             echo ''
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "$GUARD" = "failure" ] || [ "$RELEASE" = "failure" ] \
+          if [ "$GUARD" = "failure" ] || [ "$QUALITY" = "failure" ] \
+            || [ "$DELTA" = "failure" ] || [ "$RELEASE" = "failure" ] \
             || [ "$PLATFORM" = "failure" ] || [ "$ACTIONS" = "failure" ] \
             || [ "$E2E" = "failure" ]; then
             echo "::error::Release pipeline failed for $VERSION." >&2
