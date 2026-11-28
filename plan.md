@@ -19,7 +19,7 @@ pipeline warm 354.6 ms and prove warm 655.5 ms, so the earlier 682 ms and
 | Version | Status | Theme | Items |
 |---------|--------|-------|-------|
 | v1.76.0 | closed | CLI help ergonomics and documentation audience | [`adacovex-1.76.0.md`](docs/changelogs/adacovex-1.76.0.md) |
-| v1.77.0 | in progress | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links, done), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI), R10 (quiet-host re-measure, done) |
+| v1.77.0 | in progress | Glossary, diagnostics depth, and developer configuration | R6 (glossary relocation and term links, done), R7 (diagnostics matrix coverage and examples), R8 (optional sibling projects), R9 (configuration parity with the CLI), R10 (quiet-host re-measure, done), R11 (CI scenario settled and the workflows matched, done) |
 
 ## Status (2026-11-27)
 
@@ -239,6 +239,43 @@ shape is back at its idle value, so there is no regression and no debt row.
 
 ---
 
+### R11 - The CI scenario is settled and the workflows match it
+
+- [x] Answer every open question in `ci-scenario.md` and fold the record into
+  the CI/CD pages.
+- [x] Implement the settled behaviour in `ci.yml` and `release.yml`.
+
+**Goal:** `ci-scenario.md` is the long-term record of which job runs when, and
+the workflow files do exactly what it records. A reader can trust the page, and
+a release cannot ship on a stale green `main`.
+
+**Work:**
+- Settle the five open questions and the per-scenario and caching cells:
+  prove on every pull request and `main`; no docs-only skip; the end-to-end
+  suites on a release tag only (a suite whose tool path is absent is skipped
+  with its reason); one grouped quality job; a manual dispatch that can pick a
+  subset of jobs; the release re-runs the full quality gate set and a
+  pre-release coverage delta on the tagged tree; the publish job is fully gated
+  and a re-pushed tag cancels the in-flight run; each cache keeps the GitHub
+  default eviction window.
+- Add `workflow_dispatch` `run_*` inputs to `ci.yml` and gate each job on them;
+  a push or pull request always runs every job.
+- Add a `quality` job and a pre-release `coverage-delta` job to `release.yml`,
+  wire them into the publish job's `needs`, and drop the inline parity and
+  complexity gates the `quality` job now covers. Add `concurrency` with
+  `cancel-in-progress` so a failed run never creates a release and a re-tag
+  restarts cleanly.
+- Rewrite `ci-scenario.md` as the settled record and update
+  `docs/usage/ci-cd-workflows.md`, `docs/usage/ci-cd.md`, and AGENTS.md to
+  match.
+
+**Tests:** the workflow YAML is validated by the check run; the docs gates
+(`docs-check`, `surface-parity-check`, `book-links-check`) cover the prose.
+
+**Verify:** `just book`, `just check`.
+
+---
+
 ## Per-release checklist (apply to every version)
 
 1. Implement the version's items (code + tests).
@@ -287,3 +324,6 @@ shape is back at its idle value, so there is no regression and no debt row.
     and never a sibling checkout.
 13. R9: configuration parity is a CI gate before 2.0.0, not a documentation
     convention.
+14. R11: the release trusts no green `main` -- it re-runs the full quality gate
+    set and a pre-release coverage delta on the tagged tree, and the publish job
+    is fully gated so a failed run never creates a release.
